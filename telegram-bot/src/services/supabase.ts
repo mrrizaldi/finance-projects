@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { Transaction, Summary, CategoryBreakdown, Category, Account } from '../types';
+import { Transaction, Summary, CategoryBreakdown, Category, Account, Installment } from '../types';
 import { config } from '../config';
 
 const supabase = createClient(config.supabase.url, config.supabase.serviceRoleKey);
@@ -115,6 +115,64 @@ export const db = {
       .update({ balance: 0 })
       .eq('is_active', true);
     return count || 0;
+  },
+
+  // ── Installments ─────────────────────────
+  async getInstallments(status?: Installment['status']): Promise<Installment[]> {
+    let query = supabase
+      .from('installments')
+      .select('*, accounts(name), categories(name, icon)')
+      .order('created_at', { ascending: false });
+    if (status) query = query.eq('status', status);
+    const { data, error } = await query;
+    if (error) throw new Error(`Installments failed: ${error.message}`);
+    return (data || []).map((r: any) => ({
+      ...r,
+      account_name: r.accounts?.name,
+      category_name: r.categories?.name,
+      category_icon: r.categories?.icon,
+    }));
+  },
+
+  async getInstallmentByName(name: string): Promise<Installment | null> {
+    const { data } = await supabase
+      .from('installments')
+      .select('*, accounts(name), categories(name, icon)')
+      .ilike('name', name)
+      .maybeSingle();
+    if (!data) return null;
+    return {
+      ...(data as any),
+      account_name: (data as any).accounts?.name,
+      category_name: (data as any).categories?.name,
+      category_icon: (data as any).categories?.icon,
+    };
+  },
+
+  async insertInstallment(inst: Omit<Installment, 'id' | 'account_name' | 'category_name' | 'category_icon'>): Promise<Installment> {
+    const { data, error } = await supabase
+      .from('installments')
+      .insert(inst)
+      .select()
+      .single();
+    if (error) throw new Error(`Insert installment failed: ${error.message}`);
+    return data;
+  },
+
+  async updateInstallmentSchedule(id: string, schedule: string, totalMonths: number): Promise<void> {
+    const { error } = await supabase
+      .from('installments')
+      .update({ schedule, total_months: totalMonths })
+      .eq('id', id);
+    if (error) throw new Error(`Update schedule failed: ${error.message}`);
+  },
+
+  async setInstallmentPaid(id: string, newPaidMonths: number): Promise<void> {
+    const { error } = await supabase
+      .from('installments')
+      .update({ paid_months: newPaidMonths })
+      .eq('id', id);
+    if (error) throw new Error(`Update installment failed: ${error.message}`);
   },
 
   async updateAccountBalance(accountId: string, delta: number): Promise<void> {

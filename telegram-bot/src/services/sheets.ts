@@ -1,7 +1,7 @@
 import { GoogleSpreadsheet } from 'google-spreadsheet';
 import { JWT } from 'google-auth-library';
 import { config } from '../config';
-import { Transaction, Category, Account } from '../types';
+import { Transaction, Category, Account, Installment } from '../types';
 
 let doc: GoogleSpreadsheet | null = null;
 
@@ -26,7 +26,7 @@ export const sheets = {
   }): Promise<void> {
     try {
       const document = await getDoc();
-      const sheet = document.sheetsByTitle['Transactions'];
+      const sheet = document.sheetsByTitle['Transaction'];
       if (!sheet) return;
 
       await sheet.addRow({
@@ -35,8 +35,8 @@ export const sheets = {
         amount: txn.amount,
         description: txn.description || '',
         merchant: txn.merchant || '',
-        category: txn.category_name || '',
-        account: txn.account_name || '',
+        category_name: txn.category_name || '',
+        account_name: txn.account_name || '',
         source: txn.source,
         verified: txn.verified ? 'TRUE' : 'FALSE',
         transaction_date: txn.transaction_date,
@@ -53,7 +53,7 @@ export const sheets = {
   })[]): Promise<void> {
     try {
       const document = await getDoc();
-      const sheet = document.sheetsByTitle['Transactions'];
+      const sheet = document.sheetsByTitle['Transaction'];
       if (!sheet) return;
 
       await sheet.clearRows();
@@ -63,8 +63,8 @@ export const sheets = {
         amount: txn.amount,
         description: txn.description || '',
         merchant: txn.merchant || '',
-        category: txn.category_name || '',
-        account: txn.account_name || '',
+        category_name: txn.category_name || '',
+        account_name: txn.account_name || '',
         source: txn.source,
         verified: txn.verified ? 'TRUE' : 'FALSE',
         transaction_date: txn.transaction_date,
@@ -76,10 +76,42 @@ export const sheets = {
     }
   },
 
+  async syncInstallments(installments: Installment[]): Promise<void> {
+    try {
+      const document = await getDoc();
+      const sheet = document.sheetsByTitle['Installment'];
+      if (!sheet) return;
+
+      await sheet.clearRows();
+      const rows = installments.map((inst) => {
+        const remaining = inst.total_months - inst.paid_months;
+        const progress = Math.round((inst.paid_months / inst.total_months) * 100);
+        return {
+          id: inst.id,
+          name: inst.name,
+          monthly_amount: Number(inst.monthly_amount),
+          total_months: inst.total_months,
+          paid_months: inst.paid_months,
+          remaining_months: remaining,
+          start_date: inst.start_date,
+          due_day: inst.due_day || '',
+          account_name: inst.account_name || '',
+          category_name: inst.category_name || '',
+          status: inst.status,
+          progress_percent: progress,
+          notes: inst.notes || '',
+        };
+      });
+      if (rows.length > 0) await sheet.addRows(rows);
+    } catch (err) {
+      console.error('Sheets installments sync error:', err);
+    }
+  },
+
   async syncAccounts(accounts: Account[]): Promise<void> {
     try {
       const document = await getDoc();
-      const sheet = document.sheetsByTitle['Accounts'];
+      const sheet = document.sheetsByTitle['Account'];
       if (!sheet) return;
 
       await sheet.clearRows();

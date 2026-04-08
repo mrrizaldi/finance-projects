@@ -23,11 +23,12 @@ INSERT INTO public.categories (name, type, icon, color, sort_order) VALUES
   ('Subscription', 'expense', '🔄', '#8B5CF6', 5),
   ('Kesehatan', 'expense', '🏥', '#10B981', 6),
   ('Pendidikan', 'expense', '📚', '#06B6D4', 7),
-  ('Hiburan', 'expense', '🎮', '#EC4899', 8),
-  ('Pakaian', 'expense', '👕', '#F97316', 9),
-  ('Kebutuhan Rumah', 'expense', '🏠', '#84CC16', 10),
-  ('Sosial & Donasi', 'expense', '🤝', '#14B8A6', 11),
-  ('Transfer Keluar', 'expense', '💸', '#64748B', 12),
+  ('Olahraga', 'expense', '⚽', '#22C55E', 8),
+  ('Hiburan', 'expense', '🎮', '#EC4899', 9),
+  ('Pakaian', 'expense', '👕', '#F97316', 10),
+  ('Kebutuhan Rumah', 'expense', '🏠', '#84CC16', 11),
+  ('Sosial & Donasi', 'expense', '🤝', '#14B8A6', 12),
+  ('Transfer Keluar', 'expense', '💸', '#64748B', 13),
   ('Lainnya (Expense)', 'expense', '📦', '#94A3B8', 99);
 
 -- ============================================

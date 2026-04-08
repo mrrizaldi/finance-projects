@@ -43,6 +43,47 @@ Balas HANYA dengan ID kategori (UUID), tanpa penjelasan.`;
   }
 }
 
+export async function batchCategorizeTransactions(
+  transactions: Array<{ description: string; type: 'income' | 'expense' }>,
+  categories: { expense: Category[]; income: Category[] }
+): Promise<(string | null)[]> {
+  const expList = categories.expense.map((c) => c.name).join(', ');
+  const incList = categories.income.map((c) => c.name).join(', ');
+  const txList = transactions.map((t, i) => `${i + 1}.[${t.type}] ${t.description}`).join('\n');
+
+  const prompt = `Kategorisasi transaksi keuangan Indonesia. Balas HANYA JSON array nama kategori sesuai urutan transaksi.
+
+Kategori expense: ${expList}
+Kategori income: ${incList}
+
+Transaksi:
+${txList}
+
+Contoh format balasan: ["Makanan & Minuman","Transportasi","Olahraga"]`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      max_tokens: 500,
+      temperature: 0,
+    });
+
+    const raw = (response.choices[0].message.content?.trim() || '[]')
+      .replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return transactions.map(() => null);
+
+    const allCats = [...categories.expense, ...categories.income];
+    return parsed.map((name: string) => {
+      const cat = allCats.find((c) => c.name === name);
+      return cat?.id ?? null;
+    });
+  } catch {
+    return transactions.map(() => null);
+  }
+}
+
 export async function generateInsight(
   summaryData: string,
   question?: string

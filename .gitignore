@@ -7,3 +7,4 @@ dist/
 !package.json
 !tsconfig.json
 !next.config.json
+dashboard/.env.local

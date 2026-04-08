@@ -7,6 +7,7 @@ export interface Transaction {
   category_id?: string;
   account_id?: string;
   to_account_id?: string;
+  installment_id?: string;
   source: TransactionSource;
   email_subject?: string;
   email_sender?: string;
@@ -55,6 +56,24 @@ export interface Summary {
   avg_daily_expense: number;
   top_expense_category: string;
   top_expense_amount: number;
+}
+
+export interface Installment {
+  id: string;
+  name: string;
+  monthly_amount: number;
+  total_months: number;
+  paid_months: number;
+  start_date: string;
+  due_day?: number;
+  account_id?: string;
+  category_id?: string;
+  status: 'active' | 'completed' | 'paused' | 'cancelled';
+  schedule?: string; // comma-separated amounts per month, e.g. "1520593,1304533,..."
+  notes?: string;
+  account_name?: string;
+  category_name?: string;
+  category_icon?: string;
 }
 
 export interface CategoryBreakdown {

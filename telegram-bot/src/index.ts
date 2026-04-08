@@ -12,6 +12,8 @@ bot.api.setMyCommands([
   { command: 'category', description: 'Lihat daftar kategori' },
   { command: 'ask', description: 'Tanya AI tentang keuangan' },
   { command: 'sync', description: 'Sinkronisasi data ke Google Sheets' },
+  { command: 'bulk', description: 'Input banyak transaksi sekaligus' },
+  { command: 'installment', description: 'Kelola cicilan (add/pay/detail)' },
   { command: 'undo', description: 'Batalkan transaksi terakhir' },
   { command: 'reset', description: 'Hapus semua data (testing)' },
 ]);
