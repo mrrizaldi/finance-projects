@@ -781,7 +781,7 @@ export function createBot() {
         monthly = Math.round(amounts.reduce((a, b) => a + b, 0) / amounts.length);
         [accountToken, dueDayStr, categoryToken] = restParts;
       } else {
-        const [monthlyStr, monthsStr, ...rest2] = restParts;
+        const [monthsStr, ...rest2] = restParts;
         monthly = parseAmount(amountField) || 0;
         totalMonths = parseInt(monthsStr || '');
         [accountToken, dueDayStr, categoryToken] = rest2;

@@ -3,6 +3,8 @@ import OpenAI from 'openai';
 import { createServerClient } from '@/lib/supabase';
 import { startOfMonth, endOfMonth } from '@/lib/utils';
 
+export const dynamic = 'force-dynamic';
+
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req: NextRequest) {

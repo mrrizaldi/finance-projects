@@ -111,13 +111,13 @@ export default async function BudgetPage() {
       {/* Summary */}
       <div className="grid grid-cols-3 gap-4 mb-6">
         <Card>
-          <CardContent className="pt-4">
+          <CardContent className="p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Budget</p>
             <p className="text-xl font-bold text-foreground mt-1">{formatRupiah(totalBudget)}</p>
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
+          <CardContent className="p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Terpakai</p>
             <p className={cn('text-xl font-bold mt-1', totalSpent > totalBudget ? 'text-red-500' : 'text-foreground')}>
               {formatRupiah(totalSpent)}
@@ -125,7 +125,7 @@ export default async function BudgetPage() {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="pt-4">
+          <CardContent className="p-4">
             <p className="text-xs text-muted-foreground uppercase tracking-wide">Kategori Melebihi</p>
             <p className={cn('text-xl font-bold mt-1', overBudget.length > 0 ? 'text-red-500' : 'text-emerald-600')}>
               {overBudget.length} kategori

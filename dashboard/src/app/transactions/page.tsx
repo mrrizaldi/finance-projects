@@ -3,6 +3,7 @@ import { createServerClient } from '@/lib/supabase';
 import { VTransaction, Category, Account } from '@/types';
 import TransactionListClient from '@/components/transactions/TransactionListClient';
 import TransactionFilters from './TransactionFilters';
+import TransactionSort from './TransactionSort';
 import { formatRupiah } from '@/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
@@ -17,6 +18,7 @@ interface Props {
     page?: string;
     type?: string;
     category?: string;
+    account?: string;
     search?: string;
     start?: string;
     end?: string;
@@ -36,6 +38,9 @@ async function getData(searchParams: Props['searchParams']) {
 
   if (searchParams.type) query = query.eq('type', searchParams.type);
   if (searchParams.category) query = query.eq('category_id', searchParams.category);
+  if (searchParams.account) {
+    query = query.or(`account_id.eq.${searchParams.account},to_account_id.eq.${searchParams.account}`);
+  }
   if (searchParams.search) {
     query = query.or(
       `description.ilike.%${searchParams.search}%,merchant.ilike.%${searchParams.search}%`
@@ -96,6 +101,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
     const params = new URLSearchParams();
     if (searchParams.type) params.set('type', searchParams.type);
     if (searchParams.category) params.set('category', searchParams.category);
+    if (searchParams.account) params.set('account', searchParams.account);
     if (searchParams.search) params.set('search', searchParams.search);
     if (searchParams.start) params.set('start', searchParams.start);
     if (searchParams.end) params.set('end', searchParams.end);
@@ -116,7 +122,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
       </div>
 
       <Suspense fallback={null}>
-        <TransactionFilters categories={categories} />
+        <TransactionFilters categories={categories} accounts={accounts} />
       </Suspense>
 
       {/* Sort + summary bar */}
@@ -125,19 +131,10 @@ export default async function TransactionsPage({ searchParams }: Props) {
           <span className="text-emerald-600 font-medium">+{formatRupiah(incomeTotal)}</span>
           <span className="text-red-500 font-medium">-{formatRupiah(expenseTotal)}</span>
         </div>
-        <form className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <label className="text-xs text-muted-foreground">Urut:</label>
-          <select
-            name="sort"
-            defaultValue={searchParams.sort || 'date_desc'}
-            className="text-xs border border-input rounded px-2 py-1 focus:outline-none bg-background text-foreground"
-          >
-            <option value="date_desc">Tanggal ↓</option>
-            <option value="date_asc">Tanggal ↑</option>
-            <option value="amount_desc">Jumlah ↓</option>
-            <option value="amount_asc">Jumlah ↑</option>
-          </select>
-        </form>
+          <TransactionSort currentSort={searchParams.sort || 'date_desc'} />
+        </div>
       </div>
 
       {/* Transaction list */}

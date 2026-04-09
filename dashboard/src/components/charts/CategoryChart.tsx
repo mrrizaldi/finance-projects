@@ -20,12 +20,12 @@ function CustomTooltip({ active, payload }: any) {
   if (!active || !payload?.length) return null;
   const item = payload[0].payload as CategoryBreakdown;
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
-      <p className="font-medium text-gray-800">
+    <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-sm text-popover-foreground">
+      <p className="font-medium text-foreground">
         {item.category_icon} {item.category_name}
       </p>
-      <p className="text-gray-600 mt-1">{formatRupiah(item.total_amount)}</p>
-      <p className="text-gray-500">{item.percentage}% · {item.transaction_count} transaksi</p>
+      <p className="text-muted-foreground mt-1">{formatRupiah(item.total_amount)}</p>
+      <p className="text-muted-foreground/80">{item.percentage}% · {item.transaction_count} transaksi</p>
     </div>
   );
 }

@@ -1,8 +1,8 @@
 'use client';
 
 import {
-  BarChart,
-  Bar,
+  LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -20,12 +20,12 @@ interface Props {
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
-      <p className="font-medium text-gray-700 mb-2">{label}</p>
+    <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-sm text-popover-foreground">
+      <p className="font-medium text-foreground mb-2">{label}</p>
       {payload.map((entry: any) => (
         <div key={entry.name} className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-sm" style={{ background: entry.fill }} />
-          <span className="text-gray-600">
+          <span className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
+          <span className="text-muted-foreground">
             {entry.name === 'income' ? 'Pemasukan' : 'Pengeluaran'}:
           </span>
           <span className="font-medium">{formatRupiah(entry.value)}</span>
@@ -44,10 +44,12 @@ export default function MonthlyBarChart({ data }: Props) {
     );
   }
 
+  // To fix Y-axis scaling we can use dynamic width or a wider fixed width
+  // But also format values nicely.
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }} barGap={2}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+      <LineChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" stroke="oklch(var(--border))" />
         <XAxis
           dataKey="month"
           tick={{ fontSize: 11, fill: '#6b7280' }}
@@ -58,17 +60,21 @@ export default function MonthlyBarChart({ data }: Props) {
           tick={{ fontSize: 11, fill: '#6b7280' }}
           tickLine={false}
           axisLine={false}
-          tickFormatter={(v) => `${(v / 1000000).toFixed(0)}jt`}
-          width={38}
+          tickFormatter={(v) => {
+            if (v >= 1000000) return `${(v / 1000000).toFixed(0)}jt`;
+            if (v >= 1000) return `${(v / 1000).toFixed(0)}k`;
+            return v;
+          }}
+          width={45}
         />
         <Tooltip content={<CustomTooltip />} />
         <Legend
           wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
           formatter={(value) => (value === 'income' ? 'Pemasukan' : 'Pengeluaran')}
         />
-        <Bar dataKey="income" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={32} />
-        <Bar dataKey="expense" fill="#f87171" radius={[3, 3, 0, 0]} maxBarSize={32} />
-      </BarChart>
+        <Line type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 3 }} activeDot={{ r: 5 }} />
+        <Line type="monotone" dataKey="expense" stroke="#f87171" strokeWidth={2} dot={{ fill: '#f87171', r: 3 }} activeDot={{ r: 5 }} />
+      </LineChart>
     </ResponsiveContainer>
   );
 }

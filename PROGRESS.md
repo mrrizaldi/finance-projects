@@ -709,6 +709,35 @@ Dinonaktifkan via n8n MCP karena belum dibutuhkan / masih tahap testing BCA, BSI
 
 
 
+## Detail Eksekusi — Sesi 13 (9 April 2026)
+
+### UI Polish Dashboard & Fix Bot Installment
+
+**Yang dikerjakan pada Dashboard:**
+- ✅ **Dark Theme Fixes (`globals.css`)**: Mengupdate `color-scheme: dark;` dan memastikan variabel warna tema gelap (`bg-popover`, `bg-card`) menggunakan format `oklch` yang solid dan tidak bertumpuk. Ini mengatasi *bug* modal transparan yang membuat teks sulit dibaca.
+- ✅ **Modal Overlay**: Mengubah opacity overlay modal (`Dialog` dan `Sheet`) menjadi jauh lebih gelap (`bg-black/80`) dengan efek *backdrop-blur* untuk menonjolkan modal di atas UI yang lain.
+- ✅ **Select/Dropdown Fixes**: Memperbaiki *bug* pada komponen `Select` (khususnya untuk Kategori dan Akun di halaman transaksi) yang sebelumnya hanya menampilkan ID mentah (*raw UUID*) ketika form divalidasi. Label kini dirender secara eksplisit beserta ikonnya.
+- ✅ **Filter Akun di Transaksi (`TransactionFilters.tsx`)**: Menambahkan filter dropdown baru untuk menyaring daftar transaksi spesifik berdasarkan akun (BCA, GoPay, Cash, dll).
+- ✅ **Auto-Submit Sorter (`TransactionSort.tsx`)**: Mengubah *form select* `Urut` di halaman daftar transaksi yang tadinya tidak berfungsi menjadi sebuah Client Component terpisah yang otomatis mengarahkan ulang URL `?sort=` saat opsi diubah.
+- ✅ **Perbaikan Padding dan Margin Tata Letak (*Layout*)**:
+  - Mereposisi peletakan "Quick stats footer" di halaman *Overview* dari bawah ke atas sesudah kartu status.
+  - Memperbaiki padding di dalam semua `CardContent` statistik dari asalnya `.pt-4`/`.pt-5` yang tidak simetris (menyebabkan tulisan seperti lebih menjorok ke atas) menjadi standar `.p-4` yang merata di keempat sisinya.
+- ✅ **Perbaikan Chart Analitik (`MonthlyBarChart.tsx`)**: 
+  - Mengubah tipe diagram bulanan dari diagram batang (*Bar Chart*) menjadi diagram garis (*Line Chart*) agar tren naik/turun cashflow lebih mudah dibaca.
+  - Memperbaiki lebar sumbu Y (`width={45}`) agar angka jutaan tidak terpotong.
+  - Menyesuaikan fungsi `tickFormatter` agar merender format secara dinamis (contoh: `1jt`, `500k`) sehingga mencegah tampilan *ngebug* `0jt` untuk angka ratusan ribu.
+- ✅ Menambahkan `export const dynamic = 'force-dynamic';` di `api/chat/route.ts` untuk mengatasi *build error* Next.js terkait *Static Generation*.
+- ✅ **Interaktivitas Halaman Cicilan (`/installments`)**:
+  - Merombak `InstallmentsPage` dengan memecah komponen list (`InstallmentListClient`) agar cicilan kini bisa di-klik.
+  - Membuat **Modal Detail Cicilan** (`InstallmentDetailDialog.tsx`) untuk memperlihatkan status informasi jatuh tempo serta menjabarkan rincian *"Schedule Breakdown"* (Bulan ke-1, Bulan ke-2, dll beserta ceklis jika sudah dibayar).
+  - Membuat **Modal Edit Cicilan** (`InstallmentEditDialog.tsx`) dan membuat *endpoint* API khusus di sisi server `api/installments/[id]`.
+  - Menambahkan *toggle* input dinamis di Modal Edit: *"Tetap"* memunculkan parameter bulan dan nominal yang kaku, sementara *"Bervariasi"* akan memberikan form textarea multi-angka yang dipisahkan oleh koma (cocok untuk SPayLater/kredit tidak rata).
+
+**Yang dikerjakan pada Telegram Bot (`telegram-bot/src/bot.ts`):**
+- ✅ **Bug Fix Fixed Installment**: Memperbaiki logika *destructuring* saat *parsing* pesan `/installment add` dengan format *fixed*. Sebelumnya, perintah `Cash Kredivo|78440|8|BCA|14` gagal diproses karena bot keliru membaca `"BCA"` sebagai jumlah bulan akibat indeks *array* yang salah. Sekarang input cicilan berjalan lancar.
+
+---
+
 ### A. Fitur Tarik ATM / Ambil Cash
 Skenario: tarik uang dari ATM BCA → expense di bank, income di cash.
 Opsi implementasi:

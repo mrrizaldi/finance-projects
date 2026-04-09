@@ -20,12 +20,12 @@ interface Props {
 function CustomTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
-    <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3 text-sm">
-      <p className="font-medium text-gray-700 mb-2">{label}</p>
+    <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-sm text-popover-foreground">
+      <p className="font-medium text-foreground mb-2">{label}</p>
       {payload.map((entry: any) => (
         <div key={entry.name} className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
-          <span className="text-gray-600">{entry.name}:</span>
+          <span className="text-muted-foreground">{entry.name}:</span>
           <span className="font-medium" style={{ color: entry.color }}>
             {formatRupiah(entry.value)}
           </span>

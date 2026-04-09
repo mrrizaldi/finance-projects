@@ -57,7 +57,7 @@ function StatCard({
 }) {
   return (
     <Card>
-      <CardContent className="flex items-start gap-4 pt-4">
+      <CardContent className="flex items-start gap-4 p-4">
         <div className={cn('p-2.5 rounded-lg flex-shrink-0', color)}>
           {icon}
         </div>
@@ -120,6 +120,44 @@ export default async function OverviewPage() {
         />
       </div>
 
+      {/* Quick stats footer */}
+      {summary && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+          <Card>
+            <CardContent className="px-4 py-3">
+              <p className="text-xs text-muted-foreground">Avg. harian</p>
+              <p className="text-sm font-semibold text-foreground mt-0.5">
+                {formatRupiah(summary.avg_daily_expense)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="px-4 py-3">
+              <p className="text-xs text-muted-foreground">Kategori terbesar</p>
+              <p className="text-sm font-semibold text-foreground mt-0.5">
+                {summary.top_expense_category || '–'}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="px-4 py-3">
+              <p className="text-xs text-muted-foreground">Pengeluaran top</p>
+              <p className="text-sm font-semibold text-foreground mt-0.5">
+                {formatRupiah(summary.top_expense_amount)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="px-4 py-3">
+              <p className="text-xs text-muted-foreground">Total transaksi</p>
+              <p className="text-sm font-semibold text-foreground mt-0.5">
+                {summary.transaction_count}
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-6">
         {/* Cashflow Chart */}
@@ -163,44 +201,6 @@ export default async function OverviewPage() {
           </div>
         )}
       </Card>
-
-      {/* Quick stats footer */}
-      {summary && (
-        <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <Card>
-            <CardContent className="px-4 py-3">
-              <p className="text-xs text-muted-foreground">Avg. harian</p>
-              <p className="text-sm font-semibold text-foreground mt-0.5">
-                {formatRupiah(summary.avg_daily_expense)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="px-4 py-3">
-              <p className="text-xs text-muted-foreground">Kategori terbesar</p>
-              <p className="text-sm font-semibold text-foreground mt-0.5">
-                {summary.top_expense_category || '–'}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="px-4 py-3">
-              <p className="text-xs text-muted-foreground">Pengeluaran top</p>
-              <p className="text-sm font-semibold text-foreground mt-0.5">
-                {formatRupiah(summary.top_expense_amount)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="px-4 py-3">
-              <p className="text-xs text-muted-foreground">Total transaksi</p>
-              <p className="text-sm font-semibold text-foreground mt-0.5">
-                {summary.transaction_count}
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-      )}
     </div>
   );
 }
