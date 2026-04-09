@@ -7,6 +7,7 @@ bot.api.setMyCommands([
   { command: 'expense', description: 'Catat pengeluaran' },
   { command: 'income', description: 'Catat pemasukan' },
   { command: 'transfer', description: 'Transfer antar akun' },
+  { command: 'withdraw', description: 'Tarik ATM (bank → cash)' },
   { command: 'balance', description: 'Lihat saldo semua akun' },
   { command: 'report', description: 'Laporan keuangan (today/week/month/year)' },
   { command: 'category', description: 'Lihat daftar kategori' },
@@ -15,6 +16,7 @@ bot.api.setMyCommands([
   { command: 'bulk', description: 'Input banyak transaksi sekaligus' },
   { command: 'installment', description: 'Kelola cicilan (add/pay/detail)' },
   { command: 'undo', description: 'Batalkan transaksi terakhir' },
+  { command: 'edit', description: 'Edit transaksi (terakhir atau by ID)' },
   { command: 'reset', description: 'Hapus semua data (testing)' },
 ]);
 

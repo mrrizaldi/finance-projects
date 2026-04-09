@@ -22,11 +22,9 @@ export function formatTransactionMessage(txn: {
   account_name?: string;
   transaction_date: string;
   source: string;
-  verified: boolean;
 }): string {
   const icon = txn.type === 'income' ? '💰' : txn.type === 'expense' ? '💸' : '🔄';
   const sign = txn.type === 'income' ? '+' : '-';
-  const status = txn.verified ? '✅' : '⏳';
 
   return [
     `${icon} <b>Transaksi ${txn.type === 'income' ? 'Masuk' : txn.type === 'expense' ? 'Keluar' : 'Transfer'}</b>`,
@@ -38,7 +36,7 @@ export function formatTransactionMessage(txn: {
       : '',
     txn.account_name ? `🏦 ${txn.account_name}` : '',
     `⏰ ${formatDate(txn.transaction_date)}`,
-    `📡 ${txn.source.replace('_', ' ')} ${status}`,
+    `📡 ${txn.source.replace('_', ' ')}`,
     `━━━━━━━━━━━━━━━━━━━━━`,
   ]
     .filter(Boolean)

@@ -33,6 +33,23 @@ export const db = {
     if (error) throw new Error(`Delete failed: ${error.message}`);
   },
 
+  async getTransactionById(id: string): Promise<Transaction | null> {
+    const { data } = await supabase
+      .from('v_transactions')
+      .select('*')
+      .eq('id', id)
+      .maybeSingle();
+    return data || null;
+  },
+
+  async updateTransaction(id: string, fields: Partial<Pick<Transaction, 'category_id' | 'description' | 'amount' | 'account_id' | 'transaction_date'>>): Promise<void> {
+    const { error } = await supabase
+      .from('transactions')
+      .update(fields)
+      .eq('id', id);
+    if (error) throw new Error(`Update failed: ${error.message}`);
+  },
+
   async getLastTransaction(): Promise<Transaction | null> {
     const { data } = await supabase
       .from('transactions')
@@ -94,14 +111,6 @@ export const db = {
       .order('name');
     if (error) throw new Error(`Accounts failed: ${error.message}`);
     return data || [];
-  },
-
-  async confirmTransaction(id: string): Promise<{ error: any }> {
-    const { error } = await supabase
-      .from('transactions')
-      .update({ verified: true })
-      .eq('id', id);
-    return { error };
   },
 
   async resetAllTransactions(): Promise<number> {

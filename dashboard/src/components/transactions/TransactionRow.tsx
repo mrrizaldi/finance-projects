@@ -1,18 +1,24 @@
 import { VTransaction } from '@/types';
 import { formatRupiah, formatDatetime, TRANSACTION_TYPE_LABEL } from '@/lib/utils';
 import { cn } from '@/lib/utils';
-import { Badge } from '@/components/ui/badge';
 
 interface Props {
   tx: VTransaction;
+  onClick?: () => void;
 }
 
-export default function TransactionRow({ tx }: Props) {
+export default function TransactionRow({ tx, onClick }: Props) {
   const isIncome = tx.type === 'income';
   const isTransfer = tx.type === 'transfer';
 
   return (
-    <div className="flex items-center gap-3 py-3 px-4 hover:bg-muted/30 transition-colors border-b border-border last:border-0">
+    <div
+      className={cn(
+        'flex items-center gap-3 py-3 px-4 hover:bg-muted/30 transition-colors border-b border-border last:border-0',
+        onClick && 'cursor-pointer'
+      )}
+      onClick={onClick}
+    >
       {/* Icon / Emoji */}
       <div
         className={cn(
@@ -54,11 +60,6 @@ export default function TransactionRow({ tx }: Props) {
           {isIncome ? '+' : isTransfer ? '' : '-'}
           {formatRupiah(tx.amount)}
         </p>
-        {!tx.verified && (
-          <Badge variant="outline" className="text-[10px] text-amber-500 border-amber-200 bg-amber-50 px-1.5 py-0 h-auto rounded">
-            unverified
-          </Badge>
-        )}
       </div>
     </div>
   );

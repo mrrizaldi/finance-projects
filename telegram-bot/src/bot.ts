@@ -17,7 +17,7 @@ import {
   parseAmount,
 } from './services/formatter';
 import dayjs from 'dayjs';
-import { Account, Category } from './types';
+import { Account, Category, Installment, Transaction } from './types';
 
 // ── Types ───────────────────────────────────
 type MyContext = Context & ConversationFlavor;
@@ -119,6 +119,9 @@ const mainMenu = new Keyboard()
   .text('💰 Catat Income')
   .text('💸 Catat Expense')
   .row()
+  .text('🔄 Transfer')
+  .text('🏧 Tarik ATM')
+  .row()
   .text('📊 Laporan Hari Ini')
   .text('📈 Dashboard')
   .row()
@@ -126,6 +129,9 @@ const mainMenu = new Keyboard()
   .text('⚙️ Pengaturan')
   .resized()
   .persistent();
+
+// Chat IDs yang sedang menunggu input edit
+const waitingForEdit = new Map<number, { txnId: string; field: 'description' | 'amount' }>();
 
 // ── Bot Init ────────────────────────────────
 export function createBot() {
@@ -219,7 +225,6 @@ export function createBot() {
       category_id: categoryId,
       account_id: accountId,
       source: 'manual_telegram',
-      verified: true,
       transaction_date: transactionDate,
     });
 
@@ -242,7 +247,6 @@ export function createBot() {
         account_name: account?.name,
         transaction_date: txn.transaction_date || new Date().toISOString(),
         source: 'manual_telegram',
-        verified: true,
       }),
       { parse_mode: 'HTML', reply_markup: mainMenu }
     );
@@ -324,7 +328,6 @@ export function createBot() {
       category_id: categoryId,
       account_id: accountId,
       source: 'manual_telegram',
-      verified: true,
       transaction_date: transactionDate,
     });
 
@@ -346,7 +349,6 @@ export function createBot() {
         account_name: account?.name,
         transaction_date: txn.transaction_date || new Date().toISOString(),
         source: 'manual_telegram',
-        verified: true,
       }),
       { parse_mode: 'HTML', reply_markup: mainMenu }
     );
@@ -404,7 +406,6 @@ export function createBot() {
       account_id: fromAccountId,
       to_account_id: toAccountId,
       source: 'manual_telegram',
-      verified: true,
       transaction_date: new Date().toISOString(),
     });
 
@@ -423,7 +424,6 @@ export function createBot() {
         account_name: `${fromAccount?.name} → ${toAccount?.name}`,
         transaction_date: txn.transaction_date || new Date().toISOString(),
         source: 'manual_telegram',
-        verified: true,
       }),
       { parse_mode: 'HTML', reply_markup: mainMenu }
     );
@@ -492,7 +492,6 @@ export function createBot() {
       description,
       category_id: categoryId || undefined,
       source: 'manual_telegram',
-      verified: true,
       transaction_date: transactionDate,
     });
 
@@ -529,7 +528,6 @@ export function createBot() {
       description,
       category_id: categoryId || undefined,
       source: 'manual_telegram',
-      verified: true,
       transaction_date: transactionDate,
     });
 
@@ -591,6 +589,107 @@ export function createBot() {
     }
 
     await ctx.reply(msg, { parse_mode: 'HTML' });
+  });
+
+  // ── /edit ─────────────────────────────────
+  // /edit → edit transaksi terakhir
+  // /edit <id_pendek> → edit transaksi spesifik (8 char pertama UUID)
+  bot.command('edit', async (ctx) => {
+    const arg = (ctx.match || '').toString().trim();
+
+    let txn: Transaction | null = null;
+    if (arg) {
+      // Cari berdasarkan partial UUID (8 char pertama)
+      const recent = await db.getRecentTransactions(50);
+      txn = recent.find((t) => t.id?.startsWith(arg)) || null;
+      if (!txn) return ctx.reply(`❌ Transaksi dengan ID "${arg}" tidak ditemukan.`);
+    } else {
+      txn = await db.getLastTransaction();
+      if (!txn) return ctx.reply('❌ Tidak ada transaksi untuk diedit.');
+    }
+
+    const sign = txn.type === 'income' ? '+' : '-';
+    const shortId = txn.id!.slice(0, 8);
+    const msg =
+      `✏️ <b>Edit Transaksi</b>\n━━━━━━━━━━━━━━━━━━━━━\n` +
+      `ID: <code>${shortId}</code>\n` +
+      `${sign}${formatRupiah(txn.amount)} | ${txn.description || '-'}\n` +
+      `📂 ${(txn as any).category_icon || ''} ${(txn as any).category_name || 'Tanpa Kategori'}\n` +
+      `📅 ${dayjs(txn.transaction_date).format('DD/MM/YYYY HH:mm')}\n` +
+      `━━━━━━━━━━━━━━━━━━━━━\nPilih field yang ingin diedit:`;
+
+    const kb = new InlineKeyboard()
+      .text('📂 Ganti Kategori', `edit_cat_${txn.id}`)
+      .row()
+      .text('📝 Ganti Deskripsi', `edit_desc_${txn.id}`)
+      .text('💰 Ganti Nominal', `edit_amt_${txn.id}`)
+      .row()
+      .text('❌ Batal', 'edit_cancel');
+
+    await ctx.reply(msg, { parse_mode: 'HTML', reply_markup: kb });
+  });
+
+  // ── Callback: edit → ganti kategori ───────
+  bot.callbackQuery(/^edit_cat_(.+)$/, async (ctx) => {
+    const txnId = ctx.match![1];
+    const cats = await db.getCategories();
+    // Ambil expense + income categories, buat pagination sederhana (max 8 per keyboard)
+    const expCats = cats.filter((c) => c.type === 'expense' || c.type === 'both').slice(0, 8);
+    const incCats = cats.filter((c) => c.type === 'income' || c.type === 'both').slice(0, 4);
+    const allCats = [...expCats, ...incCats];
+
+    let kb = new InlineKeyboard();
+    allCats.forEach((cat, i) => {
+      kb = kb.text(`${cat.icon} ${cat.name}`, `set_cat_${txnId}_${cat.id}`);
+      if (i % 2 === 1) kb = kb.row();
+    });
+    kb = kb.row().text('❌ Batal', 'edit_cancel');
+
+    await ctx.answerCallbackQuery().catch(() => {});
+    await ctx.editMessageText('📂 <b>Pilih kategori baru:</b>', { parse_mode: 'HTML', reply_markup: kb });
+  });
+
+  bot.callbackQuery(/^set_cat_([^_]+)_(.+)$/, async (ctx) => {
+    const txnId = ctx.match![1];
+    const catId = ctx.match![2];
+    const cats = await db.getCategories();
+    const cat = cats.find((c) => c.id === catId);
+    await db.updateTransaction(txnId, { category_id: catId });
+    await ctx.answerCallbackQuery(`✅ Kategori diubah ke ${cat?.name}`).catch(() => {});
+    await ctx.editMessageText(
+      `✅ <b>Kategori diperbarui</b>\n📂 ${cat?.icon || ''} ${cat?.name || catId}`,
+      { parse_mode: 'HTML' }
+    ).catch(() => {});
+  });
+
+  // ── Callback: edit → ganti deskripsi ──────
+  bot.callbackQuery(/^edit_desc_(.+)$/, async (ctx) => {
+    const txnId = ctx.match![1];
+    await ctx.answerCallbackQuery().catch(() => {});
+    await ctx.editMessageText(
+      `📝 Ketik deskripsi baru untuk transaksi ini:`,
+      { reply_markup: new InlineKeyboard().text('❌ Batal', 'edit_cancel') }
+    ).catch(() => {});
+    waitingForEdit.set(ctx.chat!.id, { txnId, field: 'description' });
+    setTimeout(() => waitingForEdit.delete(ctx.chat!.id), 5 * 60 * 1000);
+  });
+
+  // ── Callback: edit → ganti nominal ────────
+  bot.callbackQuery(/^edit_amt_(.+)$/, async (ctx) => {
+    const txnId = ctx.match![1];
+    await ctx.answerCallbackQuery().catch(() => {});
+    await ctx.editMessageText(
+      `💰 Ketik nominal baru (contoh: <code>75000</code> atau <code>75rb</code>):`,
+      { parse_mode: 'HTML', reply_markup: new InlineKeyboard().text('❌ Batal', 'edit_cancel') }
+    ).catch(() => {});
+    waitingForEdit.set(ctx.chat!.id, { txnId, field: 'amount' });
+    setTimeout(() => waitingForEdit.delete(ctx.chat!.id), 5 * 60 * 1000);
+  });
+
+  bot.callbackQuery('edit_cancel', async (ctx) => {
+    waitingForEdit.delete(ctx.chat!.id);
+    await ctx.answerCallbackQuery('Dibatalkan').catch(() => {});
+    await ctx.editMessageText('❌ Edit dibatalkan.').catch(() => {});
   });
 
   // ── /undo ─────────────────────────────────
@@ -790,7 +889,6 @@ export function createBot() {
         account_id: inst.account_id,
         installment_id: inst.id,
         source: 'manual_telegram',
-        verified: true,
         transaction_date: new Date().toISOString(),
       });
 
@@ -976,7 +1074,76 @@ export function createBot() {
   bot.command('transfer', (ctx) => ctx.conversation.enter('recordTransferConvo'));
   bot.hears('🔄 Transfer', (ctx) => ctx.conversation.enter('recordTransferConvo'));
 
-  // ── /category ─────────────────────────────
+  // ── /transfer ─────────────────────────────
+  bot.command('transfer', (ctx) => ctx.conversation.enter('recordTransferConvo'));
+  bot.hears('🔄 Transfer', (ctx) => ctx.conversation.enter('recordTransferConvo'));
+
+  // ── /withdraw (tarik ATM: bank → cash) ────
+  bot.command('withdraw', async (ctx) => {
+    const args = (ctx.match || '').toString().trim().split(/\s+/);
+    const amountStr = args[0];
+    const bankToken = args.slice(1).join(' ');
+    const amount = amountStr ? parseAmount(amountStr) : null;
+
+    if (!amount) {
+      return ctx.reply(
+        `🏧 <b>Tarik ATM</b>\n\nFormat: <code>/withdraw &lt;nominal&gt; [bank]</code>\n\nContoh:\n<code>/withdraw 50rb BCA</code>\n<code>/withdraw 200000 BSI</code>`,
+        { parse_mode: 'HTML' }
+      );
+    }
+
+    const accounts = await db.getAccounts();
+    const cashAccount = accounts.find((a) => a.type === 'cash' || a.name.toLowerCase() === 'cash');
+    if (!cashAccount) return ctx.reply('❌ Akun Cash tidak ditemukan.');
+
+    let bankAccount = bankToken ? matchAccount(bankToken, accounts.filter((a) => a.type === 'bank')) : null;
+    if (!bankAccount) {
+      // Fallback: pick first bank account
+      bankAccount = accounts.find((a) => a.type === 'bank') || null;
+    }
+    if (!bankAccount) return ctx.reply('❌ Akun bank tidak ditemukan.');
+
+    const now = new Date().toISOString();
+    const desc = `Tarik ATM ${bankAccount.name}`;
+
+    // Insert expense di bank
+    await db.insertTransaction({
+      type: 'expense',
+      amount,
+      description: desc,
+      account_id: bankAccount.id,
+      source: 'manual_telegram',
+      transaction_date: now,
+    });
+    await db.updateAccountBalance(bankAccount.id, -amount);
+
+    // Insert income di cash
+    await db.insertTransaction({
+      type: 'income',
+      amount,
+      description: desc,
+      account_id: cashAccount.id,
+      source: 'manual_telegram',
+      transaction_date: now,
+    });
+    await db.updateAccountBalance(cashAccount.id, amount);
+
+    return ctx.reply(
+      `🏧 <b>Tarik ATM tercatat</b>\n━━━━━━━━━━━━━━━━━━━━━\n` +
+        `💸 ${bankAccount.icon || '🏦'} ${bankAccount.name}: -${formatRupiah(amount)}\n` +
+        `💰 ${cashAccount.icon || '💵'} ${cashAccount.name}: +${formatRupiah(amount)}\n` +
+        `━━━━━━━━━━━━━━━━━━━━━`,
+      { parse_mode: 'HTML', reply_markup: mainMenu }
+    );
+  });
+  bot.hears('🏧 Tarik ATM', async (ctx) => {
+    await ctx.reply(
+      `🏧 <b>Tarik ATM</b>\n\nKetik nominal + bank:\n<code>/withdraw 50rb BCA</code>\n<code>/withdraw 200000 BSI</code>`,
+      { parse_mode: 'HTML' }
+    );
+  });
+
+
   bot.command('category', async (ctx) => {
     const categories = await db.getCategories();
     const expenseList = categories
@@ -1173,7 +1340,6 @@ export function createBot() {
           category_id: e.category_id,
           account_id: e.account_id,
           source: 'manual_telegram',
-          verified: true,
           transaction_date: e.date,
         });
         const delta = e.type === 'income' ? e.amount : -e.amount;
@@ -1200,6 +1366,26 @@ export function createBot() {
 
   // ── Handler: bulk input follow-up message ─
   bot.on('message:text', async (ctx) => {
+    // ── Edit field handler ─────────────────
+    if (waitingForEdit.has(ctx.chat!.id)) {
+      const { txnId, field } = waitingForEdit.get(ctx.chat!.id)!;
+      waitingForEdit.delete(ctx.chat!.id);
+      const text = ctx.message.text.trim();
+
+      if (field === 'description') {
+        await db.updateTransaction(txnId, { description: text });
+        return ctx.reply(`✅ Deskripsi diperbarui: <i>${text}</i>`, { parse_mode: 'HTML' });
+      }
+      if (field === 'amount') {
+        const amount = parseAmount(text);
+        if (!amount) return ctx.reply('❌ Nominal tidak valid.');
+        await db.updateTransaction(txnId, { amount });
+        return ctx.reply(`✅ Nominal diperbarui: <b>${formatRupiah(amount)}</b>`, { parse_mode: 'HTML' });
+      }
+      return;
+    }
+
+    // ── Bulk input handler ─────────────────
     if (!waitingForBulk.has(ctx.chat!.id)) return;
     waitingForBulk.delete(ctx.chat!.id);
 
@@ -1265,15 +1451,6 @@ export function createBot() {
     await ctx.reply(preview, { parse_mode: 'HTML', reply_markup: keyboard });
   });
 
-  // ── Callback: email transaction confirm ───
-  bot.callbackQuery(/^confirm_txn_(.+)$/, async (ctx) => {
-    const txnId = ctx.match![1];
-    const { error } = await db.confirmTransaction(txnId);
-    await ctx.answerCallbackQuery('✅ Transaksi dikonfirmasi!').catch(() => {});
-    await ctx.editMessageText(ctx.callbackQuery.message?.text + '\n\n✅ Verified', {
-      parse_mode: 'HTML',
-    }).catch(() => {});
-  });
 
   bot.callbackQuery(/^delete_txn_(.+)$/, async (ctx) => {
     const txnId = ctx.match![1];

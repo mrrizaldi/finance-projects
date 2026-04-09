@@ -13,7 +13,6 @@ export interface Transaction {
   email_sender?: string;
   email_raw_snippet?: string;
   raw_data?: Record<string, any>;
-  verified: boolean;
   transaction_date: string;
 }
 

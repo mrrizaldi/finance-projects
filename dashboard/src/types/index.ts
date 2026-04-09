@@ -24,7 +24,6 @@ export interface Transaction {
   to_account_id?: string;
   installment_id?: string;
   source: TransactionSource;
-  verified: boolean;
   is_deleted: boolean;
   transaction_date: string;
   created_at: string;

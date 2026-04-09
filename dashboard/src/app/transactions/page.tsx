@@ -1,7 +1,7 @@
 import { Suspense } from 'react';
 import { createServerClient } from '@/lib/supabase';
-import { VTransaction, Category } from '@/types';
-import TransactionRow from '@/components/transactions/TransactionRow';
+import { VTransaction, Category, Account } from '@/types';
+import TransactionListClient from '@/components/transactions/TransactionListClient';
 import TransactionFilters from './TransactionFilters';
 import { formatRupiah } from '@/lib/utils';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -58,15 +58,17 @@ async function getData(searchParams: Props['searchParams']) {
 
   query = query.range(from, to);
 
-  const [txRes, catRes] = await Promise.all([
+  const [txRes, catRes, accRes] = await Promise.all([
     query,
     supabase.from('categories').select('*').order('sort_order'),
+    supabase.from('accounts').select('id, name, type, balance, icon').order('name'),
   ]);
 
   return {
     transactions: (txRes.data ?? []) as VTransaction[],
     total: txRes.count ?? 0,
     categories: (catRes.data ?? []) as Category[],
+    accounts: (accRes.data ?? []) as Account[],
     page,
   };
 }
@@ -87,7 +89,7 @@ function PaginationLink({ href, children, disabled }: { href: string; children: 
 }
 
 export default async function TransactionsPage({ searchParams }: Props) {
-  const { transactions, total, categories, page } = await getData(searchParams);
+  const { transactions, total, categories, accounts, page } = await getData(searchParams);
   const totalPages = Math.ceil(total / PAGE_SIZE);
 
   const buildPageUrl = (p: number) => {
@@ -140,14 +142,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
 
       {/* Transaction list */}
       <Card>
-        {transactions.length === 0 ? (
-          <div className="py-16 text-center text-muted-foreground">
-            <p className="text-3xl mb-2">🔍</p>
-            <p className="text-sm">Tidak ada transaksi yang sesuai filter</p>
-          </div>
-        ) : (
-          transactions.map((tx) => <TransactionRow key={tx.id} tx={tx} />)
-        )}
+        <TransactionListClient transactions={transactions} categories={categories} accounts={accounts} />
       </Card>
 
       {/* Pagination */}

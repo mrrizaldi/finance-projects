@@ -29,14 +29,14 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 min-h-screen bg-gray-900 flex flex-col flex-shrink-0">
+    <aside className="w-64 min-h-screen bg-[oklch(0.15_0.015_145)] flex flex-col flex-shrink-0">
       {/* Logo */}
-      <div className="px-6 py-5 border-b border-gray-700">
+      <div className="px-6 py-5 border-b border-white/8">
         <div className="flex items-center gap-2">
           <TrendingUp className="h-6 w-6 text-emerald-400" />
           <span className="text-white font-semibold text-lg">Finance</span>
         </div>
-        <p className="text-gray-400 text-xs mt-0.5">Personal Dashboard</p>
+        <p className="text-white/40 text-xs mt-0.5">Personal Dashboard</p>
       </div>
 
       {/* Navigation */}
@@ -51,8 +51,8 @@ export default function Sidebar() {
                 className={cn(
                   'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
                   isActive
-                    ? 'bg-gray-700 text-white'
-                    : 'text-gray-400 hover:bg-gray-800 hover:text-gray-200'
+                    ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/30'
+                    : 'text-white/50 hover:bg-white/5 hover:text-white/80'
                 )}
               >
                 <Icon className="h-4 w-4 flex-shrink-0" />
@@ -64,8 +64,8 @@ export default function Sidebar() {
       </ScrollArea>
 
       {/* Footer */}
-      <div className="px-6 py-4 border-t border-gray-700">
-        <p className="text-gray-500 text-xs">@aldi_monman_bot</p>
+      <div className="px-6 py-4 border-t border-white/8">
+        <p className="text-white/30 text-xs">@aldi_monman_bot</p>
       </div>
     </aside>
   );

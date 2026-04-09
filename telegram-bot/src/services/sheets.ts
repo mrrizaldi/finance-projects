@@ -38,7 +38,6 @@ export const sheets = {
         category_name: txn.category_name || '',
         account_name: txn.account_name || '',
         source: txn.source,
-        verified: txn.verified ? 'TRUE' : 'FALSE',
         transaction_date: txn.transaction_date,
         created_at: new Date().toISOString(),
       });
@@ -66,7 +65,6 @@ export const sheets = {
         category_name: txn.category_name || '',
         account_name: txn.account_name || '',
         source: txn.source,
-        verified: txn.verified ? 'TRUE' : 'FALSE',
         transaction_date: txn.transaction_date,
         created_at: new Date().toISOString(),
       }));

@@ -1,26 +1,86 @@
+import { Suspense } from 'react';
 import { createServerClient } from '@/lib/supabase';
 import { CategoryBreakdown, MonthlyTrend, HeatmapEntry } from '@/types';
-import { startOfMonth, endOfMonth, formatRupiah } from '@/lib/utils';
+import { formatRupiah } from '@/lib/utils';
 import CategoryChart from '@/components/charts/CategoryChart';
 import MonthlyBarChart from '@/components/charts/MonthlyBarChart';
 import HeatmapChart from '@/components/charts/HeatmapChart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import AnalyticsPeriodSwitcher from '@/components/analytics/AnalyticsPeriodSwitcher';
+import dayjs from 'dayjs';
+import quarterOfYear from 'dayjs/plugin/quarterOfYear';
+import 'dayjs/locale/id';
 
-export const revalidate = 60;
+dayjs.extend(quarterOfYear);
+dayjs.locale('id');
 
-async function getAnalyticsData() {
+export const revalidate = 0;
+
+type Period = 'week' | 'month' | 'quarter' | 'year';
+
+interface Props {
+  searchParams: {
+    period?: string;
+    anchor?: string;
+  };
+}
+
+function getPeriodBounds(period: Period, anchor: string): { start: string; end: string; label: string; trendMonths: number } {
+  const d = dayjs(anchor);
+  switch (period) {
+    case 'week': {
+      const start = d.startOf('week');
+      const end = d.endOf('week');
+      return {
+        start: start.toISOString(),
+        end: end.toISOString(),
+        label: `${start.format('D MMM')} – ${end.format('D MMM YYYY')}`,
+        trendMonths: 8,
+      };
+    }
+    case 'quarter': {
+      const start = d.startOf('quarter');
+      const end = d.endOf('quarter');
+      return {
+        start: start.toISOString(),
+        end: end.toISOString(),
+        label: `Q${d.quarter()} ${d.year()}`,
+        trendMonths: 12,
+      };
+    }
+    case 'year': {
+      const start = d.startOf('year');
+      const end = d.endOf('year');
+      return {
+        start: start.toISOString(),
+        end: end.toISOString(),
+        label: `${d.year()}`,
+        trendMonths: 24,
+      };
+    }
+    default: {
+      const start = d.startOf('month');
+      const end = d.endOf('month');
+      return {
+        start: start.toISOString(),
+        end: end.toISOString(),
+        label: start.format('MMMM YYYY'),
+        trendMonths: 12,
+      };
+    }
+  }
+}
+
+async function getAnalyticsData(period: Period, start: string, end: string, trendMonths: number) {
   const supabase = createServerClient();
-  const now = new Date();
-  const start = startOfMonth(now);
-  const end = endOfMonth(now);
 
   const [expCatRes, incCatRes, trendRes, heatmapRes] = await Promise.all([
     supabase.rpc('get_category_breakdown', { p_start_date: start, p_end_date: end, p_type: 'expense' }),
     supabase.rpc('get_category_breakdown', { p_start_date: start, p_end_date: end, p_type: 'income' }),
-    supabase.rpc('get_monthly_trend', { p_months: 12 }),
+    supabase.rpc('get_monthly_trend', { p_months: trendMonths }),
     supabase.rpc('get_expense_heatmap', {
-      p_start_date: new Date(Date.now() - 30 * 86400 * 1000).toISOString(),
-      p_end_date: new Date().toISOString(),
+      p_start_date: start,
+      p_end_date: end,
     }),
   ]);
 
@@ -32,17 +92,31 @@ async function getAnalyticsData() {
   };
 }
 
-export default async function AnalyticsPage() {
-  const { expCategories, incCategories, trend, heatmap } = await getAnalyticsData();
+export default async function AnalyticsPage({ searchParams }: Props) {
+  const period = (['week', 'month', 'quarter', 'year'].includes(searchParams.period || '')
+    ? searchParams.period
+    : 'month') as Period;
+
+  const anchor = searchParams.anchor || dayjs().startOf('month').toISOString();
+  const { start, end, label, trendMonths } = getPeriodBounds(period, anchor);
+
+  const { expCategories, incCategories, trend, heatmap } = await getAnalyticsData(period, start, end, trendMonths);
 
   const totalExpense = expCategories.reduce((s, c) => s + Number(c.total_amount), 0);
   const totalIncome = incCategories.reduce((s, c) => s + Number(c.total_amount), 0);
 
   return (
     <div className="p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-foreground">Analitik</h1>
         <p className="text-muted-foreground text-sm mt-1">Visualisasi pola keuangan kamu</p>
+      </div>
+
+      {/* Period switcher */}
+      <div className="mb-6">
+        <Suspense fallback={null}>
+          <AnalyticsPeriodSwitcher period={period} anchor={anchor} label={label} />
+        </Suspense>
       </div>
 
       {/* Category donut charts */}
@@ -51,12 +125,11 @@ export default async function AnalyticsPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-semibold text-muted-foreground">Pengeluaran per Kategori</CardTitle>
-              <span className="text-sm font-medium text-red-500">{formatRupiah(totalExpense)}</span>
+              <span className="text-sm font-medium text-red-400">{formatRupiah(totalExpense)}</span>
             </div>
           </CardHeader>
           <CardContent>
             <CategoryChart data={expCategories} />
-            {/* Top breakdown list */}
             <div className="mt-4 space-y-2">
               {expCategories.slice(0, 5).map((cat) => (
                 <div key={cat.category_id} className="flex items-center gap-2">
@@ -71,6 +144,9 @@ export default async function AnalyticsPage() {
                   <span className="text-xs text-muted-foreground w-10 text-right">{cat.percentage}%</span>
                 </div>
               ))}
+              {expCategories.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">Tidak ada data pengeluaran</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -79,7 +155,7 @@ export default async function AnalyticsPage() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-semibold text-muted-foreground">Pemasukan per Kategori</CardTitle>
-              <span className="text-sm font-medium text-emerald-600">{formatRupiah(totalIncome)}</span>
+              <span className="text-sm font-medium text-emerald-400">{formatRupiah(totalIncome)}</span>
             </div>
           </CardHeader>
           <CardContent>
@@ -98,6 +174,9 @@ export default async function AnalyticsPage() {
                   <span className="text-xs text-muted-foreground w-10 text-right">{cat.percentage}%</span>
                 </div>
               ))}
+              {incCategories.length === 0 && (
+                <p className="text-xs text-muted-foreground text-center py-4">Tidak ada data pemasukan</p>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -106,7 +185,9 @@ export default async function AnalyticsPage() {
       {/* Monthly bar chart */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-sm font-semibold text-muted-foreground">Perbandingan Bulanan (12 Bulan)</CardTitle>
+          <CardTitle className="text-sm font-semibold text-muted-foreground">
+            Tren Bulanan ({trendMonths} Bulan)
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <MonthlyBarChart data={trend} />
@@ -117,7 +198,7 @@ export default async function AnalyticsPage() {
       <Card>
         <CardHeader>
           <CardTitle className="text-sm font-semibold text-muted-foreground">Heatmap Pengeluaran</CardTitle>
-          <p className="text-xs text-muted-foreground">30 hari terakhir — hari × jam</p>
+          <p className="text-xs text-muted-foreground">{label} — hari × jam</p>
         </CardHeader>
         <CardContent>
           <HeatmapChart data={heatmap} />

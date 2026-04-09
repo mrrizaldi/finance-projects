@@ -10,7 +10,7 @@
 | Key | Value |
 |-----|-------|
 | Spec versi | 1.0 (4 April 2026) |
-| Progress terakhir | 7 April 2026 |
+| Progress terakhir | 9 April 2026 (Sesi 12) |
 | Bot Telegram | @aldi_monman_bot |
 | Supabase project | `dqvdhkpqyynvwfbuqyzu` (finance-project, ap-southeast-1) |
 | Home server | ubuntu-server @ 192.168.31.221 |
@@ -157,9 +157,9 @@
 - [x] Workflow BCA parser (ID: vtMiXpfvO1P0qkB7) — aktif
 - [x] Workflow BSI parser (ID: KYNtWJiV3PmEIriQ) — aktif
 - [x] Workflow GoPay parser (ID: J9vvAG8hjujAhgWs) — aktif
-- [x] Workflow Shopee parser (ID: PBpTCJAzERoAApzH) — aktif
-- [x] Workflow Tokopedia parser (ID: y7T2laxcRUTuYnsF) — aktif
-- [x] Workflow OVO/Dana/ShopeePay parser (ID: ldcQk2YZ40YhCXbk) — aktif
+- [x] Workflow Shopee parser (ID: PBpTCJAzERoAApzH) — **nonaktif** (sementara)
+- [x] Workflow Tokopedia parser (ID: y7T2laxcRUTuYnsF) — **nonaktif** (sementara)
+- [x] Workflow OVO/Dana/ShopeePay parser (ID: ldcQk2YZ40YhCXbk) — **nonaktif** (sementara)
 - [ ] Workflow Supabase → Google Sheets sync (Phase 2 bonus, bisa dikerjakan nanti)
 
 ### Phase 3: OpenClaw AI ✅
@@ -503,6 +503,223 @@ Quick commands (`/expense`, `/income`):
 cd dashboard && pnpm dev        # Development (localhost:3000)
 cd dashboard && pnpm build && pnpm start  # Production
 ```
+
+---
+
+## Detail Eksekusi — Sesi 9 (8 April 2026)
+
+### MCP Tools Baru + Dashboard Shadcn Upgrade
+
+**Yang dikerjakan:**
+- ✅ `next-devtools` MCP ditambahkan ke `.mcp.json` (project root)
+- ✅ `shadcn` MCP di-init di `dashboard/` via `pnpm dlx shadcn@latest mcp init --client claude`
+- ✅ `dashboard/.mcp.json` dibuat: berisi `next-devtools` + `shadcn` (aktif saat kerja di folder dashboard)
+- ✅ `CLAUDE.md` diupdate: wajib pakai next-devtools MCP + shadcn MCP untuk semua pekerjaan dashboard
+- ✅ shadcn/ui di-init di `dashboard/` (style: base-nova, @base-ui/react)
+- ✅ Komponen shadcn diinstall: `card`, `button`, `badge`, `table`, `input`, `select`, `separator`, `scroll-area`, `progress`, `dialog`, `sheet`, `tooltip`, `chart`
+- ✅ Semua halaman dashboard diupgrade ke shadcn: Card, Button, Badge, Progress, Input, ScrollArea
+- ✅ `pnpm build` clean setelah upgrade
+- ✅ Dev server berjalan di `http://localhost:3000`, semua 7 routes respond 200
+
+**Dashboard routes aktif:**
+| Route | Halaman | Status |
+|---|---|---|
+| `/` | Overview | ✅ |
+| `/transactions` | Daftar Transaksi | ✅ |
+| `/analytics` | Analitik (charts) | ✅ |
+| `/budget` | Budget per kategori | ✅ |
+| `/installments` | Cicilan | ✅ |
+| `/insights` | AI Chat | ✅ |
+| `/settings` | Pengaturan | ✅ |
+
+---
+
+## Detail Eksekusi — Sesi 10 (8 April 2026)
+
+### Hapus Kolom `verified` + Nonaktifkan Workflow Email Parser
+
+**Yang dikerjakan:**
+
+#### 1. Hapus kolom `verified` dari seluruh sistem
+
+Kolom `verified` dihapus karena tidak berguna dan membingungkan (semua transaksi email masuk sebagai `verified: false`, manual sebagai `verified: true`, tapi tidak ada use case yang benar-benar butuh flag ini).
+
+**Database (migration `006_drop_verified.sql` via Supabase MCP):**
+- Drop view `v_transactions` (karena depends on column)
+- Drop index `idx_transactions_verified`
+- Drop column `verified` dari tabel `transactions`
+- Recreate `v_transactions` tanpa kolom `verified`
+
+**Telegram Bot:**
+- `types/index.ts` — hapus `verified: boolean` dari interface `Transaction`
+- `bot.ts` — hapus semua 12 baris `verified: true,` dari insert payloads + hapus `confirm_txn_*` callback handler (yang memanggil `db.confirmTransaction`)
+- `services/supabase.ts` — hapus method `confirmTransaction()`
+- `services/sheets.ts` — hapus `verified` dari mapping di `syncTransaction()` dan `syncAllTransactions()`
+- `services/formatter.ts` — hapus `verified: boolean` dari param type, hapus status indicator `✅`/`⏳`, hapus dari pesan output
+
+**Dashboard:**
+- `src/types/index.ts` — hapus `verified: boolean` dari interface `Transaction`
+- `src/components/transactions/TransactionRow.tsx` — hapus unverified badge JSX + hapus import `Badge`
+
+**n8n (6 workflows via `n8n_update_partial_workflow` + `patchNodeField`):**
+- Semua 6 parser Code node (`jsCode`): hapus `, verified: false` dari return statement
+- Semua 6 Insert to Supabase node (`jsonBody`): hapus `, verified: $json.verified`
+- Workflows: BCA, BSI, GoPay, Shopee, Tokopedia, OVO/Dana/ShopeePay
+
+**Deploy:**
+- TypeScript compile clean (0 error setelah hapus `confirmTransaction` call di bot.ts)
+- Sync ke server via SSH MCP + pm2 restart → finance-bot online
+
+#### 2. Nonaktifkan 3 workflow email parser (sementara)
+
+Dinonaktifkan via n8n MCP karena belum dibutuhkan / masih tahap testing BCA, BSI, GoPay saja:
+- ❌ `Email Parser - OVO Dana ShopeePay` (ID: ldcQk2YZ40YhCXbk) — **nonaktif**
+- ❌ `Email Parser - Tokopedia` (ID: y7T2laxcRUTuYnsF) — **nonaktif**
+- ❌ `Email Parser - Shopee` (ID: PBpTCJAzERoAApzH) — **nonaktif**
+
+**Workflow aktif saat ini:**
+- ✅ `Email Parser - BCA` (ID: vtMiXpfvO1P0qkB7)
+- ✅ `Email Parser - BSI` (ID: KYNtWJiV3PmEIriQ)
+- ✅ `Email Parser - GoPay` (ID: J9vvAG8hjujAhgWs)
+
+**File yang diubah:**
+- `supabase/migrations/006_drop_verified.sql` — migration final (drop view → drop column → recreate view)
+- `telegram-bot/src/types/index.ts`
+- `telegram-bot/src/bot.ts`
+- `telegram-bot/src/services/supabase.ts`
+- `telegram-bot/src/services/sheets.ts`
+- `telegram-bot/src/services/formatter.ts`
+- `dashboard/src/types/index.ts`
+- `dashboard/src/components/transactions/TransactionRow.tsx`
+- 6 n8n workflows (via MCP, tidak ada file lokal)
+
+---
+
+## Detail Eksekusi — Sesi 11 (8 April 2026)
+
+### Planning Upgrade Dashboard: Transaction Detail/Edit/Delete + Analytics Period Filter
+
+**Yang dikerjakan:**
+
+#### 1. Analisis state saat ini (dashboard)
+- `dashboard/src/app/transactions/page.tsx` masih read-only (list + filter + pagination), belum ada action detail/edit/delete.
+- `dashboard/src/components/transactions/TransactionRow.tsx` masih server-rendered row tanpa interaksi/modal.
+- `dashboard/src/app/analytics/page.tsx` masih fixed period (kategori = bulan ini, trend = 12 bulan, heatmap = 30 hari) tanpa menu periode.
+- Belum ada API route khusus transaksi di dashboard (`/api/transactions` belum ada), jadi edit/delete dari web belum tersedia.
+
+#### 2. Rencana implementasi Transactions (detail modal + edit + delete)
+- Ubah arsitektur list jadi hybrid: data fetch tetap di Server Component (`page.tsx`), tapi rendering list dipindah ke Client Component baru agar bisa buka modal per baris.
+- Tambah komponen client baru (rencana):
+  - `TransactionListClient` — menerima `transactions`, `categories`, `accounts` dari server.
+  - `TransactionDetailDialog` — tampilkan detail lengkap transaksi (metadata, tanggal, source, account, category).
+  - `TransactionEditDialog` — form edit (`type`, `amount`, `description`, `merchant`, `category_id`, `account_id`, `transaction_date`) dengan komponen shadcn `Dialog`, `Input`, `Select`, `Button`.
+  - `TransactionDeleteDialog` — konfirmasi soft-delete.
+- Tambah API routes Next.js untuk write operation:
+  - `PATCH /api/transactions/[id]` → update transaksi.
+  - `DELETE /api/transactions/[id]` → soft-delete (`is_deleted=true`, `deleted_at=now()`).
+- Gunakan `createServerClient()` (service role) di route handler, validasi payload minimal di boundary API.
+- Setelah sukses edit/delete: refresh list via `router.refresh()` agar data server sinkron.
+
+#### 3. Rencana implementasi Analytics (menu periode harian/mingguan/bulanan)
+- Tambah kontrol periode di `analytics/page.tsx` berbasis search params, contoh:
+  - `period=day|week|month|year`
+  - optional `anchor=YYYY-MM-DD` untuk titik acuan.
+- Mapping query:
+  - **Category breakdown**: pakai `get_category_breakdown(start,end,...)` sesuai period terpilih.
+  - **Trend chart**:
+    - day → agregasi 24 jam (query ke `transactions` langsung)
+    - week → agregasi 7 hari
+    - month → agregasi per hari dalam bulan berjalan
+    - year → tetap pakai `get_monthly_trend(12)`
+  - **Heatmap**: sesuaikan rentang (mis. 7 hari, 30 hari, 90 hari, 365 hari) agar tetap relevan dengan period.
+- Tambah UI menu periode menggunakan shadcn (`Tabs` atau `Select`), default `month`.
+
+#### 4. Urutan eksekusi implementasi (sesi coding berikutnya)
+1) Refactor transactions page ke client list + modal detail.
+2) Tambah API patch/delete + wiring edit/delete.
+3) Uji manual flow edit/delete di UI.
+4) Tambah period menu analytics + refactor query per period.
+5) Uji visual chart untuk masing-masing period.
+6) Build check `dashboard: pnpm build`.
+
+**Perbedaan dari spec:**
+- Spec hanya menyebut filter/sort/export pada halaman transaksi; rencana ini menambahkan capability **detail modal + edit + delete** langsung di dashboard.
+- Spec analytics awal fokus chart statis; rencana ini menambahkan **period switcher** (harian/mingguan/bulanan/tahunan) agar analisis lebih fleksibel.
+
+---
+
+## Detail Eksekusi — Sesi 12 (9 April 2026)
+
+### Dashboard: Dark Green Theme + Transaction Modal + Analytics Period Switcher
+
+**Yang dikerjakan:**
+
+#### 1. Dark Green Theme
+
+**`dashboard/src/app/globals.css`:**
+- Ubah `.dark` color variables dari abu-abu gelap ke green-tinted dark theme
+  - `--background`: `oklch(0.12 0.015 145)` — dark green-black
+  - `--card`: `oklch(0.17 0.012 145)` — sedikit lebih terang dari background
+  - `--primary`: `oklch(0.62 0.2 145)` — vivid emerald/green sebagai aksen utama
+  - `--accent`: sama dengan primary (green)
+  - `--ring`: green (focus ring)
+  - Chart colors diubah ke variasi hijau/teal
+- Scrollbar warna diubah ke green-tinted dark
+- Override di `--foreground-rgb` tetap ada untuk backward compat
+
+**`dashboard/src/app/layout.tsx`:**
+- Tambah class `dark` ke `<html>` — aktifkan dark mode permanen
+- Background wrapper diubah dari `bg-gray-50` ke `bg-background`
+
+**`dashboard/src/components/layout/Sidebar.tsx`:**
+- Background sidebar: `bg-[oklch(0.15_0.015_145)]`
+- Border warna: `border-white/8`
+- Active nav item: `bg-emerald-600/20 text-emerald-400 border border-emerald-600/30`
+- Inactive item: `text-white/50 hover:bg-white/5 hover:text-white/80`
+
+#### 2. Transaction Modal UI
+
+**New files:**
+- `dashboard/src/components/transactions/TransactionListClient.tsx` — Client wrapper, mengelola state dialog (selected tx, mode: detail/edit/delete). Setiap row diklik buka detail dialog. Dari detail bisa lanjut ke edit atau delete.
+- `dashboard/src/components/transactions/TransactionDetailDialog.tsx` — Detail view lengkap: amount hero, badge tipe, tabel detail (deskripsi, merchant, kategori, akun, tanggal, sumber). Tombol Edit + Hapus.
+- `dashboard/src/components/transactions/TransactionEditDialog.tsx` — Form edit full: type toggle (income/expense/transfer), amount, description, merchant, category Select, account Select, to_account Select (transfer only), datetime input. Pakai shadcn Dialog + Input + Select + Button. Sync state via `useEffect` saat tx berubah.
+- `dashboard/src/components/transactions/TransactionDeleteDialog.tsx` — Konfirmasi soft-delete dengan preview transaksi.
+
+**Modified files:**
+- `dashboard/src/components/transactions/TransactionRow.tsx` — Tambah `onClick?: () => void` prop, `cursor-pointer` class saat onClick tersedia.
+- `dashboard/src/app/transactions/page.tsx` — Tambah fetch `accounts`, pass ke `TransactionListClient`. Ganti direct `TransactionRow` render dengan `TransactionListClient`.
+
+**API:**
+- `dashboard/src/app/api/transactions/[id]/route.ts` — PATCH + DELETE dengan balance management (sudah selesai sesi sebelumnya). Fix TS error: `new Set()` iteration pakai `Array.from()`.
+
+#### 3. Analytics Period Switcher
+
+**New file:**
+- `dashboard/src/components/analytics/AnalyticsPeriodSwitcher.tsx` — Client component. Tombol tabs (Mingguan/Bulanan/Kuartal/Tahunan) + navigasi ← label → untuk navigasi periode. Menggunakan `useRouter` + `useSearchParams` untuk push params.
+
+**Modified file:**
+- `dashboard/src/app/analytics/page.tsx` — Terima `searchParams.period` (week/month/quarter/year) + `searchParams.anchor` (ISO date). Fungsi `getPeriodBounds()` menghitung start/end/label sesuai period. Query category breakdown + heatmap pakai start/end dinamis. Trend months menyesuaikan (8 untuk week, 12 untuk month/quarter, 24 untuk year). `revalidate = 0` karena data berubah per request.
+
+**Perbedaan dari spec:**
+- Spec tidak menyebut dark theme sama sekali; ditambahkan berdasarkan permintaan user.
+- Spec analytics hanya menyebut chart statis; period switcher adalah enhancement baru.
+- Edit/delete transaksi dari dashboard tidak ada di spec awal (spec hanya Telegram bot untuk input).
+
+---
+
+
+
+### A. Fitur Tarik ATM / Ambil Cash
+Skenario: tarik uang dari ATM BCA → expense di bank, income di cash.
+Opsi implementasi:
+- Extend `/transfer` jadi bisa "bank → cash" dengan nama otomatis "Tarik ATM"
+- Atau tambah subcommand `/transfer atm <amount> <bank>` sebagai shortcut
+
+### B. Auto-kategorisasi di n8n Email Parsers
+Saat ini BSI, GoPay, Shopee, Tokopedia, OVO/Dana/ShopeePay belum semua punya auto-kategorisasi OpenAI di Code node.
+
+### C. Edit Transaksi (Kategori + Field Lain)
+Setelah bulk input, user ingin bisa edit kategori yang salah.
 
 ---
 
