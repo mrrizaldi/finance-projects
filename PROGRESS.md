@@ -10,11 +10,12 @@
 | Key | Value |
 |-----|-------|
 | Spec versi | 1.0 (4 April 2026) |
-| Progress terakhir | 9 April 2026 (Sesi 12) |
+| Progress terakhir | 16 April 2026 (Sesi 30) |
 | Bot Telegram | @aldi_monman_bot |
+| Monitor Bot | @monitoring_aldi23_bot |
 | Supabase project | `dqvdhkpqyynvwfbuqyzu` (finance-project, ap-southeast-1) |
 | Home server | ubuntu-server @ 192.168.31.221 |
-| Process manager | pm2 (finance-bot, status: online) |
+| Process manager | pm2 (finance-bot, finance-dashboard, monitor-bot — semua online) |
 
 ---
 
@@ -27,7 +28,443 @@
 | Phase 2 | Email Parsing Engine (n8n) | ✅ Selesai (sesi 3) |
 | Phase 3 | OpenClaw AI Integration | ✅ Selesai (sesi 4) |
 | Phase 4 | Web Dashboard (Next.js) | ✅ Selesai (sesi 8) |
-| Phase 5 | Polish, Monitoring & Maintenance | ⬜ Belum dimulai |
+| Phase 5 | Polish, Monitoring & Maintenance | 🔄 In Progress (sesi 30) |
+
+---
+
+## Detail Eksekusi — Sesi 30 (16 April 2026)
+
+### Phase 5: Monitor Bot — Server Health Monitoring via Telegram
+
+**Tujuan:**
+- Pantau semua service penting (pm2 processes + HTTP endpoints) dari satu bot Telegram terpisah.
+- Alert otomatis kalau ada yang down/recover/resource tinggi, tanpa spam (cooldown 30 menit).
+
+**Implementasi:**
+- ✅ `monitor-bot/` — project TypeScript baru (grammY + axios)
+- ✅ `monitor-bot/src/config.ts` — config: services, thresholds, cooldown interval
+- ✅ `monitor-bot/src/alertState.ts` — state machine per service (ok/down + cooldown)
+- ✅ `monitor-bot/src/checks/pm2.ts` — cek pm2 process via `pm2 jlist` JSON
+- ✅ `monitor-bot/src/checks/http.ts` — HTTP health check (any response < 500 = UP)
+- ✅ `monitor-bot/src/checks/system.ts` — CPU (load avg), RAM (os module), Disk (df -h)
+- ✅ `monitor-bot/src/index.ts` — main bot: loop checks tiap 60s, alert handler, commands
+
+**Services yang dipantau:**
+- pm2: `finance-bot`, `finance-dashboard`
+- HTTP: `http://localhost:5678` (n8n), `http://localhost:3000` (Dashboard)
+- Sistem: CPU > 80%, RAM > 85%, Disk > 90%
+
+**Commands bot:**
+| Command | Fungsi |
+|---------|--------|
+| `/status` | Lihat status semua service + resource real-time |
+| `/silence <menit>` | Matikan alert sementara (maintenance) |
+| `/unsilence` | Aktifkan kembali |
+
+**Alert behavior:**
+- Alert saat status berubah (ok→down atau down→ok)
+- Reminder alert kalau masih down setelah cooldown 30 menit
+- Startup notification saat bot pertama jalan
+
+**Deploy:**
+- ✅ pm2 start sebagai process `monitor-bot` (id: 5), status: online
+- ✅ `pm2 save` — persist across reboot
+- ✅ Env: `MONITOR_BOT_TOKEN` ditambah ke `.env`
+
+**Perbedaan dari spec:**
+- Monitoring bot tidak ada di spec awal (Phase 5 hanya menyebut "monitoring" secara umum). Diimplementasikan sebagai bot Telegram terpisah dengan token baru.
+
+---
+
+## Detail Eksekusi — Sesi 29 (14 April 2026)
+
+### Telegram Bot Hotfix: Default akun Cash untuk `/expense` quick command + update help
+
+**Latar belakang:**
+- Behavior sebelumnya: `/expense` quick command tanpa token `akun:` menyimpan `account_id` kosong.
+- Expected behavior: tanpa `akun:`, default harus ke akun `Cash` (kalau ada), fallback ke akun aktif pertama.
+
+**Perubahan implementasi:**
+- ✅ `telegram-bot/src/bot.ts`
+  - Handler `/expense`: saat tidak ada `akun:`, sekarang resolve akun default dengan pola yang sama seperti `/income`:
+    - prioritas `accounts.find((a) => a.name.toLowerCase() === 'cash')`
+    - fallback `accounts[0]`
+    - jika tidak ada akun aktif, kirim error user-friendly.
+  - Handler `/expense`: label akun pada reply quick command sekarang selalu terisi untuk path non-cicilan (karena default akun selalu dipakai).
+  - `HELP_MESSAGES.expense`: ditambah keterangan eksplisit bahwa quick command normal default ke akun `Cash` (atau akun aktif pertama bila `Cash` tidak ada).
+
+**Hasil verifikasi:**
+- ✅ `telegram-bot: pnpm exec tsc --noEmit` → 0 error.
+
+**Perbedaan dari spec:**
+- Menegaskan behavior default akun untuk `/expense` quick command agar konsisten dengan ekspektasi operasional (default `Cash`) dan dengan pattern existing di `/income`.
+
+---
+
+## Detail Eksekusi — Sesi 28 (13 April 2026)
+
+### Dashboard Performance Optimization: ISR + Cache Layer + Query Shaping
+
+**Latar belakang:**
+- Navigasi antar halaman dashboard bisa >4 detik karena semua halaman utama (`revalidate = 0`) query ulang penuh ke Supabase setiap request.
+- Target: turunkan waktu load navigasi kedua dan seterusnya (warm path) dengan ISR + cache layer, tanpa mengubah behavior bisnis.
+
+**Perubahan per halaman:**
+
+| File | Perubahan |
+|------|-----------|
+| `dashboard/src/app/page.tsx` | Wrap `getOverviewData` dengan `unstable_cache`; trim kolom `v_transactions` ke kolom ringkas yang dipakai list; cache tags: `overview`, `analytics`, `chat-context`; `revalidate = 60` |
+| `dashboard/src/app/transactions/page.tsx` | `revalidate = 60`; pisahkan fetch references (categories/accounts/installments) ke `unstable_cache` TTL 300s; query projection kolom sempit via `TX_LIST_COLUMNS`; ganti `count: 'planned'` dengan cursor-based pagination (fetch N+1, detect hasMore); fix estimasi totalPages |
+| `dashboard/src/app/analytics/page.tsx` | `revalidate = 60`; wrap query agregasi per kombinasi `period:start:end:trendMonths` ke `unstable_cache` TTL 60s dengan tag `analytics` |
+| `dashboard/src/app/settings/page.tsx` | `revalidate = 120`; wrap `getSettingsData` dengan `unstable_cache`; trim kolom accounts/categories ke yang dipakai UI |
+| `dashboard/src/app/installments/page.tsx` | `revalidate = 60`; pisahkan references ke `unstable_cache` TTL 300s; list data ke `unstable_cache` TTL 60s; derive `paid_amount_total`, `remaining_amount_total`, `next_amount`, `has_variable_months` dari `installment_months(amount, is_paid)` tanpa load field detail penuh |
+| `dashboard/src/app/api/chat/route.ts` | Cache context DB bulanan (`getChatContext`) dengan `unstable_cache` TTL 45s; OpenAI request tetap dynamic per message |
+
+**Perubahan invalidation (mutation routes):**
+- Semua route write (`api/transactions/[id]`, `api/installments/[id]`, `api/accounts`, `api/accounts/[id]`, `api/accounts/[id]/adjust`, `api/categories`, `api/categories/[id]`) ditambah `revalidateFinancePaths()` yang invalidasi semua tag relevan + `revalidatePath` halaman utama setelah sukses.
+- `api/installments/[id]` juga ditambah endpoint `GET` untuk on-demand detail load (dengan `installment_months(id, month_number, amount, is_paid, paid_date, transaction_id)`).
+
+**Perubahan komponen:**
+- `InstallmentListClient`: state detail on-demand fetch (`loadingDetailId`, `selectedDetail`); fetch via `GET /api/installments/${id}` saat card diklik.
+- `InstallmentDetailDialog`: terima `fallbackInst` + `loading` prop; tampilkan data list dulu sambil tunggu detail.
+- `InstallmentEditDialog`: jika `inst.months` kosong (list payload trimming), fetch detail on-open sebelum populate form.
+- `types/index.ts` (`Installment`): tambah field opsional `paid_amount_total`, `remaining_amount_total`, `next_amount`, `has_variable_months`.
+
+**Hasil verifikasi:**
+- ✅ `pnpm exec tsc --noEmit` → 0 error.
+- ✅ `pnpm build` → build sukses, semua 15 routes ter-compile.
+- ✅ Runtime smoke test (browser automation, production build port 3100):
+  - Tidak ada JS runtime error di semua halaman utama (hanya favicon 404 pre-existing).
+
+**Metrik performa (cold = kunjungan pertama setelah server start, warm = kunjungan berikutnya setelah cache warm):**
+
+| Halaman | Cold TTFB | Warm TTFB | Cold Load | Warm Load |
+|---------|-----------|-----------|-----------|-----------|
+| `/` Overview | ~6ms | ~6ms | ~54ms | ~55ms |
+| `/transactions` | ~900ms | ~49ms | ~8.6s | ~109ms |
+| `/analytics` | ~123ms | ~27ms | ~10.5s | ~92ms |
+| `/installments` | ~51ms | ~22ms | ~112ms | ~102ms |
+| `/settings` | ~15ms | ~11ms | ~50ms | ~69ms |
+
+- **Warm path selesai <110ms** untuk semua halaman — target utama tercapai.
+- Cold path tetap tergantung latency round-trip ke Supabase cloud (~8–10s untuk halaman berat seperti transactions dan analytics yang query 4 RPC sekaligus); ini karakteristik network, bukan bug.
+- `/installments` dan `/settings` fast bahkan cold karena data kecil dan sekarang ter-cache untuk semua hit berikutnya.
+
+**Perbedaan dari spec:**
+- Pagination transaksi tidak lagi pakai exact count; beralih ke cursor-based (fetch N+1, detect hasMore) untuk menghindari overhead `count: 'exact'` yang mahal di Supabase.
+- Detail cicilan di-load on-demand via endpoint terpisah (`GET /api/installments/[id]`), bukan eager-load di list.
+- Next.js Devtools MCP runtime tools tidak tersedia (project masih Next.js 14); verifikasi runtime dilakukan via browser automation terhadap production build.
+
+---
+
+## Detail Eksekusi — Sesi 27 (12 April 2026)
+
+### Dashboard UX Revisi: Partial Restore Ikon Aksi + Spacing Alignment
+
+**Latar belakang & keputusan:**
+- Keputusan sebelumnya menghapus semua ikon dashboard direvisi menjadi **partial restore**.
+- Ikon dikembalikan **hanya** untuk aksi UX yang kuat (Tambah/Edit/Hapus/Nonaktifkan/Adjust), dengan teks tetap tampil untuk clarity & accessibility.
+- Ikon dekoratif/non-esensial tetap tidak dikembalikan.
+
+**Perubahan UI aksi (ikon + teks):**
+- ✅ `dashboard/src/components/settings/SettingsClient.tsx`
+  - Header actions: `Tambah Akun`, `Tambah Kategori` → `Plus`
+  - Row actions akun: `Adjust`, `Edit`, `Nonaktifkan` → `ArrowUpDown`, `Pencil`, `Ban`
+  - Row actions kategori: `Edit`, `Nonaktifkan` → `Pencil`, `Ban`
+  - Density compact dipertahankan (`h-7 px-2 text-xs`) sesuai pattern existing.
+- ✅ `dashboard/src/components/transactions/TransactionDetailDialog.tsx`
+  - Tombol `Edit` + `Hapus` → `Pencil` + `Trash2` (text tetap tampil)
+  - Spacing action row: `pt-2` → `pt-4`.
+- ✅ `dashboard/src/components/transactions/TransactionDeleteDialog.tsx`
+  - Tombol konfirmasi `Hapus` → tambah `Trash2`.
+- ✅ `dashboard/src/components/installments/InstallmentDetailDialog.tsx`
+  - Tombol `Edit` → tambah `Pencil`.
+- ✅ `dashboard/src/components/installments/InstallmentEditDialog.tsx`
+  - Tombol row `Hapus` bulan → tambah `Trash2` (ukuran kecil)
+  - Tombol `Tambah Bulan` → tambah `Plus`.
+
+**Perubahan spacing/layout (high-confidence):**
+- ✅ `dashboard/src/app/analytics/page.tsx` — heading wrapper `mb-4` → `mb-6`
+- ✅ `dashboard/src/app/transactions/page.tsx` — bar sort+summary `mb-3 px-1` → `mb-4`
+- ✅ `dashboard/src/app/page.tsx` — quick stats grid `gap-3` → `gap-4`
+
+**Verifikasi:**
+- ✅ `dashboard: pnpm exec tsc --noEmit` → 0 error.
+- ✅ `dashboard: pnpm build` → build sukses, semua route utama ter-compile.
+- ✅ Runtime visual smoke via Playwright:
+  - Route dicek: `/settings`, `/transactions`, `/installments`, `/analytics`, `/`
+  - Ikon muncul hanya pada aksi UX penting (Tambah/Edit/Hapus/Nonaktifkan/Adjust)
+  - Tombol tetap text+icon (bukan icon-only)
+  - Spacing heading/grid/action row sesuai target
+  - Tidak ditemukan JS runtime error baru (hanya favicon 404 pre-existing).
+- ⚠️ Next.js Devtools MCP runtime tools tidak tersedia karena project dashboard masih Next.js 14 (`/_next/mcp` 404), jadi verifikasi runtime dilakukan via browser automation.
+
+**Perbedaan dari spec:**
+- Tidak ada perubahan kontrak data/API/DB. Scope murni UX layer dashboard.
+
+---
+
+## Detail Eksekusi — Sesi 26 (11 April 2026)
+
+### End-to-End Removal: Ikon/Emoji di Database, Dashboard, dan Telegram Bot
+
+**Latar belakang & keputusan:**
+- Field `icon` di `categories` dan `accounts` sebelumnya digunakan sebagai emoji dekoratif di UI dan bot.
+- Keputusan: hard-removal total — drop kolom dari DB, bersihkan semua referensi di view/RPC, dashboard, dan bot.
+- Bot Telegram: hapus **semua** emoji dari seluruh message/keyboard (bukan hanya ikon kategori/akun).
+- Dashboard: hilangkan semua lucide icon dan emoji dari domain UI; gunakan teks + warna saja.
+
+**Database (migration `013_remove_icon_fields.sql`):**
+- ✅ Recreate `public.get_category_breakdown()` — hapus `category_icon` dari `RETURNS TABLE` dan body function.
+- ✅ Recreate `public.v_transactions` — hapus `category_icon` dan `account_icon` dari kolom view.
+- ✅ `ALTER TABLE public.categories DROP COLUMN icon;`
+- ✅ `ALTER TABLE public.accounts DROP COLUMN icon;`
+- ✅ Verifikasi: `information_schema.columns` — kolom `icon` tidak ada di kedua tabel.
+- ✅ Verifikasi: `SELECT COUNT(*) FROM public.get_balance_snapshot_anomalies();` → 0 (tidak ada anomali).
+
+**Dashboard — type contract:**
+- ✅ `dashboard/src/types/index.ts` — hapus `icon` dari `Category`, `Account`, `Installment`, `VTransaction`, `CategoryBreakdown`.
+
+**Dashboard — UI (teks + warna, tanpa ikon):**
+- ✅ `InstallmentCard.tsx` — hapus lucide `Calendar`, ganti jadi teks.
+- ✅ `InstallmentEditDialog.tsx` — hapus lucide `Plus, Trash2`, tombol jadi teks.
+- ✅ `SettingsClient.tsx` — hapus semua lucide (`Wallet, Tag, Plus, Pencil, PowerOff, Target`), tombol aksi jadi teks.
+
+**Dashboard — API write paths:**
+- ✅ `api/accounts/route.ts`, `api/accounts/[id]/route.ts` — hapus handling field `icon`.
+- ✅ `api/categories/route.ts`, `api/categories/[id]/route.ts` — hapus handling field `icon`.
+- ✅ `api/chat/route.ts` — hapus interpolasi `category_icon` dari context AI.
+
+**Telegram bot — type contract:**
+- ✅ `types/index.ts` — hapus `icon` dari `Category`, `Account`, `Installment`; hapus `category_icon` dari `CategoryBreakdown`.
+
+**Telegram bot — services:**
+- ✅ `services/openai.ts` — hapus `${c.icon}` dari prompt kategori; hapus instruksi emoji dari system prompt.
+- ✅ `services/sheets.ts` — hapus `icon: a.icon` dari `syncAccounts()`.
+- ✅ `services/supabase.ts` — ubah semua `.select('...categories(name, icon)...')` → `categories(name)`; hapus `category_icon` dari mapping `getInstallments/getInstallmentByName/insertInstallment`.
+- ✅ `services/formatter.ts` — hapus semua emoji prefix dari `formatTransactionMessage` dan `formatSummaryMessage`.
+
+**Telegram bot — bot.ts (emoji purge total):**
+- ✅ Hapus semua referensi `category_icon`/`account_icon` dari `BulkEntry`, `parseBulkLine()`, dan semua assignment.
+- ✅ Hapus emoji dari semua keyboard button (`${c.icon} ${c.name}` → `${c.name}`, dll).
+- ✅ Strip semua emoji literal: 💰 💸 🔄 🏧 📊 📈 🤖 💳 📂 📚 📅 📝 📆 🚀 👋 ✅ ❌ ⚠️ ℹ️ ✏️ ↩️ ➕ 🎉 🎊 ✨ 📋 💵 📌 🗑️ 👍 ⛔ ⚙️ 🏦 💎 🤔 👇.
+- ✅ `index.ts` — hapus emoji dari console.log startup.
+
+**Verifikasi:**
+- ✅ `telegram-bot: pnpm exec tsc --noEmit` → 0 error.
+- ✅ `dashboard: pnpm exec tsc --noEmit` → 0 error.
+- ✅ `dashboard: pnpm build` → build sukses, 12 routes OK.
+- ✅ Regression grep `icon|category_icon|account_icon` di `telegram-bot/src` → 0 match domain.
+- ✅ Regression grep `icon|category_icon|account_icon` di `dashboard/src` → hanya `button.tsx` (shadcn variant class) dan `chart.tsx` (CSS var) — bukan domain data.
+- ✅ Emoji scan di `telegram-bot/src/**/*.ts` → 0 emoji.
+
+---
+
+## Detail Eksekusi — Sesi 25 (11 April 2026)
+
+### Guardrail: Health Check Anomali Snapshot Saldo
+
+**Tujuan:**
+- Menyediakan query guard yang bisa dipanggil kapan saja untuk mendeteksi anomali snapshot saldo secara otomatis.
+
+**Implementasi:**
+- ✅ Migration baru: `supabase/migrations/012_snapshot_health_check.sql`
+- ✅ Function baru: `public.get_balance_snapshot_anomalies(p_account_id UUID DEFAULT NULL)`
+- ✅ Cakupan deteksi:
+  - `primary_continuity`: `balance_before` transaksi != `balance_after` transaksi sebelumnya (per akun)
+  - `primary_snapshot_null`: snapshot utama null pada transaksi aktif
+  - `primary_math_mismatch`: rumus before/after tidak sesuai tipe transaksi
+  - `transfer_to_snapshot_null`: snapshot sisi akun tujuan transfer null
+  - `transfer_to_math_mismatch`: rumus snapshot sisi tujuan transfer tidak valid
+  - `account_balance_mismatch`: `accounts.balance` != snapshot after terakhir akun
+
+**Verifikasi:**
+- Migration `012_snapshot_health_check` sukses di-apply.
+- Query `SELECT COUNT(*) FROM public.get_balance_snapshot_anomalies();` menghasilkan `0` (tidak ada anomali saat ini).
+
+**Cara pakai cepat:**
+- Semua akun: `SELECT * FROM public.get_balance_snapshot_anomalies();`
+- Satu akun: `SELECT * FROM public.get_balance_snapshot_anomalies('<account_uuid>');`
+- Count saja: `SELECT COUNT(*) FROM public.get_balance_snapshot_anomalies();`
+
+---
+
+## Detail Eksekusi — Sesi 24 (11 April 2026)
+
+### Hotfix: Rekonsiliasi Snapshot Saldo Transaksi (anomali email n8n)
+
+**Gejala:**
+- Transaksi email BCA (`BCA - POK POK ROYAL BELAKANG 6`) menampilkan snapshot saldo yang tidak nyambung dengan transaksi sebelumnya (harusnya setelah `patungan makan gacoan`).
+
+**Root cause:**
+- Snapshot `balance_before/balance_after` disimpan sebagai angka statis saat insert/update.
+- Ada perubahan data historis (termasuk backfill snapshot) yang membuat snapshot lama tidak lagi konsisten dengan urutan kronologis (`ORDER BY transaction_date, created_at, id`).
+- Dashboard memang hanya menampilkan snapshot tersimpan, bukan hitung ulang dari histori saat render.
+
+**Fix yang diterapkan (end-to-end):**
+- ✅ Migration baru: `supabase/migrations/011_reconcile_transaction_snapshots.sql`
+- ✅ Tambah function `reconcile_account_snapshots(account_id)`:
+  - lock akun (`FOR UPDATE`)
+  - hitung opening balance implisit dari saldo akun saat ini dikurangi total efek transaksi aktif
+  - hitung ulang snapshot semua transaksi akun secara kronologis
+  - update `balance_before/balance_after` (dan `to_balance_*` untuk transfer)
+- ✅ Tambah trigger `trg_reconcile_transaction_snapshots` (`AFTER INSERT/UPDATE/DELETE`) agar setiap perubahan transaksi otomatis merekonsiliasi snapshot akun terdampak.
+- ✅ Patch `update_updated_at()` supaya **tidak** mengubah `updated_at` jika yang berubah hanya kolom snapshot (`balance_*`, `to_balance_*`) sehingga audit timestamp user-action tetap bersih.
+- ✅ One-time backfill dijalankan di migration untuk **semua akun** (repair data historis yang terlanjur salah).
+
+**Verifikasi hasil:**
+- BCA sekarang konsisten:
+  - `patungan makan gacoan`: `346997 → 370997`
+  - `BCA - POK POK ROYAL BELAKANG 6`: `370997 → 350997` ✅
+- BSI juga ikut terkoreksi kronologis dan konsisten dengan saldo akhir akun.
+- Query validasi gap snapshot antar transaksi (`LAG(balance_after)` vs `balance_before`) menghasilkan **0 mismatch**.
+
+**Perbedaan dari spec:**
+- Ditambahkan mekanisme rekonsiliasi snapshot berbasis trigger untuk menjaga traceability saldo tetap konsisten setelah edit/delete/backfill transaksi, karena spec awal belum mendefinisikan self-healing snapshot lintas histori.
+
+---
+
+## Detail Eksekusi — Sesi 23 (11 April 2026)
+
+### Dashboard Responsive Overhaul
+
+**Scope:** Semua halaman dan komponen layout di `dashboard/` dibuat responsif di desktop, tablet, dan mobile.
+
+**File yang diubah:**
+
+| File | Perubahan |
+|------|-----------|
+| `dashboard/src/app/layout.tsx` | Outer div → `min-h-screen bg-background lg:flex`; main → `min-w-0 flex-1 overflow-x-hidden` |
+| `dashboard/src/components/layout/Sidebar.tsx` | Full rewrite: `SidebarNav` + `SidebarPanel` extracted; mobile sticky topbar (`lg:hidden h-14`) + Sheet drawer; desktop `hidden lg:flex aside` |
+| `dashboard/src/app/page.tsx` | `p-6` → `p-4 sm:p-6` |
+| `dashboard/src/app/transactions/page.tsx` | `p-6` → `p-4 sm:p-6`; sort+summary bar → `flex-col gap-2 sm:flex-row` |
+| `dashboard/src/app/analytics/page.tsx` | `p-6` → `p-4 sm:p-6` |
+| `dashboard/src/app/budget/page.tsx` | `p-6` → `p-4 sm:p-6`; summary grid → `grid-cols-1 sm:grid-cols-3` |
+| `dashboard/src/app/installments/page.tsx` | `p-6` → `p-4 sm:p-6` |
+| `dashboard/src/app/settings/page.tsx` | `p-6` → `p-4 sm:p-6` |
+| `dashboard/src/app/transactions/TransactionFilters.tsx` | Select trigger widths → `w-full sm:w-[...]`; date range → `flex-wrap`; filter row → `flex-wrap` |
+| `dashboard/src/app/transactions/TransactionSort.tsx` | `py-1` → `py-1.5 h-8 min-w-[118px]` untuk touch target lebih baik |
+| `dashboard/src/components/analytics/AnalyticsPeriodSwitcher.tsx` | Nav group → `w-full sm:w-auto sm:ml-auto`; label button → `flex-1 sm:flex-none` |
+| `dashboard/src/components/transactions/TransactionRow.tsx` | Meta `<p>` → `flex flex-wrap items-center gap-x-1.5 gap-y-0.5` |
+| `dashboard/src/components/installments/InstallmentCard.tsx` | Meta footer → `flex flex-wrap items-center gap-x-3 gap-y-1` |
+| `dashboard/src/components/settings/SettingsClient.tsx` | Account + category row → `flex flex-wrap ... gap-2`; left div → `min-w-0`; right div → `ml-auto` |
+| `dashboard/src/components/transactions/TransactionEditDialog.tsx` | Description+Merchant grid → `grid-cols-1 sm:grid-cols-2` |
+| `dashboard/src/components/settings/CategoryEditDialog.tsx` | Kedua grid 2-col → `grid-cols-1 sm:grid-cols-2`; form → `max-h-[70vh] overflow-y-auto` |
+| `dashboard/src/components/installments/InstallmentEditDialog.tsx` | Date+DueDay grid → `grid-cols-1 sm:grid-cols-2` |
+| `dashboard/src/app/insights/page.tsx` | Container → `h-[calc(100dvh-3.5rem)] lg:h-screen` |
+| `dashboard/src/components/charts/HeatmapChart.tsx` | Tambah mobile scroll hint `sm:hidden`; restructure `overflow-x-auto` wrapper |
+
+**Hasil:**
+- `pnpm build` lulus bersih (0 error, semua 12 halaman tercompile)
+- Browser check: tidak ada runtime error JS (hanya favicon 404 pre-existing)
+- Mobile topbar sticky + Sheet drawer berfungsi
+
+**Perbedaan dari spec:**
+- `SheetTrigger` tidak digunakan. Semula rencana pakai `<SheetTrigger render={<Button>}>` tapi menyebabkan React ref warning karena `Button` bukan forwardRef component. Solusi: control Sheet via `useState(mobileOpen)` dan gunakan plain `<button className={buttonVariants({...})}>` sebagai trigger.
+- `.next` cache perlu dihapus (`rm -rf dashboard/.next`) karena stale asset 404 saat dev server; production build tidak terpengaruh.
+
+---
+
+## Detail Eksekusi — Sesi 22 (10 April 2026)
+
+### Bugfix: /expense cicilan tanggal ter-set jam 00:00
+
+**Gejala:**
+Saat input expense dengan tanggal tertentu (mis. hari ini) via flow cicilan, jam transaksi menjadi 00:00.
+
+**Root cause:**
+- Fungsi parser tanggal (`parseDatePrefix`) sebelumnya menormalisasi ke awal hari (`startOf('day')`) sehingga komponen jam selalu hilang.
+
+**Fix:**
+- Update `parseDatePrefix` agar tetap memakai tanggal yang diketik user, tapi jam/menit/detik mengikuti waktu saat command diinput.
+- Jadi hasil `transaction_date` tidak lagi 00:00, melainkan timestamp aktual saat input.
+
+**Deploy:**
+- Patch diterapkan di source lokal dan di server bot (`telegram-bot/src/bot.ts`).
+- Type-check bot lulus.
+- `pm2 restart finance-bot` sukses, status online.
+
+**Catatan tambahan:**
+- Permintaan kedua (buat semua halaman dashboard fully responsive mobile+tablet) belum dieksekusi di sesi ini karena scope besar lintas banyak halaman/komponen. Akan dikerjakan sebagai sesi lanjutan terpisah.
+
+---
+
+## Detail Eksekusi — Sesi 21 (10 April 2026)
+
+### Investigasi + Fix: transaksi dari n8n tidak punya balance before/after
+
+**Gejala:**
+Transaksi source `email_*` di dashboard detail menampilkan `Saldo Sebelum/Sesudah` = `-`.
+
+**Root cause:**
+- Workflow n8n menulis langsung ke `rest/v1/transactions` dan hanya mengirim field transaksi dasar (tidak mengirim snapshot).
+- Tidak ada trigger DB sebelumnya yang otomatis mengisi snapshot + update saldo akun untuk insert dari `email_*`.
+
+**Fix yang diterapkan:**
+- Tambah migration baru: `supabase/migrations/010_email_transactions_balance_snapshots.sql`.
+- Isi migration:
+  - function `apply_email_transaction_balance_snapshot()` (BEFORE INSERT on `transactions`)
+  - trigger `trg_email_transactions_balance_snapshot`
+  - hanya berlaku untuk source `email_%`, `type IN ('income','expense')`, `account_id` tidak null, dan skip jika snapshot sudah dikirim caller.
+  - function akan lock akun (`FOR UPDATE`), hitung `before/after`, update saldo akun, lalu isi `NEW.balance_before` + `NEW.balance_after`.
+- Migration sudah di-apply ke project Supabase (`dqvdhkpqyynvwfbuqyzu`).
+
+**Backfill data lama:**
+- Diisi snapshot untuk histori transaksi email yang masih aktif (`is_deleted=false`) dan sebelumnya null.
+- Hasil verifikasi: seluruh transaksi email aktif sekarang sudah punya `balance_before/balance_after`.
+
+**Catatan:**
+- Beberapa transaksi email lama yang statusnya `is_deleted=true` tetap null (tidak ditampilkan di dashboard karena `v_transactions` filter `is_deleted=false`).
+
+---
+
+## Detail Eksekusi — Sesi 20 (10 April 2026)
+
+### Bugfix: /edit Telegram ngestuck saat pilih field edit
+
+**Gejala:**
+Setelah `/edit` lalu pilih `📂 Ganti Kategori`, bot terlihat "stuck" (tidak lanjut).
+
+**Root cause (terkonfirmasi di log PM2):**
+- Error berulang: `Bad Request: BUTTON_DATA_INVALID` pada `editMessageText`.
+- Penyebab teknis: `callback_data` untuk tombol kategori terlalu panjang (`set_cat_<txn_uuid>_<cat_uuid>`) dan melampaui batas Telegram (64 bytes).
+
+**Fix yang diterapkan:**
+- Ubah desain callback kategori edit:
+  - Sebelumnya: callback bawa `txnId + catId` sekaligus.
+  - Sekarang: callback hanya bawa `catId` (`set_cat_<catId>`), sedangkan `txnId` disimpan sementara per chat di map `waitingForEditCategory`.
+- Tambah cleanup state pada `edit_cancel` agar state edit kategori ikut dibersihkan.
+- Deploy hotfix langsung ke server bot (`/home/mrrizaldi/dev/finance-project/telegram-bot/src/bot.ts`), lalu restart `pm2 finance-bot`.
+
+**Validasi:**
+- Type-check remote bot: `pnpm exec tsc --noEmit` (via path node/pnpm) → lulus.
+- PM2 status: `finance-bot` kembali `online`.
+
+---
+
+## Detail Eksekusi — Sesi 19 (10 April 2026)
+
+### Feature: Expense via Cicilan (installment_id di transaksi)
+
+**Konteks:**
+Sebelumnya transaksi expense hanya bisa dikaitkan ke akun (`account_id`). Permintaan: expense yang dibayar via cicilan bisa menyimpan `installment_id` sebagai pengganti `account_id`, sehingga transaksi tersebut ter-link ke cicilan yang aktif dan tampilannya berbeda di list/detail.
+
+**Kolom DB:** `transactions.installment_id` dan FK ke `installments` sudah ada sejak migration sebelumnya. Yang baru:
+- Migration `009_v_transactions_add_installment_name`: update `v_transactions` tambah LEFT JOIN ke `installments` → expose `installment_name`.
+
+**Perubahan:**
+| File | Perubahan |
+|------|-----------|
+| `supabase/migrations/009_...` | `v_transactions` + `installment_name` via JOIN |
+| `dashboard/src/types/index.ts` | `VTransaction.installment_name?: string` |
+| `dashboard/src/app/transactions/page.tsx` | Fetch installments aktif, teruskan ke client |
+| `dashboard/src/components/transactions/TransactionListClient.tsx` | Props + forward `installments` ke EditDialog |
+| `dashboard/src/components/transactions/TransactionEditDialog.tsx` | Toggle "Akun / Cicilan" untuk expense, state `installmentId` + `useInstallment`, payload kirim `installment_id` + nullkan `account_id` |
+| `dashboard/src/components/transactions/TransactionRow.tsx` | Jika `installment_name` ada, tampilkan `📋 nama cicilan` menggantikan nama akun |
+| `dashboard/src/components/transactions/TransactionDetailDialog.tsx` | Jika `installment_name` ada, tampilkan row "Cicilan" menggantikan row "Akun" |
+| `dashboard/src/app/api/transactions/[id]/route.ts` | Handle `installment_id` di PATCH payload |
+
+**Verifikasi:** `pnpm exec tsc --noEmit` → 0 errors.
 
 ---
 
@@ -709,6 +1146,102 @@ Dinonaktifkan via n8n MCP karena belum dibutuhkan / masih tahap testing BCA, BSI
 
 
 
+## Detail Eksekusi — Sesi 15 (9 April 2026)
+
+### Settings CRUD — Accounts & Categories
+
+**Yang dikerjakan:**
+
+#### 1. API Routes baru
+- `dashboard/src/app/api/accounts/route.ts` — POST (create account)
+- `dashboard/src/app/api/accounts/[id]/route.ts` — PATCH (update) + DELETE (soft deactivate: `is_active = false`)
+- `dashboard/src/app/api/categories/route.ts` — POST (create category)
+- `dashboard/src/app/api/categories/[id]/route.ts` — PATCH (update) + DELETE (soft deactivate)
+
+#### 2. Client Components baru
+- `dashboard/src/components/settings/AccountEditDialog.tsx` — Dialog create/edit akun (nama, tipe, ikon, saldo awal)
+- `dashboard/src/components/settings/CategoryEditDialog.tsx` — Dialog create/edit kategori (nama, tipe, ikon, warna, budget bulanan, sort order)
+- `dashboard/src/components/settings/SettingsClient.tsx` — Client wrapper untuk state accounts + categories. Render daftar dengan tombol Edit + Nonaktifkan per baris. Row nonaktif ditampilkan dengan opacity 50% dan badge "Nonaktif".
+
+#### 3. Settings Page Refactor
+- `dashboard/src/app/settings/page.tsx` — Hapus disclaimer banner read-only. Tetap server component untuk fetch data, pass ke `SettingsClient`. `revalidate = 0`.
+
+#### 4. Types update
+- `dashboard/src/types/index.ts` — Tambah `is_active?: boolean` pada `Account` dan `Category`
+
+**Verifikasi:**
+- `pnpm exec tsc --noEmit` ✅
+- `pnpm build` ✅
+
+**Perbedaan dari spec:**
+- Fitur ini tidak ada di spec awal — ditambahkan sebagai enhancement dashboard agar tidak perlu akses Supabase Dashboard / Telegram bot untuk manajemen master data.
+
+---
+
+## Detail Eksekusi — Sesi 14 (9 April 2026)
+
+### Refactor Cicilan: `schedule` → `installment_months` (one-to-many)
+
+**Yang dikerjakan:**
+
+#### 1. Database refactor cicilan (via Supabase MCP)
+- Dibuat tabel baru `installment_months` dengan relasi one-to-many ke `installments`:
+  - `installment_id`, `month_number`, `amount`, `is_paid`, `paid_date`, `transaction_id`
+  - unique key: `(installment_id, month_number)`
+- Data existing berhasil dipindahkan:
+  - `SPayLater` (variable) jadi 6 baris detail bulanan
+  - `Cash Kredivo` (fixed) jadi 8 baris detail bulanan (bulan pertama paid)
+- Kolom `schedule` pada `installments` sudah di-drop di database production
+- Ditambahkan migration file lokal: `supabase/migrations/007_installment_months_refactor.sql` (idempotent + auto-migrate jika kolom `schedule` masih ada)
+
+#### 2. Telegram bot diubah full pakai detail bulanan
+- `telegram-bot/src/types/index.ts`:
+  - tambah interface `InstallmentMonth`
+  - `Installment` sekarang punya `months?: InstallmentMonth[]`
+  - field `schedule` dihapus
+- `telegram-bot/src/services/supabase.ts`:
+  - query installments join `installment_months`
+  - `insertInstallment()` sekarang menerima `monthAmounts[]` dan insert detail bulan
+  - `appendInstallmentMonths()` update/upsert per bulan (preserve `is_paid`, `paid_date`, `transaction_id`)
+  - `setInstallmentMonthsPaid()` untuk mark bulan tertentu saat `/installment pay`
+- `telegram-bot/src/bot.ts`:
+  - `/installment add` variable/fixed sekarang membentuk array bulan (bukan string koma)
+  - `/installment pay` ambil nominal dari detail bulan dan menandai bulan sebagai paid
+  - `/installment append` merge tambahan nominal langsung ke detail bulan
+  - `/installment detail` tampilkan breakdown berdasarkan detail bulan
+  - list `/installment` menghitung total sisa dari bulan yang belum paid
+
+#### 3. Dashboard diubah full pakai detail bulanan
+- `dashboard/src/types/index.ts`:
+  - tambah `InstallmentMonth`
+  - `Installment.months` ditambahkan, `schedule` dihapus
+- `dashboard/src/app/installments/page.tsx`:
+  - query include `installment_months`
+  - summary “Bulan Ini” + “Total Sisa” dihitung dari `months`
+- `dashboard/src/components/installments/InstallmentCard.tsx`:
+  - nominal next due ambil dari `months[paid_months]`
+- `dashboard/src/components/installments/InstallmentDetailDialog.tsx`:
+  - breakdown per bulan ambil dari `months`
+- `dashboard/src/components/installments/InstallmentEditDialog.tsx`:
+  - UI variable diubah dari textarea comma-separated menjadi **list baris bulan** yang bisa diedit satu-satu
+  - bisa tambah/hapus bulan (yang sudah paid tidak bisa dihapus)
+- `dashboard/src/app/api/installments/[id]/route.ts`:
+  - support payload `months[]`
+  - validasi urutan bulan 1..N
+  - update `installments` (`total_months`, `monthly_amount`, `paid_months`) sinkron dengan detail bulan
+  - rewrite rows `installment_months` sambil preserve `paid_date`/`transaction_id` row yang sudah paid
+
+#### 4. Verifikasi
+- `pnpm --dir telegram-bot exec tsc --noEmit` ✅
+- `pnpm --dir dashboard exec tsc --noEmit` ✅
+- grep `schedule` di source bot/dashboard: sudah tidak ada referensi runtime ✅
+
+**Perbedaan dari spec:**
+- Implementasi cicilan variable tidak lagi pakai kolom `schedule` string.
+- Diganti struktur relasional normalisasi (`installment_months`) agar UI edit per-bulan jauh lebih natural dan data lebih konsisten.
+
+---
+
 ## Detail Eksekusi — Sesi 13 (9 April 2026)
 
 ### UI Polish Dashboard & Fix Bot Installment
@@ -749,6 +1282,187 @@ Saat ini BSI, GoPay, Shopee, Tokopedia, OVO/Dana/ShopeePay belum semua punya aut
 
 ### C. Edit Transaksi (Kategori + Field Lain)
 Setelah bulk input, user ingin bisa edit kategori yang salah.
+
+---
+
+## Detail Eksekusi — Sesi 16 (9 April 2026)
+
+### Telegram Bot `/expense`: Mode Cicilan + Inline Format Cicilan + Contextual Help
+
+**Yang dikerjakan:**
+
+#### 1. Conversation flow `/expense` ditambah mode cicilan
+- Di langkah pilih sumber pembayaran, ditambah opsi `💳 Via Cicilan`
+- Jika pilih cicilan:
+  - pilih cicilan aktif **atau** `➕ Buat Cicilan Baru`
+  - input tenor
+  - untuk cicilan existing: pilih start month (default bulan sekarang relatif ke `start_date`, bisa custom)
+  - preview breakdown per bulan + konfirmasi
+- Saat konfirmasi sukses:
+  - transaksi expense tetap masuk `transactions`
+  - `account_id` tidak diisi (jadi balance akun tidak langsung berkurang)
+  - `installment_id` terisi
+  - detail bulan cicilan di-append ke `installment_months` (existing) atau dibuat baru (new installment)
+
+#### 2. Support buat cicilan baru langsung dari flow `/expense`
+- Opsi baru `➕ Buat Cicilan Baru` pada picker cicilan
+- Input nama cicilan baru + tenor
+- Bot otomatis membuat record `installments` + `installment_months` dari nominal transaksi
+- Kategori cicilan baru otomatis mengikuti kategori expense yang dipilih di flow
+
+#### 3. Inline quick command `/expense` support token cicilan
+- Ditambah parser token terakhir dengan format:
+  - `cicilan:NamaInstallment/tenor`
+  - `cicilan:NamaInstallment/tenor/startBulan`
+- Behavior:
+  - jika installment dengan nama tersebut sudah ada → append bulan cicilan ke installment existing (default startBulan = bulan sekarang)
+  - jika belum ada → otomatis create installment baru lalu link transaksi ke installment tersebut
+- Ditambah validasi format token cicilan inline + pesan error yang jelas
+
+#### 4. Contextual help per command (`/xxx help`)
+- Ditambahkan command global baru: `/help [topik]`
+- Ditambahkan support parameter `help`/`bantuan`/`-h`/`--help`/`?` untuk command utama:
+  - `/start help`
+  - `/expense help`
+  - `/income help`
+  - `/transfer help`
+  - `/withdraw help`
+  - `/balance help`
+  - `/report help`
+  - `/edit help`
+  - `/undo help`
+  - `/installment help`
+  - `/category help`
+  - `/sync help`
+  - `/reset help`
+  - `/ask help`
+  - `/bulk help`
+- Tiap help menampilkan format + contoh penggunaan agar tidak perlu buka dokumentasi luar
+- `/expense help` diperluas dengan opsi metode bayar pada quick command:
+  - `akun:NamaAkun` (saldo akun berkurang)
+  - `cicilan:Nama/tenor[/startBulan]` (tanpa potong saldo langsung)
+- Quick command `/expense` juga diupdate agar benar-benar support suffix `akun:NamaAkun`
+- `/bulk` tanpa argumen sekarang reuse message bantuan yang sama agar konsisten
+
+#### 5. Refactor kecil
+- Tambah helper `splitInstallmentAmounts(total, tenor)` untuk pembagian nominal (sisa ke bulan pertama)
+- Tambah helper `parseExpenseInstallmentToken(token)` untuk parser inline cicilan
+- Tambah helper `isHelpRequest(raw)` + konstanta `HELP_MESSAGES`
+
+**Verifikasi:**
+- `npx tsc --noEmit` (telegram-bot) ✅
+
+**File yang diubah:**
+- `telegram-bot/src/bot.ts`
+- `telegram-bot/src/index.ts`
+
+**Perbedaan dari spec:**
+- Spec awal tidak mendefinisikan flow `/expense` berbasis cicilan interaktif atau inline token `cicilan:...`.
+- Fitur ini ditambahkan sebagai extension agar pencatatan belanja cicilan bisa langsung dari command `/expense` tanpa lewat `/installment` manual dulu.
+
+---
+
+## Detail Eksekusi — Sesi 17 (10 April 2026)
+
+### Dashboard: Fix delay setelah edit/input + loading overlay saat write & refresh
+
+**Yang dikerjakan:**
+- ✅ **Sinkronisasi refresh di parent list client**:
+  - `TransactionListClient` dan `InstallmentListClient` sudah meng-handle `router.refresh()` terpusat via `useTransition`.
+  - Dialog edit/hapus sekarang hanya trigger `onSuccess()` tanpa `router.refresh()` lokal, sehingga alur refresh tidak dobel.
+- ✅ **Loading overlay selama write**:
+  - `TransactionEditDialog`, `TransactionDeleteDialog`, `CategoryEditDialog`, `AccountEditDialog`, dan `InstallmentEditDialog` sekarang menampilkan overlay spinner saat submit/delete berlangsung.
+- ✅ **Loading overlay selama re-fetch data halaman**:
+  - `TransactionListClient`, `InstallmentListClient`, `SettingsClient` menampilkan overlay full-screen saat `router.refresh()` pending.
+- ✅ **Kurangi stale data dari page cache**:
+  - `transactions/page.tsx` tetap `revalidate = 0`.
+  - `settings/page.tsx` tetap `revalidate = 0`.
+  - `installments/page.tsx` diubah dari `revalidate = 60` menjadi `revalidate = 0` agar hasil edit cicilan muncul langsung tanpa refresh manual.
+- ✅ **Installment edit flow dibersihkan**:
+  - `InstallmentEditDialog` menghapus `useRouter` + `router.refresh()` lokal.
+  - Menambahkan overlay `Menyimpan cicilan...` di level dialog.
+
+**Verifikasi:**
+- `pnpm --dir dashboard exec tsc --noEmit` ✅
+- `pnpm --dir dashboard build` ✅
+- Smoke check browser (Playwright) untuk route:
+  - `/transactions` ✅
+  - `/settings` ✅
+  - `/installments` ✅
+  - Tidak ada console error runtime yang relevan (hanya info React DevTools di mode dev).
+
+**File yang diubah (sesi ini):**
+- `dashboard/src/components/installments/InstallmentEditDialog.tsx`
+- `dashboard/src/app/installments/page.tsx`
+
+**Catatan:**
+- `next-devtools MCP` untuk runtime diagnostics tidak tersedia karena project dashboard masih Next.js 14 (MCP runtime tool aktif penuh di Next.js 16+).
+
+---
+
+## Detail Eksekusi — Sesi 18 (10 April 2026)
+
+### Balance Traceability + Auditable Adjustment (DB, Telegram, Dashboard)
+
+**Yang dikerjakan:**
+- ✅ **Migration `008_balance_traceability.sql` diaplikasikan ke Supabase production** (`dqvdhkpqyynvwfbuqyzu`) via MCP.
+  - Menambahkan kolom snapshot di `transactions`: `balance_before`, `balance_after`, `to_balance_before`, `to_balance_after`.
+  - Menambahkan metadata adjustment: `is_adjustment` + `adjustment_note`.
+  - Menambahkan index `idx_transactions_is_adjustment`.
+  - Recreate `v_transactions` agar expose field snapshot/adjustment ke dashboard & bot.
+  - Menambahkan RPC `set_account_balance(p_account_id, p_target_balance)` untuk set saldo target secara atomic.
+  - Update RPC analytics (`get_summary`, `get_category_breakdown`, `get_monthly_trend`) agar exclude adjustment (`is_adjustment = false`).
+- ✅ **Dashboard API account adjustment**:
+  - Endpoint baru `POST /api/accounts/[id]/adjust` untuk adjust saldo berbasis target + catatan.
+  - Endpoint ini call RPC `set_account_balance`, lalu insert transaksi adjustment (`is_adjustment=true`) dengan snapshot saldo before/after.
+- ✅ **Dashboard API transaksi** (`PATCH/DELETE`) diperkuat untuk konsistensi saldo + snapshot:
+  - Hitung diff dampak saldo berdasarkan state transaksi lama vs baru.
+  - Apply diff ke akun terdampak, simpan snapshot saldo hasil mutasi ke row transaksi.
+  - Untuk transfer, simpan snapshot akun asal dan akun tujuan (`to_balance_*`).
+  - Jika update transaksi gagal, saldo akun di-rollback.
+  - Ditambahkan fallback snapshot agar edit non-balance fields tidak menghapus snapshot lama.
+- ✅ **Dashboard UI traceability**:
+  - `TransactionDetailDialog` menampilkan:
+    - `Saldo Sebelum` / `Saldo Sesudah`
+    - `Saldo Tujuan Sebelum` / `Saldo Tujuan Sesudah` (untuk transfer)
+    - badge `Adjustment` + `Catatan Adjust` jika transaksi adjustment.
+  - `TransactionRow` menampilkan ringkas `Saldo: ...` atau label `Adjustment`.
+  - `Settings` menambahkan tombol **Adjust** per akun + dialog baru `AccountAdjustDialog` (target saldo + catatan).
+- ✅ **Summary bar transaksi** disesuaikan agar exclude transaksi adjustment (angka operasional income/expense tetap representatif).
+- ✅ **Telegram bot flow auditability** sudah tersambung:
+  - `/balance adjust <akun> <nominal_baru> [catatan]` aktif.
+  - Gunakan helper `setAccountBalance` (RPC) + insert transaksi adjustment dengan snapshot before/after.
+  - Edit nominal transaksi memperbarui saldo berbasis delta dan update snapshot.
+  - Delete transaksi via callback reverse saldo berdasarkan tipe transaksi (termasuk transfer dua sisi).
+
+**Verifikasi:**
+- `pnpm --dir dashboard exec tsc --noEmit` ✅
+- `pnpm --dir telegram-bot exec tsc --noEmit` ✅
+- `pnpm --dir dashboard build` ✅
+- Supabase MCP check ✅:
+  - Migration `008_balance_traceability` tercatat di `supabase_migrations`.
+  - Kolom baru `transactions` terdeteksi.
+  - RPC `set_account_balance` terdeteksi.
+
+**File yang diubah/ditambah (sesi ini):**
+- `supabase/migrations/008_balance_traceability.sql`
+- `telegram-bot/src/bot.ts`
+- `telegram-bot/src/index.ts`
+- `telegram-bot/src/services/supabase.ts`
+- `telegram-bot/src/types/index.ts`
+- `dashboard/src/app/api/accounts/[id]/route.ts`
+- `dashboard/src/app/api/accounts/[id]/adjust/route.ts`
+- `dashboard/src/app/api/transactions/[id]/route.ts`
+- `dashboard/src/app/transactions/page.tsx`
+- `dashboard/src/components/settings/SettingsClient.tsx`
+- `dashboard/src/components/settings/AccountAdjustDialog.tsx`
+- `dashboard/src/components/transactions/TransactionDetailDialog.tsx`
+- `dashboard/src/components/transactions/TransactionRow.tsx`
+- `dashboard/src/types/index.ts`
+
+**Perbedaan dari spec:**
+- Tidak menambah type transaksi baru khusus adjustment; tetap pakai `income/expense` + flag `is_adjustment` (sesuai keputusan desain agar minim breaking changes).
+- Data transaksi lama tetap memiliki snapshot `NULL`; baseline auditability efektif mulai transaksi baru setelah rollout ini.
 
 ---
 

@@ -10,11 +10,13 @@ import { Badge } from '@/components/ui/badge';
 import { Installment } from '@/types';
 import { formatRupiah, formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
-import { CreditCard, Calendar, CheckCircle2, PauseCircle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Pencil } from 'lucide-react';
 
 interface Props {
   inst: Installment | null;
+  fallbackInst?: Installment | null;
+  loading?: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: () => void;
@@ -29,20 +31,27 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
   );
 }
 
-export default function InstallmentDetailDialog({ inst, open, onOpenChange, onEdit }: Props) {
-  if (!inst) return null;
+export default function InstallmentDetailDialog({
+  inst,
+  fallbackInst,
+  loading = false,
+  open,
+  onOpenChange,
+  onEdit,
+}: Props) {
+  const current = inst ?? fallbackInst ?? null;
+  if (!current) return null;
 
-  // Determine schedule if exists
-  let isVariable = false;
-  let amounts: number[] = [];
-  if (inst.schedule) {
-    amounts = inst.schedule.split(',').map(Number);
-    isVariable = amounts.length > 0 && amounts.some(a => a !== amounts[0]);
-  } else {
-    amounts = Array(inst.total_months).fill(inst.monthly_amount);
+  const baseAmount = Number(current.next_amount ?? current.monthly_amount);
+  let amounts: number[] = Array(current.total_months).fill(baseAmount || Number(current.monthly_amount));
+
+  if (current.months && current.months.length > 0) {
+    const sorted = current.months.slice().sort((a, b) => a.month_number - b.month_number);
+    amounts = sorted.map((m) => Number(m.amount));
   }
 
-  const nextAmount = amounts[inst.paid_months] ?? inst.monthly_amount;
+  const isVariable = current.has_variable_months ?? amounts.some((a) => a !== amounts[0]);
+  const nextAmount = Number(current.next_amount ?? amounts[current.paid_months] ?? current.monthly_amount);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -56,34 +65,32 @@ export default function InstallmentDetailDialog({ inst, open, onOpenChange, onEd
           <div className="text-center py-4">
             <div
               className={cn(
-                'w-14 h-14 rounded-full flex items-center justify-center text-2xl mx-auto mb-3',
-                inst.status === 'completed' ? 'bg-emerald-500/15' : 'bg-blue-500/15'
+                'w-14 h-2 rounded-full mx-auto mb-3',
+                current.status === 'completed' ? 'bg-emerald-500/50' : 'bg-blue-500/50'
               )}
-            >
-              {inst.status === 'completed'
-                ? <CheckCircle2 className="h-6 w-6 text-emerald-500" />
-                : <CreditCard className="h-6 w-6 text-blue-500" />
-              }
-            </div>
-            <p className="text-xl font-bold text-foreground">{inst.name}</p>
+            />
+            <p className="text-xl font-bold text-foreground">{current.name}</p>
             <p className="text-sm font-medium text-muted-foreground mt-1">
               Tagihan selanjutnya: {formatRupiah(nextAmount)}
             </p>
+            {loading && (
+              <p className="text-xs text-muted-foreground mt-1">Memuat detail lengkap...</p>
+            )}
             <Badge
               variant="outline"
               className="mt-2 text-xs"
             >
-              {inst.status.toUpperCase()}
+              {current.status.toUpperCase()}
             </Badge>
           </div>
 
           {/* Core Details */}
           <div className="text-sm bg-muted/30 p-3 rounded-xl border border-border mb-4">
-            <DetailRow label="Kategori" value={`${inst.category_icon || ''} ${inst.category_name || '–'}`} />
-            <DetailRow label="Akun Pendebet" value={inst.account_name} />
-            <DetailRow label="Tanggal Mulai" value={formatDate(inst.start_date, 'DD MMM YYYY')} />
-            <DetailRow label="Jatuh Tempo" value={inst.due_day ? `Tanggal ${inst.due_day}` : '–'} />
-            <DetailRow label="Catatan" value={inst.notes} />
+            <DetailRow label="Kategori" value={current.category_name || '–'} />
+            <DetailRow label="Akun Pendebet" value={current.account_name} />
+            <DetailRow label="Tanggal Mulai" value={formatDate(current.start_date, 'DD MMM YYYY')} />
+            <DetailRow label="Jatuh Tempo" value={current.due_day ? `Tanggal ${current.due_day}` : '–'} />
+            <DetailRow label="Catatan" value={current.notes} />
           </div>
 
           {/* Schedule Breakdown */}
@@ -91,15 +98,15 @@ export default function InstallmentDetailDialog({ inst, open, onOpenChange, onEd
             <h3 className="text-sm font-semibold text-foreground mb-3 flex justify-between items-center">
               <span>Jadwal Pembayaran</span>
               <span className="text-xs text-muted-foreground font-normal">
-                {inst.paid_months} / {inst.total_months} bulan
+                {current.paid_months} / {current.total_months} bulan
               </span>
             </h3>
             
             <div className="border border-border rounded-xl overflow-hidden divide-y divide-border text-sm">
-              {Array.from({ length: inst.total_months }).map((_, i) => {
-                const isPaid = i < inst.paid_months;
-                const isCurrent = i === inst.paid_months && inst.status !== 'completed';
-                const amt = amounts[i] ?? inst.monthly_amount;
+              {Array.from({ length: current.total_months }).map((_, i) => {
+                const isPaid = i < current.paid_months;
+                const isCurrent = i === current.paid_months && current.status !== 'completed';
+                const amt = amounts[i] ?? current.monthly_amount;
                 
                 return (
                   <div 
@@ -118,7 +125,7 @@ export default function InstallmentDetailDialog({ inst, open, onOpenChange, onEd
                     <div className="flex items-center gap-3">
                       <span>{formatRupiah(amt)}</span>
                       {isPaid ? (
-                        <CheckCircle2 className="h-4 w-4 text-emerald-500 opacity-70" />
+                        <span className="text-xs text-emerald-500">Paid</span>
                       ) : isCurrent ? (
                         <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse mr-1"></span>
                       ) : (
@@ -140,8 +147,9 @@ export default function InstallmentDetailDialog({ inst, open, onOpenChange, onEd
           <div className="flex gap-2 pt-4">
             <button
               onClick={onEdit}
-              className="flex-1 h-8 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/80 transition-colors"
+              className="flex-1 h-8 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/80 transition-colors inline-flex items-center justify-center gap-1"
             >
+              <Pencil className="h-3 w-3" />
               Edit
             </button>
           </div>

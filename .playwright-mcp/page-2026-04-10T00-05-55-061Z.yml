@@ -1,0 +1,104 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - img [ref=e6]
+          - generic [ref=e9]: Finance
+        - paragraph [ref=e10]: Personal Dashboard
+      - navigation [ref=e12]:
+        - link "Overview" [ref=e13] [cursor=pointer]:
+          - /url: /
+          - img [ref=e14]
+          - text: Overview
+        - link "Transaksi" [ref=e19] [cursor=pointer]:
+          - /url: /transactions
+          - img [ref=e20]
+          - text: Transaksi
+        - link "Analitik" [ref=e23] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=e24]
+          - text: Analitik
+        - link "Insights AI" [ref=e26] [cursor=pointer]:
+          - /url: /insights
+          - img [ref=e27]
+          - text: Insights AI
+        - link "Budget" [ref=e29] [cursor=pointer]:
+          - /url: /budget
+          - img [ref=e30]
+          - text: Budget
+        - link "Cicilan" [ref=e34] [cursor=pointer]:
+          - /url: /installments
+          - img [ref=e35]
+          - text: Cicilan
+        - link "Pengaturan" [ref=e37] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e38]
+          - text: Pengaturan
+      - paragraph [ref=e42]: "@aldi_monman_bot"
+    - main [ref=e43]:
+      - generic [ref=e44]:
+        - generic [ref=e45]:
+          - heading "Cicilan" [level=1] [ref=e46]
+          - paragraph [ref=e47]: Kelola semua cicilan aktif kamu
+        - generic [ref=e48]:
+          - generic [ref=e50]:
+            - paragraph [ref=e51]: Cicilan Aktif
+            - paragraph [ref=e52]: "2"
+          - generic [ref=e54]:
+            - paragraph [ref=e55]: Bulan Ini
+            - paragraph [ref=e56]: Rp 1.842.833
+          - generic [ref=e58]:
+            - paragraph [ref=e59]: Total Sisa
+            - paragraph [ref=e60]: Rp 8.444.540
+          - generic [ref=e62]:
+            - paragraph [ref=e63]: Sudah Lunas
+            - paragraph [ref=e64]: "0"
+        - generic [ref=e65]:
+          - heading "Cicilan Aktif (2)" [level=2] [ref=e66]
+          - generic [ref=e67]:
+            - generic [ref=e69] [cursor=pointer]:
+              - generic [ref=e70]:
+                - generic [ref=e71]:
+                  - img [ref=e73]
+                  - generic [ref=e75]:
+                    - paragraph [ref=e76]: Cash Kredivo
+                    - generic [ref=e78]: Aktif
+                - generic [ref=e79]:
+                  - paragraph [ref=e80]: Rp 78.440
+                  - paragraph [ref=e81]: /bulan
+              - generic [ref=e82]:
+                - generic [ref=e83]:
+                  - generic [ref=e84]: 1 dari 8 bulan
+                  - generic [ref=e85]: 13%
+                - progressbar [ref=e86]: x
+              - generic [ref=e91]:
+                - generic [ref=e92]:
+                  - img [ref=e93]
+                  - text: Mulai Apr 2026
+                - generic [ref=e95]: · Jatuh tempo tgl 14
+                - generic [ref=e96]: · Sisa 7 bulan
+                - generic [ref=e97]: · BCA
+            - generic [ref=e99] [cursor=pointer]:
+              - generic [ref=e100]:
+                - generic [ref=e101]:
+                  - img [ref=e103]
+                  - generic [ref=e105]:
+                    - paragraph [ref=e106]: SPayLater
+                    - generic [ref=e108]: Aktif
+                - generic [ref=e109]:
+                  - paragraph [ref=e110]: Rp 1.764.393
+                  - paragraph [ref=e111]: /bulan
+              - generic [ref=e112]:
+                - generic [ref=e113]:
+                  - generic [ref=e114]: 0 dari 6 bulan
+                  - generic [ref=e115]: 0%
+                - progressbar [ref=e116]: x
+              - generic [ref=e119]:
+                - generic [ref=e120]:
+                  - img [ref=e121]
+                  - text: Mulai Apr 2026
+                - generic [ref=e123]: · Jatuh tempo tgl 1
+                - generic [ref=e124]: · Sisa 6 bulan
+                - generic [ref=e125]: · BCA
+  - alert [ref=e126]

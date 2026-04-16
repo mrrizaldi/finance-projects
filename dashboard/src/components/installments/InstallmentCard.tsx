@@ -3,7 +3,6 @@
 import { Installment } from '@/types';
 import { formatRupiah, formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
-import { CreditCard, Calendar, CheckCircle2, PauseCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress, ProgressTrack, ProgressIndicator } from '@/components/ui/progress';
@@ -32,12 +31,7 @@ export default function InstallmentCard({ inst, onClick }: Props) {
   const progress = inst.total_months > 0 ? (inst.paid_months / inst.total_months) * 100 : 0;
   const remaining = inst.total_months - inst.paid_months;
 
-  // Parse schedule for next due amount
-  let nextAmount = inst.monthly_amount;
-  if (inst.schedule && inst.paid_months < inst.total_months) {
-    const amounts = inst.schedule.split(',').map(Number);
-    nextAmount = amounts[inst.paid_months] ?? inst.monthly_amount;
-  }
+  const nextAmount = Number(inst.next_amount ?? inst.monthly_amount);
 
   const indicatorColor = inst.status === 'completed' ? 'bg-emerald-500' : 'bg-blue-500';
 
@@ -51,25 +45,12 @@ export default function InstallmentCard({ inst, onClick }: Props) {
       <CardContent className="p-4">
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-start gap-3">
-            <div className={cn(
-              'p-2 rounded-lg flex-shrink-0',
-              inst.status === 'completed' ? 'bg-emerald-50' : 'bg-blue-50'
-            )}>
-              {inst.status === 'completed'
-                ? <CheckCircle2 className="h-5 w-5 text-emerald-600" />
-                : inst.status === 'paused'
-                  ? <PauseCircle className="h-5 w-5 text-amber-500" />
-                  : <CreditCard className="h-5 w-5 text-blue-600" />
-              }
-            </div>
             <div>
               <p className="text-sm font-semibold text-foreground">{inst.name}</p>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <StatusBadge status={inst.status} />
                 {inst.category_name && (
-                  <span className="text-xs text-muted-foreground">
-                    {inst.category_icon} {inst.category_name}
-                  </span>
+                  <span className="text-xs text-muted-foreground">{inst.category_name}</span>
                 )}
               </div>
             </div>
@@ -94,11 +75,8 @@ export default function InstallmentCard({ inst, onClick }: Props) {
         </div>
 
         {/* Meta */}
-        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Calendar className="h-3 w-3" />
-            Mulai {formatDate(inst.start_date, 'MMM YYYY')}
-          </span>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+          <span>Mulai {formatDate(inst.start_date, 'MMM YYYY')}</span>
           {inst.due_day && (
             <span>· Jatuh tempo tgl {inst.due_day}</span>
           )}

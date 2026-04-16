@@ -1,0 +1,361 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e6]
+        - generic [ref=e9]: Finance
+      - paragraph [ref=e10]: Personal Dashboard
+    - navigation [ref=e12]:
+      - link "Overview" [ref=e13] [cursor=pointer]:
+        - /url: /
+        - img [ref=e14]
+        - text: Overview
+      - link "Transaksi" [ref=e19] [cursor=pointer]:
+        - /url: /transactions
+        - img [ref=e20]
+        - text: Transaksi
+      - link "Analitik" [ref=e23] [cursor=pointer]:
+        - /url: /analytics
+        - img [ref=e24]
+        - text: Analitik
+      - link "Insights AI" [ref=e26] [cursor=pointer]:
+        - /url: /insights
+        - img [ref=e27]
+        - text: Insights AI
+      - link "Budget" [ref=e29] [cursor=pointer]:
+        - /url: /budget
+        - img [ref=e30]
+        - text: Budget
+      - link "Cicilan" [ref=e34] [cursor=pointer]:
+        - /url: /installments
+        - img [ref=e35]
+        - text: Cicilan
+      - link "Pengaturan" [ref=e37] [cursor=pointer]:
+        - /url: /settings
+        - img [ref=e38]
+        - text: Pengaturan
+    - paragraph [ref=e42]: "@aldi_monman_bot"
+  - main [ref=e43]:
+    - generic [ref=e44]:
+      - generic [ref=e45]:
+        - heading "Transaksi" [level=1] [ref=e46]
+        - paragraph [ref=e47]: 35 transaksi ditemukan
+      - generic [ref=e50]:
+        - generic [ref=e51]:
+          - img [ref=e52]
+          - textbox "Cari deskripsi, merchant..." [ref=e55]
+        - generic [ref=e56]:
+          - combobox [ref=e57] [cursor=pointer]:
+            - generic [ref=e59]: Semua tipe
+            - img: ▼
+          - textbox [ref=e60]
+          - combobox [ref=e61] [cursor=pointer]:
+            - generic [ref=e63]: Semua kategori
+            - img: ▼
+          - textbox [ref=e64]
+          - combobox [ref=e65] [cursor=pointer]:
+            - generic [ref=e67]: Semua akun
+            - img: ▼
+          - textbox [ref=e68]
+          - generic [ref=e69]:
+            - textbox [ref=e70]
+            - generic [ref=e71]: "-"
+            - textbox [ref=e72]
+      - generic [ref=e73]:
+        - generic [ref=e74]:
+          - generic [ref=e75]: +Rp 1.370.314
+          - generic [ref=e76]: "-Rp 687.943"
+        - generic [ref=e77]:
+          - generic [ref=e78]: "Urut:"
+          - combobox [ref=e79]:
+            - option "Tanggal ↓" [selected]
+            - option "Tanggal ↑"
+            - option "Jumlah ↓"
+            - option "Jumlah ↑"
+      - generic [ref=e80]:
+        - generic [ref=e81] [cursor=pointer]:
+          - generic [ref=e82]: 📦
+          - generic [ref=e83]:
+            - paragraph [ref=e84]: "BSI - ; width: 100%; max-width: 600px; background-color: #ffffff; border-spacing: 0; font-family: sans-ser"
+            - paragraph [ref=e85]:
+              - generic [ref=e86]: Lainnya (Income)
+              - generic [ref=e87]: ·
+              - generic [ref=e88]: BSI
+              - generic [ref=e89]: ·
+              - generic [ref=e90]: 09 Apr 2026, 21:55
+          - paragraph [ref=e92]: +Rp 116.000
+        - generic [ref=e93] [cursor=pointer]:
+          - generic [ref=e94]: ⚽
+          - generic [ref=e95]:
+            - paragraph [ref=e96]: beli u-lock sepeda
+            - paragraph [ref=e97]:
+              - generic [ref=e98]: Olahraga
+              - generic [ref=e99]: ·
+              - generic [ref=e100]: –
+              - generic [ref=e101]: ·
+              - generic [ref=e102]: 09 Apr 2026, 16:53
+          - paragraph [ref=e104]: "-Rp 184.800"
+        - generic [ref=e105] [cursor=pointer]:
+          - generic [ref=e106]: ⚽
+          - generic [ref=e107]:
+            - paragraph [ref=e108]: beli paddock sepeda
+            - paragraph [ref=e109]:
+              - generic [ref=e110]: Olahraga
+              - generic [ref=e111]: ·
+              - generic [ref=e112]: –
+              - generic [ref=e113]: ·
+              - generic [ref=e114]: 09 Apr 2026, 16:25
+          - paragraph [ref=e116]: "-Rp 59.000"
+        - generic [ref=e117] [cursor=pointer]:
+          - generic [ref=e118]: 💸
+          - generic [ref=e119]:
+            - paragraph [ref=e120]: Cicilan Cash Kredivo (1/8)
+            - paragraph [ref=e121]:
+              - generic [ref=e122]: –
+              - generic [ref=e123]: ·
+              - generic [ref=e124]: BCA
+              - generic [ref=e125]: ·
+              - generic [ref=e126]: 09 Apr 2026, 11:06
+          - paragraph [ref=e128]: "-Rp 78.440"
+        - generic [ref=e129] [cursor=pointer]:
+          - generic [ref=e130]: 🍔
+          - generic [ref=e131]:
+            - paragraph [ref=e132]: dimsum keju
+            - paragraph [ref=e133]:
+              - generic [ref=e134]: Makanan & Minuman
+              - generic [ref=e135]: ·
+              - generic [ref=e136]: BCA
+              - generic [ref=e137]: ·
+              - generic [ref=e138]: 08 Apr 2026, 19:21
+          - paragraph [ref=e140]: "-Rp 18.000"
+        - generic [ref=e141] [cursor=pointer]:
+          - generic [ref=e142]: 💸
+          - generic [ref=e143]:
+            - paragraph [ref=e144]: Tarik ATM BCA
+            - paragraph [ref=e145]:
+              - generic [ref=e146]: –
+              - generic [ref=e147]: ·
+              - generic [ref=e148]: BCA
+              - generic [ref=e149]: ·
+              - generic [ref=e150]: 08 Apr 2026, 16:04
+          - paragraph [ref=e152]: "-Rp 50.000"
+        - generic [ref=e153] [cursor=pointer]:
+          - generic [ref=e154]: 💰
+          - generic [ref=e155]:
+            - paragraph [ref=e156]: Tarik ATM BCA
+            - paragraph [ref=e157]:
+              - generic [ref=e158]: –
+              - generic [ref=e159]: ·
+              - generic [ref=e160]: Cash
+              - generic [ref=e161]: ·
+              - generic [ref=e162]: 08 Apr 2026, 16:04
+          - paragraph [ref=e164]: +Rp 50.000
+        - generic [ref=e165] [cursor=pointer]:
+          - generic [ref=e166]: 🚗
+          - generic [ref=e167]:
+            - paragraph [ref=e168]: parkir royal
+            - paragraph [ref=e169]:
+              - generic [ref=e170]: Transportasi
+              - generic [ref=e171]: ·
+              - generic [ref=e172]: Cash
+              - generic [ref=e173]: ·
+              - generic [ref=e174]: 08 Apr 2026, 12:22
+          - paragraph [ref=e176]: "-Rp 5.000"
+        - generic [ref=e177] [cursor=pointer]:
+          - generic [ref=e178]: 🍔
+          - generic [ref=e179]:
+            - paragraph [ref=e180]: jajan pagi
+            - paragraph [ref=e181]:
+              - generic [ref=e182]: Makanan & Minuman
+              - generic [ref=e183]: ·
+              - generic [ref=e184]: Cash
+              - generic [ref=e185]: ·
+              - generic [ref=e186]: 08 Apr 2026, 09:04
+          - paragraph [ref=e188]: "-Rp 20.000"
+        - generic [ref=e189] [cursor=pointer]:
+          - generic [ref=e190]: 📁
+          - generic [ref=e191]:
+            - paragraph [ref=e192]: beli claude code api key
+            - paragraph [ref=e193]:
+              - generic [ref=e194]: Produktivitas dan Eksperimen
+              - generic [ref=e195]: ·
+              - generic [ref=e196]: BCA
+              - generic [ref=e197]: ·
+              - generic [ref=e198]: 08 Apr 2026, 04:55
+          - paragraph [ref=e200]: "-Rp 135.003"
+        - generic [ref=e201] [cursor=pointer]:
+          - generic [ref=e202]: 💰
+          - generic [ref=e203]:
+            - paragraph [ref=e204]: gaji bca
+            - paragraph [ref=e205]:
+              - generic [ref=e206]: Gaji
+              - generic [ref=e207]: ·
+              - generic [ref=e208]: BCA
+              - generic [ref=e209]: ·
+              - generic [ref=e210]: 07 Apr 2026, 10:34
+          - paragraph [ref=e212]: +Rp 751.448
+        - generic [ref=e213] [cursor=pointer]:
+          - generic [ref=e214]: 💳
+          - generic [ref=e215]:
+            - paragraph [ref=e216]: uang pegangan
+            - paragraph [ref=e217]:
+              - generic [ref=e218]: Transfer Masuk
+              - generic [ref=e219]: ·
+              - generic [ref=e220]: Cash
+              - generic [ref=e221]: ·
+              - generic [ref=e222]: 07 Apr 2026, 03:38
+          - paragraph [ref=e224]: +Rp 100.000
+        - generic [ref=e225] [cursor=pointer]:
+          - generic [ref=e226]: 🍔
+          - generic [ref=e227]:
+            - paragraph [ref=e228]: risol
+            - paragraph [ref=e229]:
+              - generic [ref=e230]: Makanan & Minuman
+              - generic [ref=e231]: ·
+              - generic [ref=e232]: Cash
+              - generic [ref=e233]: ·
+              - generic [ref=e234]: 06 Apr 2026, 17:00
+          - paragraph [ref=e236]: "-Rp 3.000"
+        - generic [ref=e237] [cursor=pointer]:
+          - generic [ref=e238]: 💰
+          - generic [ref=e239]:
+            - paragraph [ref=e240]: beasiswa djarum
+            - paragraph [ref=e241]:
+              - generic [ref=e242]: Beasiswa
+              - generic [ref=e243]: ·
+              - generic [ref=e244]: BSI
+              - generic [ref=e245]: ·
+              - generic [ref=e246]: 06 Apr 2026, 13:37
+          - paragraph [ref=e248]: +Rp 352.866
+        - generic [ref=e249] [cursor=pointer]:
+          - generic [ref=e250]: 🍔
+          - generic [ref=e251]:
+            - paragraph [ref=e252]: jajan pokpok
+            - paragraph [ref=e253]:
+              - generic [ref=e254]: Makanan & Minuman
+              - generic [ref=e255]: ·
+              - generic [ref=e256]: BCA
+              - generic [ref=e257]: ·
+              - generic [ref=e258]: 06 Apr 2026, 00:00
+          - paragraph [ref=e260]: "-Rp 20.000"
+        - generic [ref=e261] [cursor=pointer]:
+          - generic [ref=e262]: 🍔
+          - generic [ref=e263]:
+            - paragraph [ref=e264]: parkir royal
+            - paragraph [ref=e265]:
+              - generic [ref=e266]: Makanan & Minuman
+              - generic [ref=e267]: ·
+              - generic [ref=e268]: Cash
+              - generic [ref=e269]: ·
+              - generic [ref=e270]: 06 Apr 2026, 00:00
+          - paragraph [ref=e272]: "-Rp 5.000"
+        - generic [ref=e273] [cursor=pointer]:
+          - generic [ref=e274]: 🍔
+          - generic [ref=e275]:
+            - paragraph [ref=e276]: jajan otak otak
+            - paragraph [ref=e277]:
+              - generic [ref=e278]: Makanan & Minuman
+              - generic [ref=e279]: ·
+              - generic [ref=e280]: Cash
+              - generic [ref=e281]: ·
+              - generic [ref=e282]: 05 Apr 2026, 00:00
+          - paragraph [ref=e284]: "-Rp 10.000"
+        - generic [ref=e285] [cursor=pointer]:
+          - generic [ref=e286]: 🚗
+          - generic [ref=e287]:
+            - paragraph [ref=e288]: jajan indomaret
+            - paragraph [ref=e289]:
+              - generic [ref=e290]: Transportasi
+              - generic [ref=e291]: ·
+              - generic [ref=e292]: BCA
+              - generic [ref=e293]: ·
+              - generic [ref=e294]: 05 Apr 2026, 00:00
+          - paragraph [ref=e296]: "-Rp 10.900"
+        - generic [ref=e297] [cursor=pointer]:
+          - generic [ref=e298]: 🚗
+          - generic [ref=e299]:
+            - paragraph [ref=e300]: parkir wtc
+            - paragraph [ref=e301]:
+              - generic [ref=e302]: Transportasi
+              - generic [ref=e303]: ·
+              - generic [ref=e304]: Cash
+              - generic [ref=e305]: ·
+              - generic [ref=e306]: 05 Apr 2026, 00:00
+          - paragraph [ref=e308]: "-Rp 4.000"
+        - generic [ref=e309] [cursor=pointer]:
+          - generic [ref=e310]: 🚗
+          - generic [ref=e311]:
+            - paragraph [ref=e312]: parkir royal
+            - paragraph [ref=e313]:
+              - generic [ref=e314]: Transportasi
+              - generic [ref=e315]: ·
+              - generic [ref=e316]: Cash
+              - generic [ref=e317]: ·
+              - generic [ref=e318]: 05 Apr 2026, 00:00
+          - paragraph [ref=e320]: "-Rp 5.000"
+        - generic [ref=e321] [cursor=pointer]:
+          - generic [ref=e322]: 🚗
+          - generic [ref=e323]:
+            - paragraph [ref=e324]: parkir suryabaja
+            - paragraph [ref=e325]:
+              - generic [ref=e326]: Transportasi
+              - generic [ref=e327]: ·
+              - generic [ref=e328]: Cash
+              - generic [ref=e329]: ·
+              - generic [ref=e330]: 05 Apr 2026, 00:00
+          - paragraph [ref=e332]: "-Rp 3.000"
+        - generic [ref=e333] [cursor=pointer]:
+          - generic [ref=e334]: 🍔
+          - generic [ref=e335]:
+            - paragraph [ref=e336]: jajan indomaret
+            - paragraph [ref=e337]:
+              - generic [ref=e338]: Makanan & Minuman
+              - generic [ref=e339]: ·
+              - generic [ref=e340]: BCA
+              - generic [ref=e341]: ·
+              - generic [ref=e342]: 05 Apr 2026, 00:00
+          - paragraph [ref=e344]: "-Rp 10.600"
+        - generic [ref=e345] [cursor=pointer]:
+          - generic [ref=e346]: ⚽
+          - generic [ref=e347]:
+            - paragraph [ref=e348]: iuran badminton
+            - paragraph [ref=e349]:
+              - generic [ref=e350]: Olahraga
+              - generic [ref=e351]: ·
+              - generic [ref=e352]: BCA
+              - generic [ref=e353]: ·
+              - generic [ref=e354]: 04 Apr 2026, 17:00
+          - paragraph [ref=e356]: "-Rp 32.000"
+        - generic [ref=e357] [cursor=pointer]:
+          - generic [ref=e358]: 🍔
+          - generic [ref=e359]:
+            - paragraph [ref=e360]: jajan indomaret
+            - paragraph [ref=e361]:
+              - generic [ref=e362]: Makanan & Minuman
+              - generic [ref=e363]: ·
+              - generic [ref=e364]: BCA
+              - generic [ref=e365]: ·
+              - generic [ref=e366]: 03 Apr 2026, 00:00
+          - paragraph [ref=e368]: "-Rp 21.200"
+        - generic [ref=e369] [cursor=pointer]:
+          - generic [ref=e370]: ⚽
+          - generic [ref=e371]:
+            - paragraph [ref=e372]: iuran badminton
+            - paragraph [ref=e373]:
+              - generic [ref=e374]: Olahraga
+              - generic [ref=e375]: ·
+              - generic [ref=e376]: BCA
+              - generic [ref=e377]: ·
+              - generic [ref=e378]: 03 Apr 2026, 00:00
+          - paragraph [ref=e380]: "-Rp 13.000"
+      - generic [ref=e381]:
+        - paragraph [ref=e382]: Halaman 1 dari 2
+        - generic [ref=e383]:
+          - img [ref=e385]
+          - link "1" [ref=e387] [cursor=pointer]:
+            - /url: /transactions?page=1
+          - link "2" [ref=e388] [cursor=pointer]:
+            - /url: /transactions?page=2
+          - link [ref=e389] [cursor=pointer]:
+            - /url: /transactions?page=2
+            - img [ref=e390]

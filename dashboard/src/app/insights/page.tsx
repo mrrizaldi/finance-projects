@@ -2,7 +2,6 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from '@/types';
-import { Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -20,7 +19,7 @@ export default function InsightsPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: 'Halo! Saya asisten keuangan kamu 👋\n\nSaya sudah punya akses ke data transaksi, saldo, dan kategori pengeluaran bulan ini. Mau tanya apa?',
+      content: 'Halo! Saya asisten keuangan kamu.\n\nSaya sudah punya akses ke data transaksi, saldo, dan kategori pengeluaran bulan ini. Mau tanya apa?',
     },
   ]);
   const [input, setInput] = useState('');
@@ -76,11 +75,10 @@ export default function InsightsPage() {
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="flex flex-col h-[calc(100dvh-3.5rem)] lg:h-screen">
       {/* Header */}
       <div className="px-6 py-5 border-b border-border bg-background flex-shrink-0">
         <div className="flex items-center gap-2">
-          <Sparkles className="h-5 w-5 text-violet-500" />
           <h1 className="text-xl font-bold text-foreground">Insights AI</h1>
         </div>
         <p className="text-muted-foreground text-sm mt-1">Tanya apa saja tentang keuangan kamu</p>
@@ -109,22 +107,10 @@ export default function InsightsPage() {
           <div
             key={i}
             className={cn(
-              'flex gap-3 max-w-3xl',
-              msg.role === 'user' ? 'ml-auto flex-row-reverse' : ''
+              'flex max-w-3xl',
+              msg.role === 'user' ? 'ml-auto' : ''
             )}
           >
-            {/* Avatar */}
-            <div className={cn(
-              'w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5',
-              msg.role === 'user' ? 'bg-blue-600' : 'bg-violet-100'
-            )}>
-              {msg.role === 'user'
-                ? <User className="h-3.5 w-3.5 text-white" />
-                : <Bot className="h-3.5 w-3.5 text-violet-600" />
-              }
-            </div>
-
-            {/* Bubble */}
             <div
               className={cn(
                 'rounded-2xl px-4 py-3 text-sm leading-relaxed max-w-lg whitespace-pre-wrap',
@@ -140,12 +126,9 @@ export default function InsightsPage() {
 
         {/* Loading indicator */}
         {loading && (
-          <div className="flex gap-3 max-w-3xl">
-            <div className="w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5 bg-violet-100">
-              <Bot className="h-3.5 w-3.5 text-violet-600" />
-            </div>
-            <Card className="rounded-2xl rounded-tl-sm px-4 py-3">
-              <Loader2 className="h-4 w-4 text-muted-foreground animate-spin" />
+          <div className="flex max-w-3xl">
+            <Card className="rounded-2xl rounded-tl-sm px-4 py-3 text-sm text-muted-foreground">
+              Memproses...
             </Card>
           </div>
         )}
@@ -170,9 +153,9 @@ export default function InsightsPage() {
           <Button
             type="submit"
             disabled={!input.trim() || loading}
-            className="p-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl flex-shrink-0 h-auto"
+            className="px-4 py-3 bg-violet-600 hover:bg-violet-700 text-white rounded-xl flex-shrink-0 h-auto"
           >
-            <Send className="h-4 w-4" />
+            Kirim
           </Button>
         </form>
         <p className="text-xs text-muted-foreground mt-2 text-center">

@@ -19,25 +19,26 @@ export default function TransactionRow({ tx, onClick }: Props) {
       )}
       onClick={onClick}
     >
-      {/* Icon / Emoji */}
       <div
         className={cn(
-          'w-9 h-9 rounded-full flex items-center justify-center text-sm flex-shrink-0',
-          isIncome ? 'bg-emerald-100' : isTransfer ? 'bg-blue-100' : 'bg-red-100'
+          'w-2.5 h-2.5 rounded-full flex-shrink-0',
+          isIncome ? 'bg-emerald-500' : isTransfer ? 'bg-blue-500' : 'bg-red-500'
         )}
-      >
-        {tx.category_icon || (isIncome ? '💰' : isTransfer ? '↔️' : '💸')}
-      </div>
+      />
 
       {/* Description + meta */}
       <div className="flex-1 min-w-0">
         <p className="text-sm font-medium text-foreground truncate">
           {tx.description || tx.merchant || TRANSACTION_TYPE_LABEL[tx.type]}
         </p>
-        <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+        <p className="text-xs text-muted-foreground mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5">
           <span>{tx.category_name || '–'}</span>
           <span>·</span>
-          <span>{tx.account_name || '–'}</span>
+          {tx.installment_name ? (
+            <span className="text-purple-400">Cicilan · {tx.installment_name}</span>
+          ) : (
+            <span>{tx.account_name || '–'}</span>
+          )}
           {tx.to_account_name && (
             <>
               <span>→</span>
@@ -59,6 +60,13 @@ export default function TransactionRow({ tx, onClick }: Props) {
         >
           {isIncome ? '+' : isTransfer ? '' : '-'}
           {formatRupiah(tx.amount)}
+        </p>
+        <p className="text-[11px] text-muted-foreground mt-0.5">
+          {tx.is_adjustment
+            ? 'Adjustment'
+            : tx.balance_after == null
+              ? 'Saldo: –'
+              : `Saldo: ${formatRupiah(tx.balance_after)}`}
         </p>
       </div>
     </div>

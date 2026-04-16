@@ -1,0 +1,103 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img [ref=e7]
+          - generic [ref=e10]: Finance
+        - paragraph [ref=e11]: Personal Dashboard
+      - navigation [ref=e13]:
+        - link "Overview" [ref=e14] [cursor=pointer]:
+          - /url: /
+          - img [ref=e15]
+          - text: Overview
+        - link "Transaksi" [ref=e20] [cursor=pointer]:
+          - /url: /transactions
+          - img [ref=e21]
+          - text: Transaksi
+        - link "Analitik" [ref=e24] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=e25]
+          - text: Analitik
+        - link "Insights AI" [ref=e27] [cursor=pointer]:
+          - /url: /insights
+          - img [ref=e28]
+          - text: Insights AI
+        - link "Budget" [ref=e30] [cursor=pointer]:
+          - /url: /budget
+          - img [ref=e31]
+          - text: Budget
+        - link "Cicilan" [ref=e35] [cursor=pointer]:
+          - /url: /installments
+          - img [ref=e36]
+          - text: Cicilan
+        - link "Pengaturan" [ref=e38] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e39]
+          - text: Pengaturan
+      - paragraph [ref=e43]: "@aldi_monman_bot"
+  - main [ref=e44]:
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - heading "Cicilan" [level=1] [ref=e47]
+        - paragraph [ref=e48]: Kelola semua cicilan aktif kamu
+      - generic [ref=e49]:
+        - generic [ref=e51]:
+          - paragraph [ref=e52]: Cicilan Aktif
+          - paragraph [ref=e53]: "2"
+        - generic [ref=e55]:
+          - paragraph [ref=e56]: Bulan Ini
+          - paragraph [ref=e57]: Rp 1.867.833
+        - generic [ref=e59]:
+          - paragraph [ref=e60]: Total Sisa
+          - paragraph [ref=e61]: Rp 8.469.540
+        - generic [ref=e63]:
+          - paragraph [ref=e64]: Sudah Lunas
+          - paragraph [ref=e65]: "0"
+      - generic [ref=e66]:
+        - heading "Cicilan Aktif (2)" [level=2] [ref=e67]
+        - generic [ref=e68]:
+          - generic [ref=e70] [cursor=pointer]:
+            - generic [ref=e71]:
+              - generic [ref=e72]:
+                - img [ref=e74]
+                - generic [ref=e76]:
+                  - paragraph [ref=e77]: Cash Kredivo
+                  - generic [ref=e79]: Aktif
+              - generic [ref=e80]:
+                - paragraph [ref=e81]: Rp 78.440
+                - paragraph [ref=e82]: /bulan
+            - generic [ref=e83]:
+              - generic [ref=e84]:
+                - generic [ref=e85]: 1 dari 8 bulan
+                - generic [ref=e86]: 13%
+              - progressbar [ref=e87]: x
+            - generic [ref=e92]:
+              - generic [ref=e93]:
+                - img [ref=e94]
+                - text: Mulai Apr 2026
+              - generic [ref=e96]: · Jatuh tempo tgl 14
+              - generic [ref=e97]: · Sisa 7 bulan
+              - generic [ref=e98]: · BCA
+          - generic [ref=e100] [cursor=pointer]:
+            - generic [ref=e101]:
+              - generic [ref=e102]:
+                - img [ref=e104]
+                - generic [ref=e106]:
+                  - paragraph [ref=e107]: SPayLater
+                  - generic [ref=e109]: Aktif
+              - generic [ref=e110]:
+                - paragraph [ref=e111]: Rp 1.789.393
+                - paragraph [ref=e112]: /bulan
+            - generic [ref=e113]:
+              - generic [ref=e114]:
+                - generic [ref=e115]: 0 dari 6 bulan
+                - generic [ref=e116]: 0%
+              - progressbar [ref=e117]: x
+            - generic [ref=e120]:
+              - generic [ref=e121]:
+                - img [ref=e122]
+                - text: Mulai Apr 2026
+              - generic [ref=e124]: · Jatuh tempo tgl 1
+              - generic [ref=e125]: · Sisa 6 bulan
+              - generic [ref=e126]: · BCA

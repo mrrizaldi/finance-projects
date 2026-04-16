@@ -1,0 +1,64 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - generic [ref=e6]:
+            - img [ref=e7]
+            - generic [ref=e10]: Finance
+          - paragraph [ref=e11]: Personal Dashboard
+        - navigation [ref=e13]:
+          - link "Overview" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - text: Overview
+          - link "Transaksi" [ref=e20] [cursor=pointer]:
+            - /url: /transactions
+            - img [ref=e21]
+            - text: Transaksi
+          - link "Analitik" [ref=e24] [cursor=pointer]:
+            - /url: /analytics
+            - img [ref=e25]
+            - text: Analitik
+          - link "Insights AI" [ref=e27] [cursor=pointer]:
+            - /url: /insights
+            - img [ref=e28]
+            - text: Insights AI
+          - link "Budget" [ref=e30] [cursor=pointer]:
+            - /url: /budget
+            - img [ref=e31]
+            - text: Budget
+          - link "Cicilan" [ref=e35] [cursor=pointer]:
+            - /url: /installments
+            - img [ref=e36]
+            - text: Cicilan
+          - link "Pengaturan" [ref=e38] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e39]
+            - text: Pengaturan
+        - paragraph [ref=e43]: "@aldi_monman_bot"
+    - main [ref=e44]:
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - generic [ref=e47]:
+            - img [ref=e48]
+            - heading "Insights AI" [level=1] [ref=e50]
+          - paragraph [ref=e51]: Tanya apa saja tentang keuangan kamu
+        - generic [ref=e52]:
+          - generic [ref=e53]:
+            - button "Gimana kondisi keuangan bulan ini?" [ref=e54] [cursor=pointer]
+            - button "Di mana pengeluaran terbesar saya?" [ref=e55] [cursor=pointer]
+            - button "Berikan tips hemat berdasarkan data saya" [ref=e56] [cursor=pointer]
+            - button "Bandingkan pemasukan vs pengeluaran" [ref=e57] [cursor=pointer]
+            - button "Kategori mana yang paling boros?" [ref=e58] [cursor=pointer]
+            - button "Apakah saya sudah on track dengan budget?" [ref=e59] [cursor=pointer]
+          - generic [ref=e60]:
+            - img [ref=e62]
+            - generic [ref=e65]: Halo! Saya asisten keuangan kamu 👋 Saya sudah punya akses ke data transaksi, saldo, dan kategori pengeluaran bulan ini. Mau tanya apa?
+        - generic [ref=e66]:
+          - generic [ref=e67]:
+            - textbox "Tanya tentang keuangan kamu... (Enter untuk kirim)" [ref=e68]
+            - button [disabled]:
+              - img
+          - paragraph [ref=e69]: Powered by GPT-4o Mini · Data diambil real-time dari Supabase
+  - alert [ref=e70]

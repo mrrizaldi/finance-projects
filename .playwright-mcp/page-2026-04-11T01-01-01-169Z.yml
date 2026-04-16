@@ -1,0 +1,269 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - generic [ref=e6]:
+            - img [ref=e7]
+            - generic [ref=e10]: Finance
+          - paragraph [ref=e11]: Personal Dashboard
+        - navigation [ref=e13]:
+          - link "Overview" [ref=e14] [cursor=pointer]:
+            - /url: /
+            - img [ref=e15]
+            - text: Overview
+          - link "Transaksi" [ref=e20] [cursor=pointer]:
+            - /url: /transactions
+            - img [ref=e21]
+            - text: Transaksi
+          - link "Analitik" [ref=e24] [cursor=pointer]:
+            - /url: /analytics
+            - img [ref=e25]
+            - text: Analitik
+          - link "Insights AI" [ref=e27] [cursor=pointer]:
+            - /url: /insights
+            - img [ref=e28]
+            - text: Insights AI
+          - link "Budget" [ref=e30] [cursor=pointer]:
+            - /url: /budget
+            - img [ref=e31]
+            - text: Budget
+          - link "Cicilan" [ref=e35] [cursor=pointer]:
+            - /url: /installments
+            - img [ref=e36]
+            - text: Cicilan
+          - link "Pengaturan" [ref=e38] [cursor=pointer]:
+            - /url: /settings
+            - img [ref=e39]
+            - text: Pengaturan
+        - paragraph [ref=e43]: "@aldi_monman_bot"
+    - main [ref=e44]:
+      - generic [ref=e45]:
+        - generic [ref=e46]:
+          - heading "Overview" [level=1] [ref=e47]
+          - paragraph [ref=e48]: Ringkasan keuangan bulan ini
+        - generic [ref=e49]:
+          - generic [ref=e51]:
+            - img [ref=e53]
+            - generic [ref=e56]:
+              - paragraph [ref=e57]: Total Pemasukan
+              - paragraph [ref=e58]: Rp 1.278.314
+              - paragraph [ref=e59]: 41 transaksi bulan ini
+          - generic [ref=e61]:
+            - img [ref=e63]
+            - generic [ref=e66]:
+              - paragraph [ref=e67]: Total Pengeluaran
+              - paragraph [ref=e68]: Rp 1.014.151
+              - paragraph [ref=e69]: "Terbesar: Makanan & Minuman"
+          - generic [ref=e71]:
+            - img [ref=e73]
+            - generic [ref=e76]:
+              - paragraph [ref=e77]: Net Cashflow
+              - paragraph [ref=e78]: Rp 264.163
+              - paragraph [ref=e79]: ▲ Surplus bulan ini
+        - generic [ref=e80]:
+          - generic [ref=e82]:
+            - paragraph [ref=e83]: Avg. harian
+            - paragraph [ref=e84]: Rp 34.971
+          - generic [ref=e86]:
+            - paragraph [ref=e87]: Kategori terbesar
+            - paragraph [ref=e88]: Makanan & Minuman
+          - generic [ref=e90]:
+            - paragraph [ref=e91]: Pengeluaran top
+            - paragraph [ref=e92]: Rp 328.600
+          - generic [ref=e94]:
+            - paragraph [ref=e95]: Total transaksi
+            - paragraph [ref=e96]: "41"
+        - generic [ref=e97]:
+          - generic [ref=e98]:
+            - generic [ref=e100]: Cashflow 6 Bulan Terakhir
+            - generic [ref=e103]:
+              - list [ref=e105]:
+                - listitem [ref=e106]:
+                  - img "Pengeluaran legend icon" [ref=e107]
+                  - text: Pengeluaran
+                - listitem [ref=e109]:
+                  - img "Pemasukan legend icon" [ref=e110]
+                  - text: Pemasukan
+                - listitem [ref=e112]:
+                  - img "Net legend icon" [ref=e113]
+                  - text: Net
+              - application [ref=e115]:
+                - generic [ref=e152]:
+                  - generic [ref=e153]:
+                    - generic [ref=e155]: Nov 2025
+                    - generic [ref=e157]: Dec 2025
+                    - generic [ref=e159]: Jan 2026
+                    - generic [ref=e161]: Feb 2026
+                    - generic [ref=e163]: Mar 2026
+                    - generic [ref=e165]: Apr 2026
+                  - generic [ref=e166]:
+                    - generic [ref=e168]: "-0.5jt"
+                    - generic [ref=e170]: 0.0jt
+                    - generic [ref=e172]: 0.5jt
+                    - generic [ref=e174]: 0.9jt
+                    - generic [ref=e176]: 1.4jt
+          - generic [ref=e177]:
+            - generic [ref=e179]: Pengeluaran per Kategori
+            - generic [ref=e182]:
+              - list [ref=e184]:
+                - listitem [ref=e185]:
+                  - img "🍔 Makanan & Minuman legend icon" [ref=e186]
+                  - text: 🍔 Makanan & Minuman
+                - listitem [ref=e188]:
+                  - img "⚽ Olahraga legend icon" [ref=e189]
+                  - text: ⚽ Olahraga
+                - listitem [ref=e191]:
+                  - img "📁 Produktivitas dan Eksperimen legend icon" [ref=e192]
+                  - text: 📁 Produktivitas dan Eksperimen
+                - listitem [ref=e194]:
+                  - img "📄 Tagihan & Utilitas legend icon" [ref=e195]
+                  - text: 📄 Tagihan & Utilitas
+                - listitem [ref=e197]:
+                  - img "🚗 Transportasi legend icon" [ref=e198]
+                  - text: 🚗 Transportasi
+              - application [ref=e200]:
+                - generic [ref=e219]:
+                  - generic [ref=e221]: 34%
+                  - generic [ref=e223]: 33%
+                  - generic [ref=e225]: 14%
+                  - generic [ref=e227]: 11%
+                  - generic [ref=e229]: 8%
+        - generic [ref=e230]:
+          - generic [ref=e231]:
+            - heading "Transaksi Terbaru" [level=2] [ref=e232]
+            - link "Lihat semua →" [ref=e233] [cursor=pointer]:
+              - /url: /transactions
+          - generic [ref=e234]:
+            - generic [ref=e235]:
+              - generic [ref=e236]: 🍔
+              - generic [ref=e237]:
+                - paragraph [ref=e238]: BCA - POK POK ROYAL BELAKANG 6
+                - paragraph [ref=e239]:
+                  - generic [ref=e240]: Makanan & Minuman
+                  - generic [ref=e241]: ·
+                  - generic [ref=e242]: BCA
+                  - generic [ref=e243]: ·
+                  - generic [ref=e244]: 10 Apr 2026, 15:48
+              - generic [ref=e245]:
+                - paragraph [ref=e246]: "-Rp 20.000"
+                - paragraph [ref=e247]: "Saldo: Rp 462.000"
+            - generic [ref=e248]:
+              - generic [ref=e249]: 💳
+              - generic [ref=e250]:
+                - paragraph [ref=e251]: patungan makan gacoan
+                - paragraph [ref=e252]:
+                  - generic [ref=e253]: Transfer Masuk
+                  - generic [ref=e254]: ·
+                  - generic [ref=e255]: BCA
+                  - generic [ref=e256]: ·
+                  - generic [ref=e257]: 10 Apr 2026, 14:55
+              - generic [ref=e258]:
+                - paragraph [ref=e259]: +Rp 24.000
+                - paragraph [ref=e260]: "Saldo: Rp 350.997"
+            - generic [ref=e261]:
+              - generic [ref=e262]: 🚗
+              - generic [ref=e263]:
+                - paragraph [ref=e264]: parkir masjid
+                - paragraph [ref=e265]:
+                  - generic [ref=e266]: Transportasi
+                  - generic [ref=e267]: ·
+                  - generic [ref=e268]: Cash
+                  - generic [ref=e269]: ·
+                  - generic [ref=e270]: 10 Apr 2026, 14:54
+              - generic [ref=e271]:
+                - paragraph [ref=e272]: "-Rp 2.000"
+                - paragraph [ref=e273]: "Saldo: Rp 74.000"
+            - generic [ref=e274]:
+              - generic [ref=e275]: 💸
+              - generic [ref=e276]:
+                - paragraph [ref=e277]: Balance adjustment BCA
+                - paragraph [ref=e278]:
+                  - generic [ref=e279]: –
+                  - generic [ref=e280]: ·
+                  - generic [ref=e281]: BCA
+                  - generic [ref=e282]: ·
+                  - generic [ref=e283]: 10 Apr 2026, 12:17
+              - generic [ref=e284]:
+                - paragraph [ref=e285]: "-Rp 121.443"
+                - paragraph [ref=e286]: Adjustment
+            - generic [ref=e287]:
+              - generic [ref=e288]: 💰
+              - generic [ref=e289]:
+                - paragraph [ref=e290]: Balance adjustment BSI
+                - paragraph [ref=e291]:
+                  - generic [ref=e292]: –
+                  - generic [ref=e293]: ·
+                  - generic [ref=e294]: BSI
+                  - generic [ref=e295]: ·
+                  - generic [ref=e296]: 10 Apr 2026, 12:17
+              - generic [ref=e297]:
+                - paragraph [ref=e298]: +Rp 84.000
+                - paragraph [ref=e299]: Adjustment
+            - generic [ref=e300]:
+              - generic [ref=e301]: 🚗
+              - generic [ref=e302]:
+                - paragraph [ref=e303]: parkir wtc
+                - paragraph [ref=e304]:
+                  - generic [ref=e305]: Transportasi
+                  - generic [ref=e306]: ·
+                  - generic [ref=e307]: Cash
+                  - generic [ref=e308]: ·
+                  - generic [ref=e309]: 10 Apr 2026, 09:23
+              - generic [ref=e310]:
+                - paragraph [ref=e311]: "-Rp 4.000"
+                - paragraph [ref=e312]: "Saldo: –"
+            - generic [ref=e313]:
+              - generic [ref=e314]: 🍔
+              - generic [ref=e315]:
+                - paragraph [ref=e316]: jajan chatime
+                - paragraph [ref=e317]:
+                  - generic [ref=e318]: Makanan & Minuman
+                  - generic [ref=e319]: ·
+                  - generic [ref=e320]: 📋 SPayLater
+                  - generic [ref=e321]: ·
+                  - generic [ref=e322]: 10 Apr 2026, 00:00
+              - generic [ref=e323]:
+                - paragraph [ref=e324]: "-Rp 25.000"
+                - paragraph [ref=e325]: "Saldo: –"
+            - generic [ref=e326]:
+              - generic [ref=e327]: ⚽
+              - generic [ref=e328]:
+                - paragraph [ref=e329]: beli u-lock sepeda
+                - paragraph [ref=e330]:
+                  - generic [ref=e331]: Olahraga
+                  - generic [ref=e332]: ·
+                  - generic [ref=e333]: 📋 SPayLater
+                  - generic [ref=e334]: ·
+                  - generic [ref=e335]: 09 Apr 2026, 16:53
+              - generic [ref=e336]:
+                - paragraph [ref=e337]: "-Rp 184.800"
+                - paragraph [ref=e338]: "Saldo: –"
+            - generic [ref=e339]:
+              - generic [ref=e340]: ⚽
+              - generic [ref=e341]:
+                - paragraph [ref=e342]: beli paddock sepeda
+                - paragraph [ref=e343]:
+                  - generic [ref=e344]: Olahraga
+                  - generic [ref=e345]: ·
+                  - generic [ref=e346]: 📋 SPayLater
+                  - generic [ref=e347]: ·
+                  - generic [ref=e348]: 09 Apr 2026, 16:25
+              - generic [ref=e349]:
+                - paragraph [ref=e350]: "-Rp 59.000"
+                - paragraph [ref=e351]: "Saldo: –"
+            - generic [ref=e352]:
+              - generic [ref=e353]: 🍔
+              - generic [ref=e354]:
+                - paragraph [ref=e355]: "BSI - ; width: 100%; max-width: 600px; background-color: #ffffff; border-spacing: 0; font-family: sans-ser"
+                - paragraph [ref=e356]:
+                  - generic [ref=e357]: Makanan & Minuman
+                  - generic [ref=e358]: ·
+                  - generic [ref=e359]: BSI
+                  - generic [ref=e360]: ·
+                  - generic [ref=e361]: 09 Apr 2026, 14:55
+              - generic [ref=e362]:
+                - paragraph [ref=e363]: "-Rp 116.000"
+                - paragraph [ref=e364]: "Saldo: Rp 191.966"
+  - alert [ref=e365]
+  - generic [ref=e366]: "-0.5jt"

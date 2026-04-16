@@ -1,0 +1,60 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - generic [ref=e6]: Finance
+          - paragraph [ref=e7]: Personal Dashboard
+        - navigation [ref=e9]:
+          - link "Overview" [ref=e10] [cursor=pointer]:
+            - /url: /
+          - link "Transaksi" [ref=e11] [cursor=pointer]:
+            - /url: /transactions
+          - link "Analitik" [ref=e12] [cursor=pointer]:
+            - /url: /analytics
+          - link "Insights AI" [ref=e13] [cursor=pointer]:
+            - /url: /insights
+          - link "Budget" [ref=e14] [cursor=pointer]:
+            - /url: /budget
+          - link "Cicilan" [ref=e15] [cursor=pointer]:
+            - /url: /installments
+          - link "Pengaturan" [ref=e16] [cursor=pointer]:
+            - /url: /settings
+        - paragraph [ref=e18]: "@aldi_monman_bot"
+    - main [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - heading "Transaksi" [level=1] [ref=e22]
+          - paragraph [ref=e23]: 0 transaksi ditemukan
+        - generic [ref=e26]:
+          - textbox "Cari deskripsi, merchant..." [ref=e28]
+          - generic [ref=e29]:
+            - combobox [ref=e30] [cursor=pointer]:
+              - generic [ref=e32]: Semua tipe
+              - img: ▼
+            - textbox [ref=e33]
+            - combobox [ref=e34] [cursor=pointer]:
+              - generic [ref=e36]: Semua kategori
+              - img: ▼
+            - textbox [ref=e37]
+            - combobox [ref=e38] [cursor=pointer]:
+              - generic [ref=e40]: Semua akun
+              - img: ▼
+            - textbox [ref=e41]
+            - generic [ref=e42]:
+              - textbox [ref=e43]
+              - generic [ref=e44]: "-"
+              - textbox [ref=e45]
+        - generic [ref=e46]:
+          - generic [ref=e47]:
+            - generic [ref=e48]: +Rp 0
+            - generic [ref=e49]: "-Rp 0"
+          - generic [ref=e50]:
+            - generic [ref=e51]: "Urut:"
+            - combobox [ref=e52]:
+              - option "Tanggal ↓" [selected]
+              - option "Tanggal ↑"
+              - option "Jumlah ↓"
+              - option "Jumlah ↑"
+        - paragraph [ref=e55]: Tidak ada transaksi yang sesuai filter
+  - alert [ref=e56]

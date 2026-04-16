@@ -1,0 +1,426 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img [ref=e7]
+          - generic [ref=e10]: Finance
+        - paragraph [ref=e11]: Personal Dashboard
+      - navigation [ref=e13]:
+        - link "Overview" [ref=e14] [cursor=pointer]:
+          - /url: /
+          - img [ref=e15]
+          - text: Overview
+        - link "Transaksi" [ref=e20] [cursor=pointer]:
+          - /url: /transactions
+          - img [ref=e21]
+          - text: Transaksi
+        - link "Analitik" [ref=e24] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=e25]
+          - text: Analitik
+        - link "Insights AI" [ref=e27] [cursor=pointer]:
+          - /url: /insights
+          - img [ref=e28]
+          - text: Insights AI
+        - link "Budget" [ref=e30] [cursor=pointer]:
+          - /url: /budget
+          - img [ref=e31]
+          - text: Budget
+        - link "Cicilan" [ref=e35] [cursor=pointer]:
+          - /url: /installments
+          - img [ref=e36]
+          - text: Cicilan
+        - link "Pengaturan" [ref=e38] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e39]
+          - text: Pengaturan
+      - paragraph [ref=e43]: "@aldi_monman_bot"
+  - main [ref=e44]:
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - heading "Pengaturan" [level=1] [ref=e47]
+        - paragraph [ref=e48]: Kelola akun dan kategori transaksi
+      - generic [ref=e49]:
+        - generic [ref=e51]:
+          - generic [ref=e52]:
+            - img [ref=e53]
+            - generic [ref=e56]: Akun (9)
+          - button "Tambah Akun" [ref=e57] [cursor=pointer]:
+            - img
+            - text: Tambah Akun
+        - generic [ref=e58]:
+          - generic [ref=e59]:
+            - generic [ref=e60]:
+              - generic [ref=e61]: 🏦
+              - generic [ref=e62]:
+                - paragraph [ref=e64]: BCA
+                - paragraph [ref=e65]: bank
+            - generic [ref=e66]:
+              - generic [ref=e67]: Rp 350.997
+              - button "Adjust saldo" [ref=e68] [cursor=pointer]:
+                - img
+              - button [ref=e69] [cursor=pointer]:
+                - img
+              - button [ref=e70] [cursor=pointer]:
+                - img
+          - generic [ref=e71]:
+            - generic [ref=e72]:
+              - generic [ref=e73]: 🏦
+              - generic [ref=e74]:
+                - paragraph [ref=e76]: BSI
+                - paragraph [ref=e77]: bank
+            - generic [ref=e78]:
+              - generic [ref=e79]: Rp 191.966
+              - button "Adjust saldo" [ref=e80] [cursor=pointer]:
+                - img
+              - button [ref=e81] [cursor=pointer]:
+                - img
+              - button [ref=e82] [cursor=pointer]:
+                - img
+          - generic [ref=e83]:
+            - generic [ref=e84]:
+              - generic [ref=e85]: 💵
+              - generic [ref=e86]:
+                - paragraph [ref=e88]: Cash
+                - paragraph [ref=e89]: cash
+            - generic [ref=e90]:
+              - generic [ref=e91]: Rp 74.000
+              - button "Adjust saldo" [ref=e92] [cursor=pointer]:
+                - img
+              - button [ref=e93] [cursor=pointer]:
+                - img
+              - button [ref=e94] [cursor=pointer]:
+                - img
+          - generic [ref=e95]:
+            - generic [ref=e96]:
+              - generic [ref=e97]: 💙
+              - generic [ref=e98]:
+                - paragraph [ref=e100]: Dana
+                - paragraph [ref=e101]: ewallet
+            - generic [ref=e102]:
+              - generic [ref=e103]: Rp 0
+              - button "Adjust saldo" [ref=e104] [cursor=pointer]:
+                - img
+              - button [ref=e105] [cursor=pointer]:
+                - img
+              - button [ref=e106] [cursor=pointer]:
+                - img
+          - generic [ref=e107]:
+            - generic [ref=e108]:
+              - generic [ref=e109]: 💚
+              - generic [ref=e110]:
+                - paragraph [ref=e112]: GoPay
+                - paragraph [ref=e113]: ewallet
+            - generic [ref=e114]:
+              - generic [ref=e115]: Rp 0
+              - button "Adjust saldo" [ref=e116] [cursor=pointer]:
+                - img
+              - button [ref=e117] [cursor=pointer]:
+                - img
+              - button [ref=e118] [cursor=pointer]:
+                - img
+          - generic [ref=e119]:
+            - generic [ref=e120]:
+              - generic [ref=e121]: 💜
+              - generic [ref=e122]:
+                - paragraph [ref=e124]: OVO
+                - paragraph [ref=e125]: ewallet
+            - generic [ref=e126]:
+              - generic [ref=e127]: Rp 0
+              - button "Adjust saldo" [ref=e128] [cursor=pointer]:
+                - img
+              - button [ref=e129] [cursor=pointer]:
+                - img
+              - button [ref=e130] [cursor=pointer]:
+                - img
+          - generic [ref=e131]:
+            - generic [ref=e132]:
+              - generic [ref=e133]: 🧡
+              - generic [ref=e134]:
+                - paragraph [ref=e136]: ShopeePay
+                - paragraph [ref=e137]: ewallet
+            - generic [ref=e138]:
+              - generic [ref=e139]: Rp 0
+              - button "Adjust saldo" [ref=e140] [cursor=pointer]:
+                - img
+              - button [ref=e141] [cursor=pointer]:
+                - img
+              - button [ref=e142] [cursor=pointer]:
+                - img
+          - generic [ref=e143]:
+            - generic [ref=e144]:
+              - generic [ref=e145]: 🛒
+              - generic [ref=e146]:
+                - paragraph [ref=e148]: Shopee
+                - paragraph [ref=e149]: marketplace
+            - generic [ref=e150]:
+              - generic [ref=e151]: Rp 57
+              - button "Adjust saldo" [ref=e152] [cursor=pointer]:
+                - img
+              - button [ref=e153] [cursor=pointer]:
+                - img
+              - button [ref=e154] [cursor=pointer]:
+                - img
+          - generic [ref=e155]:
+            - generic [ref=e156]:
+              - generic [ref=e157]: 🛒
+              - generic [ref=e158]:
+                - paragraph [ref=e160]: Tokopedia
+                - paragraph [ref=e161]: marketplace
+            - generic [ref=e162]:
+              - generic [ref=e163]: Rp 0
+              - button "Adjust saldo" [ref=e164] [cursor=pointer]:
+                - img
+              - button [ref=e165] [cursor=pointer]:
+                - img
+              - button [ref=e166] [cursor=pointer]:
+                - img
+      - generic [ref=e167]:
+        - generic [ref=e169]:
+          - generic [ref=e170]:
+            - img [ref=e171]
+            - generic [ref=e174]: Kategori (24)
+          - button "Tambah Kategori" [ref=e175] [cursor=pointer]:
+            - img
+            - text: Tambah Kategori
+        - paragraph [ref=e177]: Pengeluaran (16)
+        - generic [ref=e178]:
+          - generic [ref=e179]:
+            - paragraph [ref=e183]: Suplementasi
+            - generic [ref=e184]:
+              - generic [ref=e185]: No budget
+              - button [ref=e186] [cursor=pointer]:
+                - img
+              - button [ref=e187] [cursor=pointer]:
+                - img
+          - generic [ref=e188]:
+            - generic [ref=e189]:
+              - generic [ref=e190]: 📁
+              - paragraph [ref=e192]: Produktivitas dan Eksperimen
+            - generic [ref=e193]:
+              - generic [ref=e194]: No budget
+              - button [ref=e195] [cursor=pointer]:
+                - img
+              - button [ref=e196] [cursor=pointer]:
+                - img
+          - generic [ref=e197]:
+            - generic [ref=e198]:
+              - generic [ref=e199]: 🍔
+              - paragraph [ref=e201]: Makanan & Minuman
+            - generic [ref=e202]:
+              - generic [ref=e203]: No budget
+              - button [ref=e204] [cursor=pointer]:
+                - img
+              - button [ref=e205] [cursor=pointer]:
+                - img
+          - generic [ref=e206]:
+            - generic [ref=e207]:
+              - generic [ref=e208]: 🚗
+              - paragraph [ref=e210]: Transportasi
+            - generic [ref=e211]:
+              - generic [ref=e212]: No budget
+              - button [ref=e213] [cursor=pointer]:
+                - img
+              - button [ref=e214] [cursor=pointer]:
+                - img
+          - generic [ref=e215]:
+            - generic [ref=e216]:
+              - generic [ref=e217]: 🛒
+              - paragraph [ref=e219]: Belanja Online
+            - generic [ref=e220]:
+              - generic [ref=e221]: No budget
+              - button [ref=e222] [cursor=pointer]:
+                - img
+              - button [ref=e223] [cursor=pointer]:
+                - img
+          - generic [ref=e224]:
+            - generic [ref=e225]:
+              - generic [ref=e226]: 📄
+              - paragraph [ref=e228]: Tagihan & Utilitas
+            - generic [ref=e229]:
+              - generic [ref=e230]: No budget
+              - button [ref=e231] [cursor=pointer]:
+                - img
+              - button [ref=e232] [cursor=pointer]:
+                - img
+          - generic [ref=e233]:
+            - generic [ref=e234]:
+              - generic [ref=e235]: 🔄
+              - paragraph [ref=e237]: Subscription
+            - generic [ref=e238]:
+              - generic [ref=e239]: No budget
+              - button [ref=e240] [cursor=pointer]:
+                - img
+              - button [ref=e241] [cursor=pointer]:
+                - img
+          - generic [ref=e242]:
+            - generic [ref=e243]:
+              - generic [ref=e244]: 🏥
+              - paragraph [ref=e246]: Kesehatan
+            - generic [ref=e247]:
+              - generic [ref=e248]: No budget
+              - button [ref=e249] [cursor=pointer]:
+                - img
+              - button [ref=e250] [cursor=pointer]:
+                - img
+          - generic [ref=e251]:
+            - generic [ref=e252]:
+              - generic [ref=e253]: 📚
+              - paragraph [ref=e255]: Pendidikan
+            - generic [ref=e256]:
+              - generic [ref=e257]: No budget
+              - button [ref=e258] [cursor=pointer]:
+                - img
+              - button [ref=e259] [cursor=pointer]:
+                - img
+          - generic [ref=e260]:
+            - generic [ref=e261]:
+              - generic [ref=e262]: ⚽
+              - paragraph [ref=e264]: Olahraga
+            - generic [ref=e265]:
+              - generic [ref=e266]: No budget
+              - button [ref=e267] [cursor=pointer]:
+                - img
+              - button [ref=e268] [cursor=pointer]:
+                - img
+          - generic [ref=e269]:
+            - generic [ref=e270]:
+              - generic [ref=e271]: 🎮
+              - paragraph [ref=e273]: Hiburan
+            - generic [ref=e274]:
+              - generic [ref=e275]: No budget
+              - button [ref=e276] [cursor=pointer]:
+                - img
+              - button [ref=e277] [cursor=pointer]:
+                - img
+          - generic [ref=e278]:
+            - generic [ref=e279]:
+              - generic [ref=e280]: 👕
+              - paragraph [ref=e282]: Pakaian
+            - generic [ref=e283]:
+              - generic [ref=e284]: No budget
+              - button [ref=e285] [cursor=pointer]:
+                - img
+              - button [ref=e286] [cursor=pointer]:
+                - img
+          - generic [ref=e287]:
+            - generic [ref=e288]:
+              - generic [ref=e289]: 🏠
+              - paragraph [ref=e291]: Kebutuhan Rumah
+            - generic [ref=e292]:
+              - generic [ref=e293]: No budget
+              - button [ref=e294] [cursor=pointer]:
+                - img
+              - button [ref=e295] [cursor=pointer]:
+                - img
+          - generic [ref=e296]:
+            - generic [ref=e297]:
+              - generic [ref=e298]: 🤝
+              - paragraph [ref=e300]: Sosial & Donasi
+            - generic [ref=e301]:
+              - generic [ref=e302]: No budget
+              - button [ref=e303] [cursor=pointer]:
+                - img
+              - button [ref=e304] [cursor=pointer]:
+                - img
+          - generic [ref=e305]:
+            - generic [ref=e306]:
+              - generic [ref=e307]: 💸
+              - paragraph [ref=e309]: Transfer Keluar
+            - generic [ref=e310]:
+              - generic [ref=e311]: No budget
+              - button [ref=e312] [cursor=pointer]:
+                - img
+              - button [ref=e313] [cursor=pointer]:
+                - img
+          - generic [ref=e314]:
+            - generic [ref=e315]:
+              - generic [ref=e316]: 📦
+              - paragraph [ref=e318]: Lainnya (Expense)
+            - generic [ref=e319]:
+              - generic [ref=e320]: No budget
+              - button [ref=e321] [cursor=pointer]:
+                - img
+              - button [ref=e322] [cursor=pointer]:
+                - img
+        - paragraph [ref=e324]: Pemasukan (8)
+        - generic [ref=e325]:
+          - generic [ref=e326]:
+            - paragraph [ref=e330]: Beasiswa
+            - generic [ref=e331]:
+              - generic [ref=e332]: No budget
+              - button [ref=e333] [cursor=pointer]:
+                - img
+              - button [ref=e334] [cursor=pointer]:
+                - img
+          - generic [ref=e335]:
+            - generic [ref=e336]:
+              - generic [ref=e337]: 💰
+              - paragraph [ref=e339]: Gaji
+            - generic [ref=e340]:
+              - generic [ref=e341]: No budget
+              - button [ref=e342] [cursor=pointer]:
+                - img
+              - button [ref=e343] [cursor=pointer]:
+                - img
+          - generic [ref=e344]:
+            - generic [ref=e345]:
+              - generic [ref=e346]: 💻
+              - paragraph [ref=e348]: Freelance
+            - generic [ref=e349]:
+              - generic [ref=e350]: No budget
+              - button [ref=e351] [cursor=pointer]:
+                - img
+              - button [ref=e352] [cursor=pointer]:
+                - img
+          - generic [ref=e353]:
+            - generic [ref=e354]:
+              - generic [ref=e355]: 📈
+              - paragraph [ref=e357]: Investasi
+            - generic [ref=e358]:
+              - generic [ref=e359]: No budget
+              - button [ref=e360] [cursor=pointer]:
+                - img
+              - button [ref=e361] [cursor=pointer]:
+                - img
+          - generic [ref=e362]:
+            - generic [ref=e363]:
+              - generic [ref=e364]: 🎁
+              - paragraph [ref=e366]: Bonus
+            - generic [ref=e367]:
+              - generic [ref=e368]: No budget
+              - button [ref=e369] [cursor=pointer]:
+                - img
+              - button [ref=e370] [cursor=pointer]:
+                - img
+          - generic [ref=e371]:
+            - generic [ref=e372]:
+              - generic [ref=e373]: 💳
+              - paragraph [ref=e375]: Transfer Masuk
+            - generic [ref=e376]:
+              - generic [ref=e377]: No budget
+              - button [ref=e378] [cursor=pointer]:
+                - img
+              - button [ref=e379] [cursor=pointer]:
+                - img
+          - generic [ref=e380]:
+            - generic [ref=e381]:
+              - generic [ref=e382]: 🔙
+              - paragraph [ref=e384]: Cashback
+            - generic [ref=e385]:
+              - generic [ref=e386]: No budget
+              - button [ref=e387] [cursor=pointer]:
+                - img
+              - button [ref=e388] [cursor=pointer]:
+                - img
+          - generic [ref=e389]:
+            - generic [ref=e390]:
+              - generic [ref=e391]: 📦
+              - paragraph [ref=e393]: Lainnya (Income)
+            - generic [ref=e394]:
+              - generic [ref=e395]: No budget
+              - button [ref=e396] [cursor=pointer]:
+                - img
+              - button [ref=e397] [cursor=pointer]:
+                - img

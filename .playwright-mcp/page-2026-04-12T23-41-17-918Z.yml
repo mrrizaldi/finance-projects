@@ -1,0 +1,161 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - generic [ref=e6]: Finance
+          - paragraph [ref=e7]: Personal Dashboard
+        - navigation [ref=e9]:
+          - link "Overview" [ref=e10] [cursor=pointer]:
+            - /url: /
+          - link "Transaksi" [ref=e11] [cursor=pointer]:
+            - /url: /transactions
+          - link "Analitik" [ref=e12] [cursor=pointer]:
+            - /url: /analytics
+          - link "Insights AI" [ref=e13] [cursor=pointer]:
+            - /url: /insights
+          - link "Budget" [ref=e14] [cursor=pointer]:
+            - /url: /budget
+          - link "Cicilan" [ref=e15] [cursor=pointer]:
+            - /url: /installments
+          - link "Pengaturan" [ref=e16] [cursor=pointer]:
+            - /url: /settings
+        - paragraph [ref=e18]: "@aldi_monman_bot"
+    - main [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - heading "Analitik" [level=1] [ref=e22]
+          - paragraph [ref=e23]: Visualisasi pola keuangan kamu
+        - generic [ref=e25]:
+          - generic [ref=e26]:
+            - button "Mingguan" [ref=e27] [cursor=pointer]
+            - button "Bulanan" [ref=e28] [cursor=pointer]
+            - button "Kuartal" [ref=e29] [cursor=pointer]
+            - button "Tahunan" [ref=e30] [cursor=pointer]
+          - generic [ref=e31]:
+            - button "Prev" [ref=e32] [cursor=pointer]
+            - button "April 2026" [ref=e33] [cursor=pointer]
+            - button "Next" [ref=e34] [cursor=pointer]
+        - generic [ref=e35]:
+          - generic [ref=e36]:
+            - generic [ref=e38]:
+              - generic [ref=e39]: Pengeluaran per Kategori
+              - generic [ref=e40]: Rp 1.035.822
+            - generic [ref=e41]:
+              - generic [ref=e43]:
+                - list [ref=e45]:
+                  - listitem [ref=e46]:
+                    - img "Makanan & Minuman legend icon" [ref=e47]
+                    - text: Makanan & Minuman
+                  - listitem [ref=e49]:
+                    - img "Olahraga legend icon" [ref=e50]
+                    - text: Olahraga
+                  - listitem [ref=e52]:
+                    - img "Produktivitas dan Eksperimen legend icon" [ref=e53]
+                    - text: Produktivitas dan Eksperimen
+                  - listitem [ref=e55]:
+                    - img "Tagihan & Utilitas legend icon" [ref=e56]
+                    - text: Tagihan & Utilitas
+                  - listitem [ref=e58]:
+                    - img "Transportasi legend icon" [ref=e59]
+                    - text: Transportasi
+                - application [ref=e61]:
+                  - generic [ref=e80]:
+                    - generic [ref=e82]: 35%
+                    - generic [ref=e84]: 34%
+                    - generic [ref=e86]: 13%
+                    - generic [ref=e88]: 11%
+                    - generic [ref=e90]: 8%
+              - generic [ref=e91]:
+                - generic [ref=e92]:
+                  - generic [ref=e94]: Makanan & Minuman
+                  - generic [ref=e95]: Rp 358.000
+                  - generic [ref=e96]: 34.6%
+                - generic [ref=e97]:
+                  - generic [ref=e99]: Olahraga
+                  - generic [ref=e100]: Rp 351.071
+                  - generic [ref=e101]: 33.9%
+                - generic [ref=e102]:
+                  - generic [ref=e104]: Produktivitas dan Eksperimen
+                  - generic [ref=e105]: Rp 135.003
+                  - generic [ref=e106]: 13%
+                - generic [ref=e107]:
+                  - generic [ref=e109]: Transportasi
+                  - generic [ref=e110]: Rp 113.308
+                  - generic [ref=e111]: 10.9%
+                - generic [ref=e112]:
+                  - generic [ref=e114]: Tagihan & Utilitas
+                  - generic [ref=e115]: Rp 78.440
+                  - generic [ref=e116]: 7.6%
+          - generic [ref=e117]:
+            - generic [ref=e119]:
+              - generic [ref=e120]: Pemasukan per Kategori
+              - generic [ref=e121]: Rp 1.268.314
+            - generic [ref=e122]:
+              - generic [ref=e124]:
+                - list [ref=e126]:
+                  - listitem [ref=e127]:
+                    - img "Beasiswa legend icon" [ref=e128]
+                    - text: Beasiswa
+                  - listitem [ref=e130]:
+                    - img "Gaji legend icon" [ref=e131]
+                    - text: Gaji
+                  - listitem [ref=e133]:
+                    - img "Transfer Masuk legend icon" [ref=e134]
+                    - text: Transfer Masuk
+                - application [ref=e136]:
+                  - generic [ref=e149]:
+                    - generic [ref=e151]: 59%
+                    - generic [ref=e153]: 28%
+                    - generic [ref=e155]: 13%
+              - generic [ref=e156]:
+                - generic [ref=e157]:
+                  - generic [ref=e159]: Gaji
+                  - generic [ref=e160]: Rp 751.448
+                  - generic [ref=e161]: 59.2%
+                - generic [ref=e162]:
+                  - generic [ref=e164]: Beasiswa
+                  - generic [ref=e165]: Rp 352.866
+                  - generic [ref=e166]: 27.8%
+                - generic [ref=e167]:
+                  - generic [ref=e169]: Transfer Masuk
+                  - generic [ref=e170]: Rp 164.000
+                  - generic [ref=e171]: 12.9%
+        - generic [ref=e172]:
+          - generic [ref=e174]: Tren Bulanan (12 Bulan)
+          - generic [ref=e177]:
+            - list [ref=e179]:
+              - listitem [ref=e180]:
+                - img "Pengeluaran legend icon" [ref=e181]
+                - text: Pengeluaran
+              - listitem [ref=e183]:
+                - img "Pemasukan legend icon" [ref=e184]
+                - text: Pemasukan
+            - application [ref=e186]:
+              - generic [ref=e225]:
+                - generic [ref=e226]:
+                  - generic [ref=e228]: May 2025
+                  - generic [ref=e230]: Jun 2025
+                  - generic [ref=e232]: Jul 2025
+                  - generic [ref=e234]: Aug 2025
+                  - generic [ref=e236]: Sep 2025
+                  - generic [ref=e238]: Oct 2025
+                  - generic [ref=e240]: Nov 2025
+                  - generic [ref=e242]: Dec 2025
+                  - generic [ref=e244]: Jan 2026
+                  - generic [ref=e246]: Feb 2026
+                  - generic [ref=e248]: Mar 2026
+                  - generic [ref=e250]: Apr 2026
+                - generic [ref=e251]:
+                  - generic [ref=e253]: "0"
+                  - generic [ref=e255]: 350k
+                  - generic [ref=e257]: 700k
+                  - generic [ref=e259]: 1jt
+                  - generic [ref=e261]: 1jt
+        - generic [ref=e262]:
+          - generic [ref=e263]:
+            - generic [ref=e264]: Heatmap Pengeluaran
+            - paragraph [ref=e265]: April 2026 — hari × jam
+          - generic [ref=e267]: Belum ada data heatmap
+  - alert [ref=e268]
+  - generic [ref=e269]: "0"

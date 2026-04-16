@@ -21,9 +21,7 @@ function CustomTooltip({ active, payload }: any) {
   const item = payload[0].payload as CategoryBreakdown;
   return (
     <div className="bg-popover border border-border rounded-lg shadow-lg p-3 text-sm text-popover-foreground">
-      <p className="font-medium text-foreground">
-        {item.category_icon} {item.category_name}
-      </p>
+      <p className="font-medium text-foreground">{item.category_name}</p>
       <p className="text-muted-foreground mt-1">{formatRupiah(item.total_amount)}</p>
       <p className="text-muted-foreground/80">{item.percentage}% · {item.transaction_count} transaksi</p>
     </div>
@@ -74,7 +72,7 @@ export default function CategoryChart({ data }: Props) {
         </Pie>
         <Tooltip content={<CustomTooltip />} />
         <Legend
-          formatter={(value, entry: any) => `${entry.payload.category_icon} ${value}`}
+          formatter={(value) => `${value}`}
           wrapperStyle={{ fontSize: 11 }}
         />
       </PieChart>

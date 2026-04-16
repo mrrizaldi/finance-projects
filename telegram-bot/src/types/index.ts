@@ -13,6 +13,12 @@ export interface Transaction {
   email_sender?: string;
   email_raw_snippet?: string;
   raw_data?: Record<string, any>;
+  balance_before?: number;
+  balance_after?: number;
+  to_balance_before?: number;
+  to_balance_after?: number;
+  is_adjustment?: boolean;
+  adjustment_note?: string;
   transaction_date: string;
 }
 
@@ -34,7 +40,6 @@ export interface Category {
   id: string;
   name: string;
   type: 'income' | 'expense' | 'both';
-  icon: string;
   color: string;
   budget_monthly?: number;
 }
@@ -44,7 +49,12 @@ export interface Account {
   name: string;
   type: 'bank' | 'ewallet' | 'cash' | 'marketplace' | 'other';
   balance: number;
-  icon: string;
+}
+
+export interface BalanceMutationResult {
+  before: number;
+  after: number;
+  delta: number;
 }
 
 export interface Summary {
@@ -55,6 +65,16 @@ export interface Summary {
   avg_daily_expense: number;
   top_expense_category: string;
   top_expense_amount: number;
+}
+
+export interface InstallmentMonth {
+  id: string;
+  installment_id: string;
+  month_number: number;
+  amount: number;
+  is_paid: boolean;
+  paid_date?: string;
+  transaction_id?: string;
 }
 
 export interface Installment {
@@ -68,17 +88,15 @@ export interface Installment {
   account_id?: string;
   category_id?: string;
   status: 'active' | 'completed' | 'paused' | 'cancelled';
-  schedule?: string; // comma-separated amounts per month, e.g. "1520593,1304533,..."
   notes?: string;
+  months?: InstallmentMonth[];
   account_name?: string;
   category_name?: string;
-  category_icon?: string;
 }
 
 export interface CategoryBreakdown {
   category_id: string;
   category_name: string;
-  category_icon: string;
   total_amount: number;
   transaction_count: number;
   percentage: number;

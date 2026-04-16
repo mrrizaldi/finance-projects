@@ -45,52 +45,55 @@ export default function HeatmapChart({ data }: Props) {
   const days = [0, 1, 2, 3, 4, 5, 6]; // Sun=0 to Sat=6
 
   return (
-    <div className="overflow-x-auto">
-      <div className="min-w-[600px]">
-        {/* Hour labels */}
-        <div className="flex ml-10 mb-1">
-          {hours.map((h) => (
-            <div key={h} className="flex-1 text-center text-[9px] text-gray-400">
-              {h % 3 === 0 ? `${h}` : ''}
+    <div>
+      <p className="text-xs text-muted-foreground mb-2 sm:hidden">Geser ke samping untuk lihat semua jam →</p>
+      <div className="overflow-x-auto">
+        <div className="min-w-[600px]">
+          {/* Hour labels */}
+          <div className="flex ml-10 mb-1">
+            {hours.map((h) => (
+              <div key={h} className="flex-1 text-center text-[9px] text-gray-400">
+                {h % 3 === 0 ? `${h}` : ''}
+              </div>
+            ))}
+          </div>
+
+          {/* Grid rows */}
+          {days.map((day) => (
+            <div key={day} className="flex items-center gap-1 mb-1">
+              <span className="w-8 text-right text-xs text-gray-500 pr-1 flex-shrink-0">
+                {DAY_NAMES[day]}
+              </span>
+              {hours.map((hour) => {
+                const key = `${day}-${hour}`;
+                const entry = grid[key];
+                const intensity = entry ? getIntensity(entry.total_amount) : 0;
+                return (
+                  <div
+                    key={hour}
+                    className={cn(
+                      'flex-1 h-5 rounded-sm cursor-pointer transition-opacity hover:opacity-80',
+                      getBg(intensity)
+                    )}
+                    title={
+                      entry
+                        ? `${DAY_NAMES[day]} ${hour}:00 — ${formatRupiah(entry.total_amount)} (${entry.count}x)`
+                        : `${DAY_NAMES[day]} ${hour}:00 — tidak ada`
+                    }
+                  />
+                );
+              })}
             </div>
           ))}
-        </div>
 
-        {/* Grid rows */}
-        {days.map((day) => (
-          <div key={day} className="flex items-center gap-1 mb-1">
-            <span className="w-8 text-right text-xs text-gray-500 pr-1 flex-shrink-0">
-              {DAY_NAMES[day]}
-            </span>
-            {hours.map((hour) => {
-              const key = `${day}-${hour}`;
-              const entry = grid[key];
-              const intensity = entry ? getIntensity(entry.total_amount) : 0;
-              return (
-                <div
-                  key={hour}
-                  className={cn(
-                    'flex-1 h-5 rounded-sm cursor-pointer transition-opacity hover:opacity-80',
-                    getBg(intensity)
-                  )}
-                  title={
-                    entry
-                      ? `${DAY_NAMES[day]} ${hour}:00 — ${formatRupiah(entry.total_amount)} (${entry.count}x)`
-                      : `${DAY_NAMES[day]} ${hour}:00 — tidak ada`
-                  }
-                />
-              );
-            })}
+          {/* Legend */}
+          <div className="flex items-center gap-2 mt-3 ml-10">
+            <span className="text-xs text-gray-400">Rendah</span>
+            {['bg-gray-100', 'bg-red-100', 'bg-red-200', 'bg-red-300', 'bg-red-400', 'bg-red-500'].map((cls) => (
+              <div key={cls} className={cn('w-4 h-3 rounded-sm', cls)} />
+            ))}
+            <span className="text-xs text-gray-400">Tinggi</span>
           </div>
-        ))}
-
-        {/* Legend */}
-        <div className="flex items-center gap-2 mt-3 ml-10">
-          <span className="text-xs text-gray-400">Rendah</span>
-          {['bg-gray-100', 'bg-red-100', 'bg-red-200', 'bg-red-300', 'bg-red-400', 'bg-red-500'].map((cls) => (
-            <div key={cls} className={cn('w-4 h-3 rounded-sm', cls)} />
-          ))}
-          <span className="text-xs text-gray-400">Tinggi</span>
         </div>
       </div>
     </div>

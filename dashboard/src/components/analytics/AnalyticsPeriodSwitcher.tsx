@@ -1,8 +1,6 @@
 'use client';
 
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
 import quarterOfYear from 'dayjs/plugin/quarterOfYear';
 import 'dayjs/locale/id';
@@ -105,20 +103,28 @@ export default function AnalyticsPeriodSwitcher({ period, anchor, label }: Props
         ))}
       </div>
 
-      {/* Navigation arrows + label */}
-      <div className="flex items-center gap-1.5 ml-auto">
-        <Button variant="outline" size="icon-sm" onClick={() => shift(-1)}>
-          <ChevronLeft className="h-3.5 w-3.5" />
-        </Button>
+      {/* Navigation controls + label */}
+      <div className="flex items-center gap-1.5 w-full sm:w-auto sm:ml-auto">
+        <button
+          type="button"
+          className="h-7 px-2 rounded-md border border-input bg-background text-xs text-foreground hover:bg-muted"
+          onClick={() => shift(-1)}
+        >
+          Prev
+        </button>
         <button
           onClick={resetToNow}
-          className="px-3 py-1 text-xs font-medium text-foreground min-w-32 text-center hover:text-primary transition-colors"
+          className="px-3 py-1 text-xs font-medium text-foreground flex-1 sm:flex-none min-w-0 sm:min-w-32 text-center hover:text-primary transition-colors"
         >
           {label}
         </button>
-        <Button variant="outline" size="icon-sm" onClick={() => shift(1)}>
-          <ChevronRight className="h-3.5 w-3.5" />
-        </Button>
+        <button
+          type="button"
+          className="h-7 px-2 rounded-md border border-input bg-background text-xs text-foreground hover:bg-muted"
+          onClick={() => shift(1)}
+        >
+          Next
+        </button>
       </div>
     </div>
   );

@@ -25,7 +25,7 @@ export default function TransactionSort({ currentSort }: { currentSort: string }
     <select
       value={currentSort}
       onChange={(e) => handleSortChange(e.target.value)}
-      className="text-xs border border-input rounded px-2 py-1 focus:outline-none bg-background text-foreground"
+      className="text-xs border border-input rounded px-2 py-1.5 h-8 min-w-[118px] focus:outline-none bg-background text-foreground"
     >
       <option value="date_desc">Tanggal ↓</option>
       <option value="date_asc">Tanggal ↑</option>

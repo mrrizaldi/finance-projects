@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -18,7 +17,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { VTransaction, Category, Account } from '@/types';
+import { VTransaction, Category, Account, Installment } from '@/types';
 import { TRANSACTION_TYPE_LABEL } from '@/lib/utils';
 
 interface Props {
@@ -27,11 +26,11 @@ interface Props {
   onOpenChange: (open: boolean) => void;
   categories: Category[];
   accounts: Account[];
+  installments: Pick<Installment, 'id' | 'name' | 'monthly_amount' | 'status'>[];
   onSuccess: () => void;
 }
 
-export default function TransactionEditDialog({ tx, open, onOpenChange, categories, accounts, onSuccess }: Props) {
-  const router = useRouter();
+export default function TransactionEditDialog({ tx, open, onOpenChange, categories, accounts, installments, onSuccess }: Props) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -42,6 +41,8 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
   const [categoryId, setCategoryId] = useState(tx?.category_id || '');
   const [accountId, setAccountId] = useState(tx?.account_id || '');
   const [toAccountId, setToAccountId] = useState(tx?.to_account_id || '');
+  const [installmentId, setInstallmentId] = useState(tx?.installment_id || '');
+  const [useInstallment, setUseInstallment] = useState(!!tx?.installment_id);
   const [transactionDate, setTransactionDate] = useState(
     tx ? tx.transaction_date.slice(0, 16) : ''
   );
@@ -56,6 +57,8 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
       setCategoryId(tx.category_id || '');
       setAccountId(tx.account_id || '');
       setToAccountId(tx.to_account_id || '');
+      setInstallmentId(tx.installment_id || '');
+      setUseInstallment(!!tx.installment_id);
       setTransactionDate(tx.transaction_date.slice(0, 16));
       setError(null);
     }
@@ -80,8 +83,9 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
       description: description || null,
       merchant: merchant || null,
       category_id: categoryId || null,
-      account_id: accountId || null,
+      account_id: (type === 'expense' && useInstallment) ? null : (accountId || null),
       to_account_id: type === 'transfer' ? (toAccountId || null) : null,
+      installment_id: (type === 'expense' && useInstallment) ? (installmentId || null) : null,
       transaction_date: transactionDate,
     };
 
@@ -98,7 +102,6 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
       }
       onOpenChange(false);
       onSuccess();
-      router.refresh();
     } catch {
       setError('Terjadi kesalahan jaringan');
     } finally {
@@ -109,6 +112,13 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
+        {loading && (
+          <div className="absolute inset-0 z-20 bg-black/70 backdrop-blur-sm rounded-lg flex items-center justify-center">
+            <div className="rounded-md border border-border bg-card px-3 py-2 text-sm">
+              Menyimpan transaksi...
+            </div>
+          </div>
+        )}
         <DialogHeader>
           <DialogTitle>Edit Transaksi</DialogTitle>
         </DialogHeader>
@@ -153,7 +163,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
           </div>
 
           {/* Description + Merchant */}
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">Deskripsi</label>
               <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Opsional" />
@@ -171,50 +181,109 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
                           <SelectTrigger className="w-full">
                             <div data-slot="select-value" className="flex flex-1 text-left items-center gap-1.5">
                               {categoryId && categories.find((c) => c.id === categoryId) ? (
-                                <>
-                                  {categories.find((c) => c.id === categoryId)?.icon}{' '}
-                                  {categories.find((c) => c.id === categoryId)?.name}
-                                </>
+                                <>{categories.find((c) => c.id === categoryId)?.name}</>
                               ) : (
                                 <span className="text-muted-foreground">Pilih kategori...</span>
                               )}
                             </div>
                           </SelectTrigger>              <SelectContent>
                 {filteredCategories.map((c) => (
-                  <SelectItem key={c.id} value={c.id}>
-                    {c.icon} {c.name}
-                  </SelectItem>
+                  <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
-          {/* Account */}
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">
-              {type === 'transfer' ? 'Akun Asal' : 'Akun'}
-            </label>
-            <Select value={accountId} onValueChange={(v) => setAccountId(v ?? '')}>
-                          <SelectTrigger className="w-full">
-                            <div data-slot="select-value" className="flex flex-1 text-left items-center gap-1.5">
-                              {accountId && accounts.find((a) => a.id === accountId) ? (
-                                <>
-                                  {accounts.find((a) => a.id === accountId)?.icon}{' '}
-                                  {accounts.find((a) => a.id === accountId)?.name}
-                                </>
-                              ) : (
-                                <span className="text-muted-foreground">Pilih akun...</span>
-                              )}
-                            </div>
-                          </SelectTrigger>              <SelectContent>
-                {accounts.map((a) => (
-                  <SelectItem key={a.id} value={a.id}>
-                    {a.icon} {a.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* Account / Installment — expense can switch between the two */}
+          {type === 'expense' ? (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-muted-foreground">Dibayar via</label>
+                <div className="flex gap-1 text-xs">
+                  <button
+                    type="button"
+                    onClick={() => setUseInstallment(false)}
+                    className={`px-2 py-0.5 rounded transition-colors border ${
+                      !useInstallment
+                        ? 'bg-primary/15 text-primary border-primary/30'
+                        : 'bg-muted text-muted-foreground border-border'
+                    }`}
+                  >
+                    Akun
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUseInstallment(true)}
+                    className={`px-2 py-0.5 rounded transition-colors border ${
+                      useInstallment
+                        ? 'bg-purple-500/15 text-purple-400 border-purple-500/30'
+                        : 'bg-muted text-muted-foreground border-border'
+                    }`}
+                  >
+                    Cicilan
+                  </button>
+                </div>
+              </div>
+              {useInstallment ? (
+                <Select value={installmentId} onValueChange={(v) => setInstallmentId(v ?? '')}>
+                  <SelectTrigger className="w-full">
+                    <div data-slot="select-value" className="flex flex-1 text-left items-center gap-1.5">
+                      {installmentId && installments.find((i) => i.id === installmentId) ? (
+                        <span className="text-purple-400">
+                          Cicilan · {installments.find((i) => i.id === installmentId)?.name}
+                        </span>
+                      ) : (
+                        <span className="text-muted-foreground">Pilih cicilan...</span>
+                      )}
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {installments.map((inst) => (
+                      <SelectItem key={inst.id} value={inst.id}>{inst.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              ) : (
+                <Select value={accountId} onValueChange={(v) => setAccountId(v ?? '')}>
+                  <SelectTrigger className="w-full">
+                    <div data-slot="select-value" className="flex flex-1 text-left items-center gap-1.5">
+                      {accountId && accounts.find((a) => a.id === accountId) ? (
+                        <>{accounts.find((a) => a.id === accountId)?.name}</>
+                      ) : (
+                        <span className="text-muted-foreground">Pilih akun...</span>
+                      )}
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {accounts.map((a) => (
+                      <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+            </div>
+          ) : (
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">
+                {type === 'transfer' ? 'Akun Asal' : 'Akun'}
+              </label>
+              <Select value={accountId} onValueChange={(v) => setAccountId(v ?? '')}>
+                            <SelectTrigger className="w-full">
+                              <div data-slot="select-value" className="flex flex-1 text-left items-center gap-1.5">
+                                {accountId && accounts.find((a) => a.id === accountId) ? (
+                                  <>{accounts.find((a) => a.id === accountId)?.name}</>
+                                ) : (
+                                  <span className="text-muted-foreground">Pilih akun...</span>
+                                )}
+                              </div>
+                            </SelectTrigger>              <SelectContent>
+                  {accounts.map((a) => (
+                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
 
           {/* To Account (transfer only) */}
           {type === 'transfer' && (
@@ -224,10 +293,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
                 <SelectTrigger className="w-full">
                   <div data-slot="select-value" className="flex flex-1 text-left items-center gap-1.5">
                     {toAccountId && accounts.find((a) => a.id === toAccountId) ? (
-                      <>
-                        {accounts.find((a) => a.id === toAccountId)?.icon}{' '}
-                        {accounts.find((a) => a.id === toAccountId)?.name}
-                      </>
+                      <>{accounts.find((a) => a.id === toAccountId)?.name}</>
                     ) : (
                       <span className="text-muted-foreground">Pilih akun tujuan...</span>
                     )}
@@ -235,9 +301,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
                 </SelectTrigger>
                 <SelectContent>
                   {accounts.filter((a) => a.id !== accountId).map((a) => (
-                    <SelectItem key={a.id} value={a.id}>
-                      {a.icon} {a.name}
-                    </SelectItem>
+                    <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>

@@ -1,3 +1,4 @@
+import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerClient } from '@/lib/supabase';
 
@@ -9,6 +10,13 @@ type TxBalanceState = {
   amount: number;
   account_id: string | null;
   to_account_id: string | null;
+};
+
+type BalanceSnapshot = {
+  balance_before: number | null;
+  balance_after: number | null;
+  to_balance_before: number | null;
+  to_balance_after: number | null;
 };
 
 function getEffects(tx: TxBalanceState): Record<string, number> {
@@ -49,9 +57,13 @@ function invertEffects(effects: Record<string, number>) {
   return out;
 }
 
-async function applyBalanceDiffs(supabase: ReturnType<typeof createServerClient>, diffs: Record<string, number>) {
+async function applyBalanceDiffs(
+  supabase: ReturnType<typeof createServerClient>,
+  diffs: Record<string, number>
+): Promise<Map<string, { before: number; after: number }>> {
   const accountIds = Object.keys(diffs).filter((id) => Math.abs(diffs[id]) > 0.000001);
-  if (!accountIds.length) return;
+  const snapshots = new Map<string, { before: number; after: number }>();
+  if (!accountIds.length) return snapshots;
 
   const { data: accounts, error: fetchError } = await supabase
     .from('accounts')
@@ -61,18 +73,36 @@ async function applyBalanceDiffs(supabase: ReturnType<typeof createServerClient>
   if (fetchError) throw new Error(`Gagal membaca saldo akun: ${fetchError.message}`);
 
   const byId = new Map((accounts ?? []).map((acc) => [acc.id as string, Number(acc.balance)]));
+  const appliedIds: string[] = [];
 
-  for (const accountId of accountIds) {
-    const currentBalance = byId.get(accountId);
-    if (currentBalance === undefined) continue;
+  try {
+    for (const accountId of accountIds) {
+      const currentBalance = byId.get(accountId);
+      if (currentBalance === undefined) {
+        throw new Error(`Akun tidak ditemukan untuk update saldo: ${accountId}`);
+      }
 
-    const { error: updateError } = await supabase
-      .from('accounts')
-      .update({ balance: currentBalance + diffs[accountId] })
-      .eq('id', accountId);
+      const nextBalance = currentBalance + diffs[accountId];
+      snapshots.set(accountId, { before: currentBalance, after: nextBalance });
 
-    if (updateError) throw new Error(`Gagal update saldo akun: ${updateError.message}`);
+      const { error: updateError } = await supabase
+        .from('accounts')
+        .update({ balance: nextBalance })
+        .eq('id', accountId);
+
+      if (updateError) throw new Error(`Gagal update saldo akun: ${updateError.message}`);
+      appliedIds.push(accountId);
+    }
+  } catch (error) {
+    for (const accountId of appliedIds) {
+      const snapshot = snapshots.get(accountId);
+      if (!snapshot) continue;
+      await supabase.from('accounts').update({ balance: snapshot.before }).eq('id', accountId);
+    }
+    throw error;
   }
+
+  return snapshots;
 }
 
 function normalizeNullableString(value: unknown, field: string) {
@@ -82,10 +112,44 @@ function normalizeNullableString(value: unknown, field: string) {
   return value;
 }
 
+function revalidateFinancePaths() {
+  revalidateTag('transactions-references');
+  revalidateTag('accounts');
+  revalidateTag('settings-data');
+  revalidateTag('overview');
+  revalidateTag('analytics');
+  revalidateTag('chat-context');
+  revalidateTag('installments');
+  revalidatePath('/');
+  revalidatePath('/transactions');
+  revalidatePath('/analytics');
+  revalidatePath('/installments');
+  revalidatePath('/settings');
+  revalidatePath('/insights');
+}
+
+function buildSnapshotForState(
+  state: TxBalanceState,
+  updates: Map<string, { before: number; after: number }>,
+  fallback?: BalanceSnapshot
+): BalanceSnapshot {
+  const from = state.account_id ? updates.get(state.account_id) : undefined;
+  const to = state.to_account_id ? updates.get(state.to_account_id) : undefined;
+
+  return {
+    balance_before: from?.before ?? fallback?.balance_before ?? null,
+    balance_after: from?.after ?? fallback?.balance_after ?? null,
+    to_balance_before: state.type === 'transfer' ? (to?.before ?? fallback?.to_balance_before ?? null) : null,
+    to_balance_after: state.type === 'transfer' ? (to?.after ?? fallback?.to_balance_after ?? null) : null,
+  };
+}
+
 async function getActiveTransaction(supabase: ReturnType<typeof createServerClient>, id: string) {
   const { data, error } = await supabase
     .from('transactions')
-    .select('id, type, amount, account_id, to_account_id, is_deleted')
+    .select(
+      'id, type, amount, account_id, to_account_id, balance_before, balance_after, to_balance_before, to_balance_after, is_deleted'
+    )
     .eq('id', id)
     .maybeSingle();
 
@@ -98,6 +162,10 @@ async function getActiveTransaction(supabase: ReturnType<typeof createServerClie
     amount: Number(data.amount),
     account_id: (data.account_id as string | null) ?? null,
     to_account_id: (data.to_account_id as string | null) ?? null,
+    balance_before: data.balance_before == null ? null : Number(data.balance_before),
+    balance_after: data.balance_after == null ? null : Number(data.balance_after),
+    to_balance_before: data.to_balance_before == null ? null : Number(data.to_balance_before),
+    to_balance_after: data.to_balance_after == null ? null : Number(data.to_balance_after),
   };
 }
 
@@ -152,6 +220,10 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       updatePayload.to_account_id = normalizeNullableString(body.to_account_id, 'to_account_id');
     }
 
+    if ('installment_id' in body) {
+      updatePayload.installment_id = normalizeNullableString(body.installment_id, 'installment_id');
+    }
+
     if ('transaction_date' in body) {
       const raw = normalizeNullableString(body.transaction_date, 'transaction_date');
       if (!raw) {
@@ -191,7 +263,18 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     const balanceDiffs = diffEffects(getEffects(existing), getEffects(nextState));
 
-    await applyBalanceDiffs(supabase, balanceDiffs);
+    const balanceSnapshots = await applyBalanceDiffs(supabase, balanceDiffs);
+
+    const nextSnapshot = buildSnapshotForState(nextState, balanceSnapshots, {
+      balance_before: existing.balance_before,
+      balance_after: existing.balance_after,
+      to_balance_before: existing.to_balance_before,
+      to_balance_after: existing.to_balance_after,
+    });
+    updatePayload.balance_before = nextSnapshot.balance_before;
+    updatePayload.balance_after = nextSnapshot.balance_after;
+    updatePayload.to_balance_before = nextSnapshot.to_balance_before;
+    updatePayload.to_balance_after = nextSnapshot.to_balance_after;
 
     const { error: updateError } = await supabase
       .from('transactions')
@@ -204,6 +287,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       throw new Error(`Gagal update transaksi: ${updateError.message}`);
     }
 
+    revalidateFinancePaths();
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 });
@@ -233,6 +317,7 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
       throw new Error(`Gagal menghapus transaksi: ${deleteError.message}`);
     }
 
+    revalidateFinancePaths();
     return NextResponse.json({ success: true });
   } catch (error: any) {
     return NextResponse.json({ error: error?.message || 'Internal server error' }, { status: 500 });

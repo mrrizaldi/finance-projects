@@ -1,10 +1,10 @@
+import { unstable_cache } from 'next/cache';
 import { createServerClient } from '@/lib/supabase';
 import { formatRupiah, startOfMonth, endOfMonth } from '@/lib/utils';
 import { Summary, MonthlyTrend, CategoryBreakdown, VTransaction } from '@/types';
 import CashflowChart from '@/components/charts/CashflowChart';
 import CategoryChart from '@/components/charts/CategoryChart';
 import TransactionRow from '@/components/transactions/TransactionRow';
-import { TrendingUp, TrendingDown, ArrowUpRight, ArrowDownRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
   Card,
@@ -15,54 +15,55 @@ import {
 
 export const revalidate = 60; // Revalidate every minute
 
-async function getOverviewData() {
-  const supabase = createServerClient();
-  const now = new Date();
-  const start = startOfMonth(now);
-  const end = endOfMonth(now);
+const getOverviewData = unstable_cache(
+  async () => {
+    const supabase = createServerClient();
+    const now = new Date();
+    const start = startOfMonth(now);
+    const end = endOfMonth(now);
 
-  const [summaryRes, trendRes, categoryRes, txRes] = await Promise.all([
-    supabase.rpc('get_summary', { p_start_date: start, p_end_date: end }),
-    supabase.rpc('get_monthly_trend', { p_months: 6 }),
-    supabase.rpc('get_category_breakdown', { p_start_date: start, p_end_date: end, p_type: 'expense' }),
-    supabase
-      .from('v_transactions')
-      .select('*')
-      .order('transaction_date', { ascending: false })
-      .limit(10),
-  ]);
+    const [summaryRes, trendRes, categoryRes, txRes] = await Promise.all([
+      supabase.rpc('get_summary', { p_start_date: start, p_end_date: end }),
+      supabase.rpc('get_monthly_trend', { p_months: 6 }),
+      supabase.rpc('get_category_breakdown', { p_start_date: start, p_end_date: end, p_type: 'expense' }),
+      supabase
+        .from('v_transactions')
+        .select(
+          'id, type, amount, description, merchant, category_id, account_id, to_account_id, installment_id, source, balance_after, is_adjustment, transaction_date, category_name, category_color, account_name, to_account_name, installment_name'
+        )
+        .order('transaction_date', { ascending: false })
+        .limit(10),
+    ]);
 
-  return {
-    summary: (summaryRes.data?.[0] ?? null) as Summary | null,
-    trend: (trendRes.data ?? []) as MonthlyTrend[],
-    categories: (categoryRes.data ?? []) as CategoryBreakdown[],
-    transactions: (txRes.data ?? []) as VTransaction[],
-  };
-}
+    return {
+      summary: (summaryRes.data?.[0] ?? null) as Summary | null,
+      trend: (trendRes.data ?? []) as MonthlyTrend[],
+      categories: (categoryRes.data ?? []) as CategoryBreakdown[],
+      transactions: (txRes.data ?? []) as VTransaction[],
+    };
+  },
+  ['overview-data'],
+  { revalidate: 60, tags: ['overview', 'analytics', 'chat-context'] }
+);
 
 function StatCard({
   title,
   value,
   sub,
   positive,
-  icon,
-  color,
+  tone,
 }: {
   title: string;
   value: string;
   sub?: string;
   positive?: boolean;
-  icon: React.ReactNode;
-  color: string;
+  tone: string;
 }) {
   return (
     <Card>
-      <CardContent className="flex items-start gap-4 p-4">
-        <div className={cn('p-2.5 rounded-lg flex-shrink-0', color)}>
-          {icon}
-        </div>
+      <CardContent className="p-4">
         <div className="flex-1 min-w-0">
-          <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide">{title}</p>
+          <p className={cn('text-xs font-medium uppercase tracking-wide', tone)}>{title}</p>
           <p className="text-xl font-bold text-foreground mt-0.5 truncate">{value}</p>
           {sub && (
             <p className={cn('text-xs mt-1', positive === true ? 'text-emerald-600' : positive === false ? 'text-red-500' : 'text-muted-foreground')}>
@@ -83,7 +84,7 @@ export default async function OverviewPage() {
   const net = income - expense;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       {/* Header */}
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">Overview</h1>
@@ -96,33 +97,26 @@ export default async function OverviewPage() {
           title="Total Pemasukan"
           value={formatRupiah(income)}
           sub={`${summary?.transaction_count ?? 0} transaksi bulan ini`}
-          icon={<TrendingUp className="h-5 w-5 text-emerald-600" />}
-          color="bg-emerald-50"
+          tone="text-emerald-600"
         />
         <StatCard
           title="Total Pengeluaran"
           value={formatRupiah(expense)}
           sub={`Terbesar: ${summary?.top_expense_category ?? '-'}`}
-          icon={<TrendingDown className="h-5 w-5 text-red-500" />}
-          color="bg-red-50"
+          tone="text-red-500"
         />
         <StatCard
           title="Net Cashflow"
           value={formatRupiah(Math.abs(net))}
-          sub={net >= 0 ? '▲ Surplus bulan ini' : '▼ Defisit bulan ini'}
+          sub={net >= 0 ? 'Surplus bulan ini' : 'Defisit bulan ini'}
           positive={net >= 0}
-          icon={
-            net >= 0
-              ? <ArrowUpRight className="h-5 w-5 text-blue-600" />
-              : <ArrowDownRight className="h-5 w-5 text-orange-500" />
-          }
-          color={net >= 0 ? 'bg-blue-50' : 'bg-orange-50'}
+          tone={net >= 0 ? 'text-blue-600' : 'text-orange-500'}
         />
       </div>
 
       {/* Quick stats footer */}
       {summary && (
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
           <Card>
             <CardContent className="px-4 py-3">
               <p className="text-xs text-muted-foreground">Avg. harian</p>
@@ -186,7 +180,7 @@ export default async function OverviewPage() {
         <div className="px-4 py-4 border-b border-border flex items-center justify-between">
           <h2 className="text-sm font-semibold text-foreground">Transaksi Terbaru</h2>
           <a href="/transactions" className="text-xs text-blue-600 hover:underline">
-            Lihat semua →
+            Lihat semua
           </a>
         </div>
         {transactions.length === 0 ? (

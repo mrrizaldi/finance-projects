@@ -1,0 +1,94 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - generic [ref=e6]: Finance
+          - paragraph [ref=e7]: Personal Dashboard
+        - navigation [ref=e9]:
+          - link "Overview" [ref=e10] [cursor=pointer]:
+            - /url: /
+          - link "Transaksi" [ref=e11] [cursor=pointer]:
+            - /url: /transactions
+          - link "Analitik" [ref=e12] [cursor=pointer]:
+            - /url: /analytics
+          - link "Insights AI" [ref=e13] [cursor=pointer]:
+            - /url: /insights
+          - link "Budget" [ref=e14] [cursor=pointer]:
+            - /url: /budget
+          - link "Cicilan" [ref=e15] [cursor=pointer]:
+            - /url: /installments
+          - link "Pengaturan" [ref=e16] [cursor=pointer]:
+            - /url: /settings
+        - paragraph [ref=e18]: "@aldi_monman_bot"
+    - main [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - heading "Overview" [level=1] [ref=e22]
+          - paragraph [ref=e23]: Ringkasan keuangan bulan ini
+        - generic [ref=e24]:
+          - generic [ref=e27]:
+            - paragraph [ref=e28]: Total Pemasukan
+            - paragraph [ref=e29]: Rp 1.318.314
+            - paragraph [ref=e30]: 47 transaksi bulan ini
+          - generic [ref=e33]:
+            - paragraph [ref=e34]: Total Pengeluaran
+            - paragraph [ref=e35]: Rp 1.085.822
+            - paragraph [ref=e36]: "Terbesar: Makanan & Minuman"
+          - generic [ref=e39]:
+            - paragraph [ref=e40]: Net Cashflow
+            - paragraph [ref=e41]: Rp 232.492
+            - paragraph [ref=e42]: Surplus bulan ini
+        - generic [ref=e43]:
+          - generic [ref=e45]:
+            - paragraph [ref=e46]: Avg. harian
+            - paragraph [ref=e47]: Rp 37.442
+          - generic [ref=e49]:
+            - paragraph [ref=e50]: Kategori terbesar
+            - paragraph [ref=e51]: Makanan & Minuman
+          - generic [ref=e53]:
+            - paragraph [ref=e54]: Pengeluaran top
+            - paragraph [ref=e55]: Rp 358.000
+          - generic [ref=e57]:
+            - paragraph [ref=e58]: Total transaksi
+            - paragraph [ref=e59]: "47"
+        - generic [ref=e60]:
+          - generic [ref=e61]:
+            - generic [ref=e63]: Cashflow 6 Bulan Terakhir
+            - generic [ref=e66]:
+              - list [ref=e68]:
+                - listitem [ref=e69]:
+                  - img "Pengeluaran legend icon" [ref=e70]
+                  - text: Pengeluaran
+                - listitem [ref=e72]:
+                  - img "Pemasukan legend icon" [ref=e73]
+                  - text: Pemasukan
+                - listitem [ref=e75]:
+                  - img "Net legend icon" [ref=e76]
+                  - text: Net
+              - application [ref=e78]:
+                - generic [ref=e115]:
+                  - generic [ref=e116]:
+                    - generic [ref=e118]: Nov 2025
+                    - generic [ref=e120]: Dec 2025
+                    - generic [ref=e122]: Jan 2026
+                    - generic [ref=e124]: Feb 2026
+                    - generic [ref=e126]: Mar 2026
+                    - generic [ref=e128]: Apr 2026
+                  - generic [ref=e129]:
+                    - generic [ref=e131]: "-0.5jt"
+                    - generic [ref=e133]: 0.0jt
+                    - generic [ref=e135]: 0.5jt
+                    - generic [ref=e137]: 0.9jt
+                    - generic [ref=e139]: 1.4jt
+          - generic [ref=e140]:
+            - generic [ref=e142]: Pengeluaran per Kategori
+            - generic [ref=e144]: Belum ada data kategori
+        - generic [ref=e145]:
+          - generic [ref=e146]:
+            - heading "Transaksi Terbaru" [level=2] [ref=e147]
+            - link "Lihat semua" [ref=e148] [cursor=pointer]:
+              - /url: /transactions
+          - generic [ref=e149]: Belum ada transaksi
+  - alert [ref=e150]
+  - generic [ref=e151]: "-0.5jt"

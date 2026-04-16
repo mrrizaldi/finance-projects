@@ -19,9 +19,9 @@ export default function RootLayout({
   return (
     <html lang="id" className={cn('font-sans dark', inter.variable)}>
       <body className={inter.className}>
-        <div className="flex min-h-screen bg-background">
+        <div className="min-h-screen bg-background lg:flex">
           <Sidebar />
-          <main className="flex-1 overflow-x-hidden">
+          <main className="min-w-0 flex-1 overflow-x-hidden">
             {children}
           </main>
         </div>

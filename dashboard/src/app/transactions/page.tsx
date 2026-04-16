@@ -1,17 +1,43 @@
 import { Suspense } from 'react';
+import { unstable_cache } from 'next/cache';
 import { createServerClient } from '@/lib/supabase';
-import { VTransaction, Category, Account } from '@/types';
+import { VTransaction, Category, Account, Installment } from '@/types';
 import TransactionListClient from '@/components/transactions/TransactionListClient';
 import TransactionFilters from './TransactionFilters';
 import TransactionSort from './TransactionSort';
 import { formatRupiah } from '@/lib/utils';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 
-export const revalidate = 30;
+export const revalidate = 60;
 
 const PAGE_SIZE = 25;
+const TX_LIST_COLUMNS = [
+  'id',
+  'type',
+  'amount',
+  'description',
+  'merchant',
+  'category_id',
+  'account_id',
+  'to_account_id',
+  'installment_id',
+  'source',
+  'balance_before',
+  'balance_after',
+  'to_balance_before',
+  'to_balance_after',
+  'is_adjustment',
+  'adjustment_note',
+  'transaction_date',
+  'created_at',
+  'updated_at',
+  'category_name',
+  'category_color',
+  'account_name',
+  'to_account_name',
+  'installment_name',
+].join(', ');
+const REFERENCE_TTL_SECONDS = 300;
 
 interface Props {
   searchParams: {
@@ -26,15 +52,46 @@ interface Props {
   };
 }
 
+const getTransactionReferences = unstable_cache(
+  async () => {
+    const supabase = createServerClient();
+    const [catRes, accRes, instRes] = await Promise.all([
+      supabase
+        .from('categories')
+        .select('id, name, type, color, budget_monthly, sort_order, is_active')
+        .eq('is_active', true)
+        .order('sort_order'),
+      supabase
+        .from('accounts')
+        .select('id, name, type, balance, is_active')
+        .eq('is_active', true)
+        .order('name'),
+      supabase
+        .from('installments')
+        .select('id, name, monthly_amount, status')
+        .eq('status', 'active')
+        .order('name'),
+    ]);
+
+    return {
+      categories: (catRes.data ?? []) as Category[],
+      accounts: (accRes.data ?? []) as Account[],
+      installments: (instRes.data ?? []) as Pick<Installment, 'id' | 'name' | 'monthly_amount' | 'status'>[],
+    };
+  },
+  ['transactions-references'],
+  { revalidate: REFERENCE_TTL_SECONDS, tags: ['accounts', 'categories', 'installments', 'transactions-references'] }
+);
+
 async function getData(searchParams: Props['searchParams']) {
   const supabase = createServerClient();
   const page = Math.max(1, parseInt(searchParams.page || '1'));
   const from = (page - 1) * PAGE_SIZE;
-  const to = from + PAGE_SIZE - 1;
+  const to = from + PAGE_SIZE;
 
   let query = supabase
     .from('v_transactions')
-    .select('*', { count: 'exact' });
+    .select(TX_LIST_COLUMNS);
 
   if (searchParams.type) query = query.eq('type', searchParams.type);
   if (searchParams.category) query = query.eq('category_id', searchParams.category);
@@ -63,17 +120,21 @@ async function getData(searchParams: Props['searchParams']) {
 
   query = query.range(from, to);
 
-  const [txRes, catRes, accRes] = await Promise.all([
+  const [txRes, refs] = await Promise.all([
     query,
-    supabase.from('categories').select('*').order('sort_order'),
-    supabase.from('accounts').select('id, name, type, balance, icon').order('name'),
+    getTransactionReferences(),
   ]);
 
+  const rows = ((txRes.data ?? []) as unknown[]) as VTransaction[];
+  const hasMore = rows.length > PAGE_SIZE;
+  const transactions = hasMore ? rows.slice(0, PAGE_SIZE) : rows;
+
   return {
-    transactions: (txRes.data ?? []) as VTransaction[],
-    total: txRes.count ?? 0,
-    categories: (catRes.data ?? []) as Category[],
-    accounts: (accRes.data ?? []) as Account[],
+    transactions,
+    hasMore,
+    categories: refs.categories,
+    accounts: refs.accounts,
+    installments: refs.installments,
     page,
   };
 }
@@ -94,8 +155,9 @@ function PaginationLink({ href, children, disabled }: { href: string; children: 
 }
 
 export default async function TransactionsPage({ searchParams }: Props) {
-  const { transactions, total, categories, accounts, page } = await getData(searchParams);
-  const totalPages = Math.ceil(total / PAGE_SIZE);
+  const { transactions, hasMore, categories, accounts, installments, page } = await getData(searchParams);
+  const estimatedTotal = (page - 1) * PAGE_SIZE + transactions.length + (hasMore ? 1 : 0);
+  const totalPages = Math.max(page, Math.ceil(estimatedTotal / PAGE_SIZE));
 
   const buildPageUrl = (p: number) => {
     const params = new URLSearchParams();
@@ -111,14 +173,19 @@ export default async function TransactionsPage({ searchParams }: Props) {
   };
 
   // Calculate totals for current filtered view
-  const incomeTotal = transactions.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-  const expenseTotal = transactions.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
+  const nonAdjustmentTransactions = transactions.filter((t) => !t.is_adjustment);
+  const incomeTotal = nonAdjustmentTransactions
+    .filter((t) => t.type === 'income')
+    .reduce((s, t) => s + t.amount, 0);
+  const expenseTotal = nonAdjustmentTransactions
+    .filter((t) => t.type === 'expense')
+    .reduce((s, t) => s + t.amount, 0);
 
   return (
-    <div className="p-6 max-w-7xl mx-auto">
+    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-foreground">Transaksi</h1>
-        <p className="text-muted-foreground text-sm mt-1">{total} transaksi ditemukan</p>
+        <p className="text-muted-foreground text-sm mt-1">{transactions.length === 0 ? '0' : `~${estimatedTotal}`} transaksi ditemukan</p>
       </div>
 
       <Suspense fallback={null}>
@@ -126,12 +193,12 @@ export default async function TransactionsPage({ searchParams }: Props) {
       </Suspense>
 
       {/* Sort + summary bar */}
-      <div className="flex items-center justify-between mb-3 px-1">
-        <div className="flex items-center gap-4 text-sm">
+      <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm">
           <span className="text-emerald-600 font-medium">+{formatRupiah(incomeTotal)}</span>
           <span className="text-red-500 font-medium">-{formatRupiah(expenseTotal)}</span>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 self-start sm:self-auto">
           <label className="text-xs text-muted-foreground">Urut:</label>
           <TransactionSort currentSort={searchParams.sort || 'date_desc'} />
         </div>
@@ -139,7 +206,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
 
       {/* Transaction list */}
       <Card>
-        <TransactionListClient transactions={transactions} categories={categories} accounts={accounts} />
+        <TransactionListClient transactions={transactions} categories={categories} accounts={accounts} installments={installments} />
       </Card>
 
       {/* Pagination */}
@@ -149,9 +216,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
             Halaman {page} dari {totalPages}
           </p>
           <div className="flex items-center gap-2">
-            <PaginationLink href={buildPageUrl(page - 1)} disabled={page <= 1}>
-              <ChevronLeft className="h-4 w-4" />
-            </PaginationLink>
+            <PaginationLink href={buildPageUrl(page - 1)} disabled={page <= 1}>Prev</PaginationLink>
             {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
               let p: number;
               if (totalPages <= 5) p = i + 1;
@@ -172,9 +237,7 @@ export default async function TransactionsPage({ searchParams }: Props) {
                 </a>
               );
             })}
-            <PaginationLink href={buildPageUrl(page + 1)} disabled={page >= totalPages}>
-              <ChevronRight className="h-4 w-4" />
-            </PaginationLink>
+            <PaginationLink href={buildPageUrl(page + 1)} disabled={!hasMore}>Next</PaginationLink>
           </div>
         </div>
       )}

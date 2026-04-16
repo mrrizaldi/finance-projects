@@ -4,11 +4,12 @@ const bot = createBot();
 
 bot.api.setMyCommands([
   { command: 'start', description: 'Mulai bot & tampilkan menu' },
+  { command: 'help', description: 'Bantuan command & format' },
   { command: 'expense', description: 'Catat pengeluaran' },
   { command: 'income', description: 'Catat pemasukan' },
   { command: 'transfer', description: 'Transfer antar akun' },
   { command: 'withdraw', description: 'Tarik ATM (bank → cash)' },
-  { command: 'balance', description: 'Lihat saldo semua akun' },
+  { command: 'balance', description: 'Lihat saldo / adjust saldo akun' },
   { command: 'report', description: 'Laporan keuangan (today/week/month/year)' },
   { command: 'category', description: 'Lihat daftar kategori' },
   { command: 'ask', description: 'Tanya AI tentang keuangan' },
@@ -22,7 +23,7 @@ bot.api.setMyCommands([
 
 bot.start({
   onStart: (botInfo) => {
-    console.log(`🤖 Bot @${botInfo.username} is running!`);
+    console.log(`Bot @${botInfo.username} is running!`);
   },
 });
 

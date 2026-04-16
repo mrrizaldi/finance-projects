@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 import { createServerClient } from '@/lib/supabase';
@@ -7,6 +8,30 @@ export const dynamic = 'force-dynamic';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+const getChatContext = unstable_cache(
+  async (yearMonth: string) => {
+    const supabase = createServerClient();
+    const [year, month] = yearMonth.split('-').map(Number);
+    const now = new Date(year, (month || 1) - 1, 2);
+    const start = startOfMonth(now);
+    const end = endOfMonth(now);
+
+    const [summaryRes, breakdownRes, accountsRes] = await Promise.all([
+      supabase.rpc('get_summary', { p_start_date: start, p_end_date: end }),
+      supabase.rpc('get_category_breakdown', { p_start_date: start, p_end_date: end, p_type: 'expense' }),
+      supabase.from('accounts').select('name, type, balance').eq('is_active', true),
+    ]);
+
+    return {
+      summary: summaryRes.data?.[0] ?? null,
+      breakdown: breakdownRes.data ?? [],
+      accounts: accountsRes.data ?? [],
+    };
+  },
+  ['chat-monthly-context'],
+  { revalidate: 45, tags: ['chat-context', 'overview', 'analytics', 'accounts', 'categories'] }
+);
+
 export async function POST(req: NextRequest) {
   try {
     const { messages } = await req.json();
@@ -15,21 +40,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid messages' }, { status: 400 });
     }
 
-    // Fetch context data from Supabase
-    const supabase = createServerClient();
     const now = new Date();
-    const start = startOfMonth(now);
-    const end = endOfMonth(now);
-
-    const [summaryRes, breakdownRes, accountsRes] = await Promise.all([
-      supabase.rpc('get_summary', { p_start_date: start, p_end_date: end }),
-      supabase.rpc('get_category_breakdown', { p_start_date: start, p_end_date: end, p_type: 'expense' }),
-      supabase.from('accounts').select('name, type, balance'),
-    ]);
-
-    const summary = summaryRes.data?.[0];
-    const breakdown = breakdownRes.data ?? [];
-    const accounts = accountsRes.data ?? [];
+    const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+    const { summary, breakdown, accounts } = await getChatContext(yearMonth);
 
     const formatRp = (n: number) => `Rp ${Number(n).toLocaleString('id-ID')}`;
 
@@ -48,7 +61,7 @@ export async function POST(req: NextRequest) {
       '',
       '=== BREAKDOWN KATEGORI PENGELUARAN ===',
       breakdown.slice(0, 8).map((c: any) =>
-        `- ${c.category_icon} ${c.category_name}: ${formatRp(c.total_amount)} (${c.percentage}%, ${c.transaction_count} transaksi)`
+        `- ${c.category_name}: ${formatRp(c.total_amount)} (${c.percentage}%, ${c.transaction_count} transaksi)`
       ).join('\n') || 'Tidak ada data.',
       '',
       '=== SALDO AKUN ===',

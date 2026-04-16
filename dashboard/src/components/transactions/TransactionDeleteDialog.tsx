@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -11,6 +10,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { VTransaction } from '@/types';
+import { Trash2 } from 'lucide-react';
 import { formatRupiah, TRANSACTION_TYPE_LABEL } from '@/lib/utils';
 
 interface Props {
@@ -21,7 +21,6 @@ interface Props {
 }
 
 export default function TransactionDeleteDialog({ tx, open, onOpenChange, onSuccess }: Props) {
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -41,7 +40,6 @@ export default function TransactionDeleteDialog({ tx, open, onOpenChange, onSucc
       }
       onOpenChange(false);
       onSuccess();
-      router.refresh();
     } catch {
       setError('Terjadi kesalahan jaringan');
     } finally {
@@ -52,6 +50,13 @@ export default function TransactionDeleteDialog({ tx, open, onOpenChange, onSucc
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-sm">
+        {loading && (
+          <div className="absolute inset-0 z-20 bg-black/70 backdrop-blur-sm rounded-lg flex items-center justify-center">
+            <div className="rounded-md border border-border bg-card px-3 py-2 text-sm">
+              Menghapus transaksi...
+            </div>
+          </div>
+        )}
         <DialogHeader>
           <DialogTitle>Hapus Transaksi</DialogTitle>
         </DialogHeader>
@@ -76,7 +81,14 @@ export default function TransactionDeleteDialog({ tx, open, onOpenChange, onSucc
             Batal
           </Button>
           <Button variant="destructive" onClick={handleDelete} disabled={loading}>
-            {loading ? 'Menghapus...' : 'Hapus'}
+            {loading ? (
+              'Menghapus...'
+            ) : (
+              <>
+                <Trash2 className="h-3.5 w-3.5 mr-1" />
+                Hapus
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

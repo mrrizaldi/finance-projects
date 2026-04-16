@@ -11,7 +11,7 @@ export async function categorizeTransaction(
   categories: Category[]
 ): Promise<string | null> {
   const categoryList = categories
-    .map((c) => `- ID: ${c.id} | ${c.icon} ${c.name}`)
+    .map((c) => `- ID: ${c.id} | ${c.name}`)
     .join('\n');
 
   const prompt = `Kamu adalah asisten kategorisasi keuangan pribadi Indonesia.
@@ -90,7 +90,6 @@ export async function generateInsight(
 ): Promise<string> {
   const systemPrompt = `Kamu adalah analis keuangan pribadi yang membantu user Indonesia mengelola cashflow mereka.
 Gaya bahasa: casual, friendly, pakai bahasa Indonesia sehari-hari.
-Gunakan emoji untuk highlight poin penting.
 Berikan insight yang actionable, bukan hanya deskripsi data.
 Format: ringkas, pakai bullet points jika perlu.
 Selalu gunakan format Rupiah (Rp) dengan titik sebagai separator ribuan.`;

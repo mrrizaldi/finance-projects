@@ -18,25 +18,21 @@ export function formatTransactionMessage(txn: {
   amount: number;
   description?: string;
   category_name?: string;
-  category_icon?: string;
   account_name?: string;
   transaction_date: string;
   source: string;
 }): string {
-  const icon = txn.type === 'income' ? '💰' : txn.type === 'expense' ? '💸' : '🔄';
   const sign = txn.type === 'income' ? '+' : '-';
 
   return [
-    `${icon} <b>Transaksi ${txn.type === 'income' ? 'Masuk' : txn.type === 'expense' ? 'Keluar' : 'Transfer'}</b>`,
+    `<b>Transaksi ${txn.type === 'income' ? 'Masuk' : txn.type === 'expense' ? 'Keluar' : 'Transfer'}</b>`,
     `━━━━━━━━━━━━━━━━━━━━━`,
     `${sign}${formatRupiah(txn.amount)}`,
-    txn.description ? `📝 ${txn.description}` : '',
-    txn.category_icon && txn.category_name
-      ? `📂 ${txn.category_icon} ${txn.category_name}`
-      : '',
-    txn.account_name ? `🏦 ${txn.account_name}` : '',
-    `⏰ ${formatDate(txn.transaction_date)}`,
-    `📡 ${txn.source.replace('_', ' ')}`,
+    txn.description ? `Deskripsi: ${txn.description}` : '',
+    txn.category_name ? `Kategori: ${txn.category_name}` : '',
+    txn.account_name ? `Akun: ${txn.account_name}` : '',
+    `Waktu: ${formatDate(txn.transaction_date)}`,
+    `Sumber: ${txn.source.replace('_', ' ')}`,
     `━━━━━━━━━━━━━━━━━━━━━`,
   ]
     .filter(Boolean)
@@ -55,18 +51,16 @@ export function formatSummaryMessage(
     top_expense_amount: number;
   }
 ): string {
-  const netIcon = summary.net_cashflow >= 0 ? '📈' : '📉';
-
   return [
-    `📊 <b>Laporan ${period}</b>`,
+    `<b>Laporan ${period}</b>`,
     `━━━━━━━━━━━━━━━━━━━━━`,
-    `💰 Income: <b>${formatRupiah(summary.total_income)}</b>`,
-    `💸 Expense: <b>${formatRupiah(summary.total_expense)}</b>`,
-    `${netIcon} Net: <b>${formatRupiah(summary.net_cashflow)}</b>`,
+    `Income: <b>${formatRupiah(summary.total_income)}</b>`,
+    `Expense: <b>${formatRupiah(summary.total_expense)}</b>`,
+    `Net: <b>${formatRupiah(summary.net_cashflow)}</b>`,
     ``,
-    `📋 Total transaksi: ${summary.transaction_count}`,
-    `📅 Rata-rata expense/hari: ${formatRupiah(summary.avg_daily_expense)}`,
-    `🏆 Top kategori: ${summary.top_expense_category} (${formatRupiah(summary.top_expense_amount)})`,
+    `Total transaksi: ${summary.transaction_count}`,
+    `Rata-rata expense/hari: ${formatRupiah(summary.avg_daily_expense)}`,
+    `Top kategori: ${summary.top_expense_category} (${formatRupiah(summary.top_expense_amount)})`,
     `━━━━━━━━━━━━━━━━━━━━━`,
   ].join('\n');
 }

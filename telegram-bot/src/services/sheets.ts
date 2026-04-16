@@ -4,9 +4,11 @@ import { config } from '../config';
 import { Transaction, Category, Account, Installment } from '../types';
 
 let doc: GoogleSpreadsheet | null = null;
+let docLoading: Promise<GoogleSpreadsheet> | null = null;
 
 async function getDoc(): Promise<GoogleSpreadsheet> {
   if (doc) return doc;
+  if (docLoading) return docLoading;
 
   const auth = new JWT({
     email: config.google.serviceAccountEmail,
@@ -14,9 +16,18 @@ async function getDoc(): Promise<GoogleSpreadsheet> {
     scopes: ['https://www.googleapis.com/auth/spreadsheets'],
   });
 
-  doc = new GoogleSpreadsheet(config.google.sheetsId, auth);
-  await doc.loadInfo();
-  return doc;
+  const nextDoc = new GoogleSpreadsheet(config.google.sheetsId, auth);
+  docLoading = (async () => {
+    await nextDoc.loadInfo();
+    doc = nextDoc;
+    return nextDoc;
+  })();
+
+  try {
+    return await docLoading;
+  } finally {
+    docLoading = null;
+  }
 }
 
 export const sheets = {
@@ -119,7 +130,6 @@ export const sheets = {
           name: a.name,
           type: a.type,
           balance: a.balance,
-          icon: a.icon,
         }))
       );
     } catch (err) {

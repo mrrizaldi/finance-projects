@@ -1,0 +1,419 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]: Finance
+        - paragraph [ref=e7]: Personal Dashboard
+      - navigation [ref=e9]:
+        - link "Overview" [ref=e10] [cursor=pointer]:
+          - /url: /
+        - link "Transaksi" [ref=e11] [cursor=pointer]:
+          - /url: /transactions
+        - link "Analitik" [ref=e12] [cursor=pointer]:
+          - /url: /analytics
+        - link "Insights AI" [ref=e13] [cursor=pointer]:
+          - /url: /insights
+        - link "Budget" [ref=e14] [cursor=pointer]:
+          - /url: /budget
+        - link "Cicilan" [ref=e15] [cursor=pointer]:
+          - /url: /installments
+        - link "Pengaturan" [ref=e16] [cursor=pointer]:
+          - /url: /settings
+      - paragraph [ref=e18]: "@aldi_monman_bot"
+  - main [ref=e19]:
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - heading "Pengaturan" [level=1] [ref=e22]
+        - paragraph [ref=e23]: Kelola akun dan kategori transaksi
+      - generic [ref=e24]:
+        - generic [ref=e26]:
+          - generic [ref=e27]: Akun (9)
+          - button "Tambah Akun" [ref=e28] [cursor=pointer]:
+            - img
+            - text: Tambah Akun
+        - generic [ref=e29]:
+          - generic [ref=e30]:
+            - generic [ref=e32]:
+              - paragraph [ref=e34]: BCA
+              - paragraph [ref=e35]: bank
+            - generic [ref=e36]:
+              - generic [ref=e37]: Rp 356.597
+              - button "Adjust" [ref=e38] [cursor=pointer]:
+                - img
+                - text: Adjust
+              - button "Edit" [ref=e39] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e40] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e41]:
+            - generic [ref=e43]:
+              - paragraph [ref=e45]: BSI
+              - paragraph [ref=e46]: bank
+            - generic [ref=e47]:
+              - generic [ref=e48]: Rp 191.966
+              - button "Adjust" [ref=e49] [cursor=pointer]:
+                - img
+                - text: Adjust
+              - button "Edit" [ref=e50] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e51] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e52]:
+            - generic [ref=e54]:
+              - paragraph [ref=e56]: Cash
+              - paragraph [ref=e57]: cash
+            - generic [ref=e58]:
+              - generic [ref=e59]: Rp 74.000
+              - button "Adjust" [ref=e60] [cursor=pointer]:
+                - img
+                - text: Adjust
+              - button "Edit" [ref=e61] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e62] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e63]:
+            - generic [ref=e65]:
+              - paragraph [ref=e67]: Dana
+              - paragraph [ref=e68]: ewallet
+            - generic [ref=e69]:
+              - generic [ref=e70]: Rp 0
+              - button "Adjust" [ref=e71] [cursor=pointer]:
+                - img
+                - text: Adjust
+              - button "Edit" [ref=e72] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e73] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e74]:
+            - generic [ref=e76]:
+              - paragraph [ref=e78]: GoPay
+              - paragraph [ref=e79]: ewallet
+            - generic [ref=e80]:
+              - generic [ref=e81]: Rp 0
+              - button "Adjust" [ref=e82] [cursor=pointer]:
+                - img
+                - text: Adjust
+              - button "Edit" [ref=e83] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e84] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e85]:
+            - generic [ref=e87]:
+              - paragraph [ref=e89]: OVO
+              - paragraph [ref=e90]: ewallet
+            - generic [ref=e91]:
+              - generic [ref=e92]: Rp 0
+              - button "Adjust" [ref=e93] [cursor=pointer]:
+                - img
+                - text: Adjust
+              - button "Edit" [ref=e94] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e95] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e96]:
+            - generic [ref=e98]:
+              - paragraph [ref=e100]: ShopeePay
+              - paragraph [ref=e101]: ewallet
+            - generic [ref=e102]:
+              - generic [ref=e103]: Rp 0
+              - button "Adjust" [ref=e104] [cursor=pointer]:
+                - img
+                - text: Adjust
+              - button "Edit" [ref=e105] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e106] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e107]:
+            - generic [ref=e109]:
+              - paragraph [ref=e111]: Shopee
+              - paragraph [ref=e112]: marketplace
+            - generic [ref=e113]:
+              - generic [ref=e114]: Rp 57
+              - button "Adjust" [ref=e115] [cursor=pointer]:
+                - img
+                - text: Adjust
+              - button "Edit" [ref=e116] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e117] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e118]:
+            - generic [ref=e120]:
+              - paragraph [ref=e122]: Tokopedia
+              - paragraph [ref=e123]: marketplace
+            - generic [ref=e124]:
+              - generic [ref=e125]: Rp 0
+              - button "Adjust" [ref=e126] [cursor=pointer]:
+                - img
+                - text: Adjust
+              - button "Edit" [ref=e127] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e128] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+      - generic [ref=e129]:
+        - generic [ref=e131]:
+          - generic [ref=e132]: Kategori (24)
+          - button "Tambah Kategori" [ref=e133] [cursor=pointer]:
+            - img
+            - text: Tambah Kategori
+        - paragraph [ref=e135]: Pengeluaran (16)
+        - generic [ref=e136]:
+          - generic [ref=e137]:
+            - paragraph [ref=e141]: Suplementasi
+            - generic [ref=e142]:
+              - generic [ref=e143]: No budget
+              - button "Edit" [ref=e144] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e145] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e146]:
+            - paragraph [ref=e150]: Produktivitas dan Eksperimen
+            - generic [ref=e151]:
+              - generic [ref=e152]: No budget
+              - button "Edit" [ref=e153] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e154] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e155]:
+            - paragraph [ref=e159]: Makanan & Minuman
+            - generic [ref=e160]:
+              - generic [ref=e161]: No budget
+              - button "Edit" [ref=e162] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e163] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e164]:
+            - paragraph [ref=e168]: Transportasi
+            - generic [ref=e169]:
+              - generic [ref=e170]: No budget
+              - button "Edit" [ref=e171] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e172] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e173]:
+            - paragraph [ref=e177]: Belanja Online
+            - generic [ref=e178]:
+              - generic [ref=e179]: No budget
+              - button "Edit" [ref=e180] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e181] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e182]:
+            - paragraph [ref=e186]: Tagihan & Utilitas
+            - generic [ref=e187]:
+              - generic [ref=e188]: No budget
+              - button "Edit" [ref=e189] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e190] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e191]:
+            - paragraph [ref=e195]: Subscription
+            - generic [ref=e196]:
+              - generic [ref=e197]: No budget
+              - button "Edit" [ref=e198] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e199] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e200]:
+            - paragraph [ref=e204]: Kesehatan
+            - generic [ref=e205]:
+              - generic [ref=e206]: No budget
+              - button "Edit" [ref=e207] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e208] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e209]:
+            - paragraph [ref=e213]: Pendidikan
+            - generic [ref=e214]:
+              - generic [ref=e215]: No budget
+              - button "Edit" [ref=e216] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e217] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e218]:
+            - paragraph [ref=e222]: Olahraga
+            - generic [ref=e223]:
+              - generic [ref=e224]: No budget
+              - button "Edit" [ref=e225] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e226] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e227]:
+            - paragraph [ref=e231]: Hiburan
+            - generic [ref=e232]:
+              - generic [ref=e233]: No budget
+              - button "Edit" [ref=e234] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e235] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e236]:
+            - paragraph [ref=e240]: Pakaian
+            - generic [ref=e241]:
+              - generic [ref=e242]: No budget
+              - button "Edit" [ref=e243] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e244] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e245]:
+            - paragraph [ref=e249]: Kebutuhan Rumah
+            - generic [ref=e250]:
+              - generic [ref=e251]: No budget
+              - button "Edit" [ref=e252] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e253] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e254]:
+            - paragraph [ref=e258]: Sosial & Donasi
+            - generic [ref=e259]:
+              - generic [ref=e260]: No budget
+              - button "Edit" [ref=e261] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e262] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e263]:
+            - paragraph [ref=e267]: Transfer Keluar
+            - generic [ref=e268]:
+              - generic [ref=e269]: No budget
+              - button "Edit" [ref=e270] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e271] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e272]:
+            - paragraph [ref=e276]: Lainnya (Expense)
+            - generic [ref=e277]:
+              - generic [ref=e278]: No budget
+              - button "Edit" [ref=e279] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e280] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+        - paragraph [ref=e282]: Pemasukan (8)
+        - generic [ref=e283]:
+          - generic [ref=e284]:
+            - paragraph [ref=e288]: Beasiswa
+            - generic [ref=e289]:
+              - generic [ref=e290]: No budget
+              - button "Edit" [ref=e291] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e292] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e293]:
+            - paragraph [ref=e297]: Gaji
+            - generic [ref=e298]:
+              - generic [ref=e299]: No budget
+              - button "Edit" [ref=e300] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e301] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e302]:
+            - paragraph [ref=e306]: Freelance
+            - generic [ref=e307]:
+              - generic [ref=e308]: No budget
+              - button "Edit" [ref=e309] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e310] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e311]:
+            - paragraph [ref=e315]: Investasi
+            - generic [ref=e316]:
+              - generic [ref=e317]: No budget
+              - button "Edit" [ref=e318] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e319] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e320]:
+            - paragraph [ref=e324]: Bonus
+            - generic [ref=e325]:
+              - generic [ref=e326]: No budget
+              - button "Edit" [ref=e327] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e328] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e329]:
+            - paragraph [ref=e333]: Transfer Masuk
+            - generic [ref=e334]:
+              - generic [ref=e335]: No budget
+              - button "Edit" [ref=e336] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e337] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e338]:
+            - paragraph [ref=e342]: Cashback
+            - generic [ref=e343]:
+              - generic [ref=e344]: No budget
+              - button "Edit" [ref=e345] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e346] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan
+          - generic [ref=e347]:
+            - paragraph [ref=e351]: Lainnya (Income)
+            - generic [ref=e352]:
+              - generic [ref=e353]: No budget
+              - button "Edit" [ref=e354] [cursor=pointer]:
+                - img
+                - text: Edit
+              - button "Nonaktifkan" [ref=e355] [cursor=pointer]:
+                - img
+                - text: Nonaktifkan

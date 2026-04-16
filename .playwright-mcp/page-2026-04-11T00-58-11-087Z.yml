@@ -1,0 +1,298 @@
+- generic [ref=e2]:
+  - complementary [ref=e3]:
+    - generic [ref=e4]:
+      - generic [ref=e5]:
+        - generic [ref=e6]:
+          - img [ref=e7]
+          - generic [ref=e10]: Finance
+        - paragraph [ref=e11]: Personal Dashboard
+      - navigation [ref=e13]:
+        - link "Overview" [ref=e14] [cursor=pointer]:
+          - /url: /
+          - img [ref=e15]
+          - text: Overview
+        - link "Transaksi" [ref=e20] [cursor=pointer]:
+          - /url: /transactions
+          - img [ref=e21]
+          - text: Transaksi
+        - link "Analitik" [ref=e24] [cursor=pointer]:
+          - /url: /analytics
+          - img [ref=e25]
+          - text: Analitik
+        - link "Insights AI" [ref=e27] [cursor=pointer]:
+          - /url: /insights
+          - img [ref=e28]
+          - text: Insights AI
+        - link "Budget" [ref=e30] [cursor=pointer]:
+          - /url: /budget
+          - img [ref=e31]
+          - text: Budget
+        - link "Cicilan" [ref=e35] [cursor=pointer]:
+          - /url: /installments
+          - img [ref=e36]
+          - text: Cicilan
+        - link "Pengaturan" [ref=e38] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e39]
+          - text: Pengaturan
+      - paragraph [ref=e43]: "@aldi_monman_bot"
+  - main [ref=e44]:
+    - generic [ref=e45]:
+      - generic [ref=e46]:
+        - heading "Analitik" [level=1] [ref=e47]
+        - paragraph [ref=e48]: Visualisasi pola keuangan kamu
+      - generic [ref=e50]:
+        - generic [ref=e51]:
+          - button "Mingguan" [ref=e52] [cursor=pointer]
+          - button "Bulanan" [ref=e53] [cursor=pointer]
+          - button "Kuartal" [ref=e54] [cursor=pointer]
+          - button "Tahunan" [ref=e55] [cursor=pointer]
+        - generic [ref=e56]:
+          - button [ref=e57] [cursor=pointer]:
+            - img
+          - button "April 2026" [ref=e58] [cursor=pointer]
+          - button [ref=e59] [cursor=pointer]:
+            - img
+      - generic [ref=e60]:
+        - generic [ref=e61]:
+          - generic [ref=e63]:
+            - generic [ref=e64]: Pengeluaran per Kategori
+            - generic [ref=e65]: Rp 964.151
+          - generic [ref=e68]:
+            - generic [ref=e69]:
+              - generic [ref=e71]: 🍔 Makanan & Minuman
+              - generic [ref=e72]: Rp 328.600
+              - generic [ref=e73]: 34.1%
+            - generic [ref=e74]:
+              - generic [ref=e76]: ⚽ Olahraga
+              - generic [ref=e77]: Rp 313.800
+              - generic [ref=e78]: 32.5%
+            - generic [ref=e79]:
+              - generic [ref=e81]: 📁 Produktivitas dan Eksperimen
+              - generic [ref=e82]: Rp 135.003
+              - generic [ref=e83]: 14%
+            - generic [ref=e84]:
+              - generic [ref=e86]: 🚗 Transportasi
+              - generic [ref=e87]: Rp 108.308
+              - generic [ref=e88]: 11.2%
+            - generic [ref=e89]:
+              - generic [ref=e91]: 📄 Tagihan & Utilitas
+              - generic [ref=e92]: Rp 78.440
+              - generic [ref=e93]: 8.1%
+        - generic [ref=e94]:
+          - generic [ref=e96]:
+            - generic [ref=e97]: Pemasukan per Kategori
+            - generic [ref=e98]: Rp 1.228.314
+          - generic [ref=e101]:
+            - generic [ref=e102]:
+              - generic [ref=e104]: 💰 Gaji
+              - generic [ref=e105]: Rp 751.448
+              - generic [ref=e106]: 61.2%
+            - generic [ref=e107]:
+              - generic [ref=e109]: Beasiswa
+              - generic [ref=e110]: Rp 352.866
+              - generic [ref=e111]: 28.7%
+            - generic [ref=e112]:
+              - generic [ref=e114]: 💳 Transfer Masuk
+              - generic [ref=e115]: Rp 124.000
+              - generic [ref=e116]: 10.1%
+      - generic [ref=e119]: Tren Bulanan (12 Bulan)
+      - generic [ref=e122]:
+        - generic [ref=e123]:
+          - generic [ref=e124]: Heatmap Pengeluaran
+          - paragraph [ref=e125]: April 2026 — hari × jam
+        - generic [ref=e129]:
+          - generic [ref=e130]:
+            - generic [ref=e131]: "0"
+            - generic [ref=e134]: "3"
+            - generic [ref=e137]: "6"
+            - generic [ref=e140]: "9"
+            - generic [ref=e143]: "12"
+            - generic [ref=e146]: "15"
+            - generic [ref=e149]: "18"
+            - generic [ref=e152]: "21"
+          - generic [ref=e155]:
+            - generic [ref=e156]: Min
+            - generic "Min 0:00 — Rp 43.500 (6x)" [ref=e157] [cursor=pointer]
+            - generic "Min 1:00 — tidak ada" [ref=e158] [cursor=pointer]
+            - generic "Min 2:00 — tidak ada" [ref=e159] [cursor=pointer]
+            - generic "Min 3:00 — tidak ada" [ref=e160] [cursor=pointer]
+            - generic "Min 4:00 — tidak ada" [ref=e161] [cursor=pointer]
+            - generic "Min 5:00 — tidak ada" [ref=e162] [cursor=pointer]
+            - generic "Min 6:00 — tidak ada" [ref=e163] [cursor=pointer]
+            - generic "Min 7:00 — tidak ada" [ref=e164] [cursor=pointer]
+            - generic "Min 8:00 — tidak ada" [ref=e165] [cursor=pointer]
+            - generic "Min 9:00 — tidak ada" [ref=e166] [cursor=pointer]
+            - generic "Min 10:00 — tidak ada" [ref=e167] [cursor=pointer]
+            - generic "Min 11:00 — tidak ada" [ref=e168] [cursor=pointer]
+            - generic "Min 12:00 — tidak ada" [ref=e169] [cursor=pointer]
+            - generic "Min 13:00 — tidak ada" [ref=e170] [cursor=pointer]
+            - generic "Min 14:00 — tidak ada" [ref=e171] [cursor=pointer]
+            - generic "Min 15:00 — tidak ada" [ref=e172] [cursor=pointer]
+            - generic "Min 16:00 — tidak ada" [ref=e173] [cursor=pointer]
+            - generic "Min 17:00 — tidak ada" [ref=e174] [cursor=pointer]
+            - generic "Min 18:00 — tidak ada" [ref=e175] [cursor=pointer]
+            - generic "Min 19:00 — tidak ada" [ref=e176] [cursor=pointer]
+            - generic "Min 20:00 — tidak ada" [ref=e177] [cursor=pointer]
+            - generic "Min 21:00 — tidak ada" [ref=e178] [cursor=pointer]
+            - generic "Min 22:00 — tidak ada" [ref=e179] [cursor=pointer]
+            - generic "Min 23:00 — tidak ada" [ref=e180] [cursor=pointer]
+          - generic [ref=e181]:
+            - generic [ref=e182]: Sen
+            - generic "Sen 0:00 — Rp 25.000 (2x)" [ref=e183] [cursor=pointer]
+            - generic "Sen 1:00 — tidak ada" [ref=e184] [cursor=pointer]
+            - generic "Sen 2:00 — tidak ada" [ref=e185] [cursor=pointer]
+            - generic "Sen 3:00 — tidak ada" [ref=e186] [cursor=pointer]
+            - generic "Sen 4:00 — tidak ada" [ref=e187] [cursor=pointer]
+            - generic "Sen 5:00 — tidak ada" [ref=e188] [cursor=pointer]
+            - generic "Sen 6:00 — tidak ada" [ref=e189] [cursor=pointer]
+            - generic "Sen 7:00 — tidak ada" [ref=e190] [cursor=pointer]
+            - generic "Sen 8:00 — tidak ada" [ref=e191] [cursor=pointer]
+            - generic "Sen 9:00 — tidak ada" [ref=e192] [cursor=pointer]
+            - generic "Sen 10:00 — tidak ada" [ref=e193] [cursor=pointer]
+            - generic "Sen 11:00 — tidak ada" [ref=e194] [cursor=pointer]
+            - generic "Sen 12:00 — tidak ada" [ref=e195] [cursor=pointer]
+            - generic "Sen 13:00 — tidak ada" [ref=e196] [cursor=pointer]
+            - generic "Sen 14:00 — tidak ada" [ref=e197] [cursor=pointer]
+            - generic "Sen 15:00 — tidak ada" [ref=e198] [cursor=pointer]
+            - generic "Sen 16:00 — tidak ada" [ref=e199] [cursor=pointer]
+            - generic "Sen 17:00 — Rp 3.000 (1x)" [ref=e200] [cursor=pointer]
+            - generic "Sen 18:00 — tidak ada" [ref=e201] [cursor=pointer]
+            - generic "Sen 19:00 — tidak ada" [ref=e202] [cursor=pointer]
+            - generic "Sen 20:00 — tidak ada" [ref=e203] [cursor=pointer]
+            - generic "Sen 21:00 — tidak ada" [ref=e204] [cursor=pointer]
+            - generic "Sen 22:00 — tidak ada" [ref=e205] [cursor=pointer]
+            - generic "Sen 23:00 — tidak ada" [ref=e206] [cursor=pointer]
+          - generic [ref=e207]:
+            - generic [ref=e208]: Sel
+            - generic "Sel 0:00 — tidak ada" [ref=e209] [cursor=pointer]
+            - generic "Sel 1:00 — tidak ada" [ref=e210] [cursor=pointer]
+            - generic "Sel 2:00 — tidak ada" [ref=e211] [cursor=pointer]
+            - generic "Sel 3:00 — tidak ada" [ref=e212] [cursor=pointer]
+            - generic "Sel 4:00 — tidak ada" [ref=e213] [cursor=pointer]
+            - generic "Sel 5:00 — tidak ada" [ref=e214] [cursor=pointer]
+            - generic "Sel 6:00 — tidak ada" [ref=e215] [cursor=pointer]
+            - generic "Sel 7:00 — tidak ada" [ref=e216] [cursor=pointer]
+            - generic "Sel 8:00 — tidak ada" [ref=e217] [cursor=pointer]
+            - generic "Sel 9:00 — tidak ada" [ref=e218] [cursor=pointer]
+            - generic "Sel 10:00 — tidak ada" [ref=e219] [cursor=pointer]
+            - generic "Sel 11:00 — tidak ada" [ref=e220] [cursor=pointer]
+            - generic "Sel 12:00 — tidak ada" [ref=e221] [cursor=pointer]
+            - generic "Sel 13:00 — tidak ada" [ref=e222] [cursor=pointer]
+            - generic "Sel 14:00 — tidak ada" [ref=e223] [cursor=pointer]
+            - generic "Sel 15:00 — tidak ada" [ref=e224] [cursor=pointer]
+            - generic "Sel 16:00 — tidak ada" [ref=e225] [cursor=pointer]
+            - generic "Sel 17:00 — tidak ada" [ref=e226] [cursor=pointer]
+            - generic "Sel 18:00 — tidak ada" [ref=e227] [cursor=pointer]
+            - generic "Sel 19:00 — tidak ada" [ref=e228] [cursor=pointer]
+            - generic "Sel 20:00 — tidak ada" [ref=e229] [cursor=pointer]
+            - generic "Sel 21:00 — tidak ada" [ref=e230] [cursor=pointer]
+            - generic "Sel 22:00 — tidak ada" [ref=e231] [cursor=pointer]
+            - generic "Sel 23:00 — tidak ada" [ref=e232] [cursor=pointer]
+          - generic [ref=e233]:
+            - generic [ref=e234]: Rab
+            - generic "Rab 0:00 — Rp 17.900 (2x)" [ref=e235] [cursor=pointer]
+            - generic "Rab 1:00 — tidak ada" [ref=e236] [cursor=pointer]
+            - generic "Rab 2:00 — tidak ada" [ref=e237] [cursor=pointer]
+            - generic "Rab 3:00 — tidak ada" [ref=e238] [cursor=pointer]
+            - generic "Rab 4:00 — Rp 135.003 (1x)" [ref=e239] [cursor=pointer]
+            - generic "Rab 5:00 — tidak ada" [ref=e240] [cursor=pointer]
+            - generic "Rab 6:00 — tidak ada" [ref=e241] [cursor=pointer]
+            - generic "Rab 7:00 — tidak ada" [ref=e242] [cursor=pointer]
+            - generic "Rab 8:00 — tidak ada" [ref=e243] [cursor=pointer]
+            - generic "Rab 9:00 — Rp 20.000 (1x)" [ref=e244] [cursor=pointer]
+            - generic "Rab 10:00 — tidak ada" [ref=e245] [cursor=pointer]
+            - generic "Rab 11:00 — tidak ada" [ref=e246] [cursor=pointer]
+            - generic "Rab 12:00 — Rp 5.000 (1x)" [ref=e247] [cursor=pointer]
+            - generic "Rab 13:00 — tidak ada" [ref=e248] [cursor=pointer]
+            - generic "Rab 14:00 — tidak ada" [ref=e249] [cursor=pointer]
+            - generic "Rab 15:00 — tidak ada" [ref=e250] [cursor=pointer]
+            - generic "Rab 16:00 — Rp 50.000 (1x)" [ref=e251] [cursor=pointer]
+            - generic "Rab 17:00 — tidak ada" [ref=e252] [cursor=pointer]
+            - generic "Rab 18:00 — tidak ada" [ref=e253] [cursor=pointer]
+            - generic "Rab 19:00 — Rp 18.000 (1x)" [ref=e254] [cursor=pointer]
+            - generic "Rab 20:00 — tidak ada" [ref=e255] [cursor=pointer]
+            - generic "Rab 21:00 — Rp 78.440 (1x)" [ref=e256] [cursor=pointer]
+            - generic "Rab 22:00 — tidak ada" [ref=e257] [cursor=pointer]
+            - generic "Rab 23:00 — tidak ada" [ref=e258] [cursor=pointer]
+          - generic [ref=e259]:
+            - generic [ref=e260]: Kam
+            - generic "Kam 0:00 — Rp 6.000 (2x)" [ref=e261] [cursor=pointer]
+            - generic "Kam 1:00 — tidak ada" [ref=e262] [cursor=pointer]
+            - generic "Kam 2:00 — tidak ada" [ref=e263] [cursor=pointer]
+            - generic "Kam 3:00 — tidak ada" [ref=e264] [cursor=pointer]
+            - generic "Kam 4:00 — tidak ada" [ref=e265] [cursor=pointer]
+            - generic "Kam 5:00 — tidak ada" [ref=e266] [cursor=pointer]
+            - generic "Kam 6:00 — tidak ada" [ref=e267] [cursor=pointer]
+            - generic "Kam 7:00 — tidak ada" [ref=e268] [cursor=pointer]
+            - generic "Kam 8:00 — tidak ada" [ref=e269] [cursor=pointer]
+            - generic "Kam 9:00 — tidak ada" [ref=e270] [cursor=pointer]
+            - generic "Kam 10:00 — tidak ada" [ref=e271] [cursor=pointer]
+            - generic "Kam 11:00 — tidak ada" [ref=e272] [cursor=pointer]
+            - generic "Kam 12:00 — tidak ada" [ref=e273] [cursor=pointer]
+            - generic "Kam 13:00 — tidak ada" [ref=e274] [cursor=pointer]
+            - generic "Kam 14:00 — Rp 116.000 (1x)" [ref=e275] [cursor=pointer]
+            - generic "Kam 15:00 — tidak ada" [ref=e276] [cursor=pointer]
+            - generic "Kam 16:00 — Rp 243.800 (2x)" [ref=e277] [cursor=pointer]
+            - generic "Kam 17:00 — Rp 25.000 (1x)" [ref=e278] [cursor=pointer]
+            - generic "Kam 18:00 — tidak ada" [ref=e279] [cursor=pointer]
+            - generic "Kam 19:00 — tidak ada" [ref=e280] [cursor=pointer]
+            - generic "Kam 20:00 — tidak ada" [ref=e281] [cursor=pointer]
+            - generic "Kam 21:00 — tidak ada" [ref=e282] [cursor=pointer]
+            - generic "Kam 22:00 — tidak ada" [ref=e283] [cursor=pointer]
+            - generic "Kam 23:00 — tidak ada" [ref=e284] [cursor=pointer]
+          - generic [ref=e285]:
+            - generic [ref=e286]: Jum
+            - generic "Jum 0:00 — Rp 169.508 (9x)" [ref=e287] [cursor=pointer]
+            - generic "Jum 1:00 — tidak ada" [ref=e288] [cursor=pointer]
+            - generic "Jum 2:00 — tidak ada" [ref=e289] [cursor=pointer]
+            - generic "Jum 3:00 — tidak ada" [ref=e290] [cursor=pointer]
+            - generic "Jum 4:00 — tidak ada" [ref=e291] [cursor=pointer]
+            - generic "Jum 5:00 — tidak ada" [ref=e292] [cursor=pointer]
+            - generic "Jum 6:00 — tidak ada" [ref=e293] [cursor=pointer]
+            - generic "Jum 7:00 — tidak ada" [ref=e294] [cursor=pointer]
+            - generic "Jum 8:00 — tidak ada" [ref=e295] [cursor=pointer]
+            - generic "Jum 9:00 — Rp 4.000 (1x)" [ref=e296] [cursor=pointer]
+            - generic "Jum 10:00 — tidak ada" [ref=e297] [cursor=pointer]
+            - generic "Jum 11:00 — tidak ada" [ref=e298] [cursor=pointer]
+            - generic "Jum 12:00 — Rp 121.443 (1x)" [ref=e299] [cursor=pointer]
+            - generic "Jum 13:00 — tidak ada" [ref=e300] [cursor=pointer]
+            - generic "Jum 14:00 — Rp 2.000 (1x)" [ref=e301] [cursor=pointer]
+            - generic "Jum 15:00 — Rp 20.000 (1x)" [ref=e302] [cursor=pointer]
+            - generic "Jum 16:00 — tidak ada" [ref=e303] [cursor=pointer]
+            - generic "Jum 17:00 — tidak ada" [ref=e304] [cursor=pointer]
+            - generic "Jum 18:00 — tidak ada" [ref=e305] [cursor=pointer]
+            - generic "Jum 19:00 — tidak ada" [ref=e306] [cursor=pointer]
+            - generic "Jum 20:00 — tidak ada" [ref=e307] [cursor=pointer]
+            - generic "Jum 21:00 — tidak ada" [ref=e308] [cursor=pointer]
+            - generic "Jum 22:00 — tidak ada" [ref=e309] [cursor=pointer]
+            - generic "Jum 23:00 — tidak ada" [ref=e310] [cursor=pointer]
+          - generic [ref=e311]:
+            - generic [ref=e312]: Sab
+            - generic "Sab 0:00 — tidak ada" [ref=e313] [cursor=pointer]
+            - generic "Sab 1:00 — tidak ada" [ref=e314] [cursor=pointer]
+            - generic "Sab 2:00 — tidak ada" [ref=e315] [cursor=pointer]
+            - generic "Sab 3:00 — tidak ada" [ref=e316] [cursor=pointer]
+            - generic "Sab 4:00 — tidak ada" [ref=e317] [cursor=pointer]
+            - generic "Sab 5:00 — tidak ada" [ref=e318] [cursor=pointer]
+            - generic "Sab 6:00 — tidak ada" [ref=e319] [cursor=pointer]
+            - generic "Sab 7:00 — tidak ada" [ref=e320] [cursor=pointer]
+            - generic "Sab 8:00 — tidak ada" [ref=e321] [cursor=pointer]
+            - generic "Sab 9:00 — tidak ada" [ref=e322] [cursor=pointer]
+            - generic "Sab 10:00 — tidak ada" [ref=e323] [cursor=pointer]
+            - generic "Sab 11:00 — tidak ada" [ref=e324] [cursor=pointer]
+            - generic "Sab 12:00 — tidak ada" [ref=e325] [cursor=pointer]
+            - generic "Sab 13:00 — tidak ada" [ref=e326] [cursor=pointer]
+            - generic "Sab 14:00 — tidak ada" [ref=e327] [cursor=pointer]
+            - generic "Sab 15:00 — tidak ada" [ref=e328] [cursor=pointer]
+            - generic "Sab 16:00 — tidak ada" [ref=e329] [cursor=pointer]
+            - generic "Sab 17:00 — Rp 32.000 (1x)" [ref=e330] [cursor=pointer]
+            - generic "Sab 18:00 — tidak ada" [ref=e331] [cursor=pointer]
+            - generic "Sab 19:00 — tidak ada" [ref=e332] [cursor=pointer]
+            - generic "Sab 20:00 — tidak ada" [ref=e333] [cursor=pointer]
+            - generic "Sab 21:00 — tidak ada" [ref=e334] [cursor=pointer]
+            - generic "Sab 22:00 — tidak ada" [ref=e335] [cursor=pointer]
+            - generic "Sab 23:00 — tidak ada" [ref=e336] [cursor=pointer]
+          - generic [ref=e337]:
+            - generic [ref=e338]: Rendah
+            - generic [ref=e345]: Tinggi

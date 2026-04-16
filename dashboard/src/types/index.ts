@@ -24,6 +24,12 @@ export interface Transaction {
   to_account_id?: string;
   installment_id?: string;
   source: TransactionSource;
+  balance_before?: number | null;
+  balance_after?: number | null;
+  to_balance_before?: number | null;
+  to_balance_after?: number | null;
+  is_adjustment?: boolean;
+  adjustment_note?: string | null;
   is_deleted: boolean;
   transaction_date: string;
   created_at: string;
@@ -32,21 +38,20 @@ export interface Transaction {
 
 export interface VTransaction extends Transaction {
   category_name?: string;
-  category_icon?: string;
   category_color?: string;
   account_name?: string;
-  account_icon?: string;
   to_account_name?: string;
+  installment_name?: string;
 }
 
 export interface Category {
   id: string;
   name: string;
   type: 'income' | 'expense' | 'both';
-  icon: string;
   color: string;
   budget_monthly?: number;
   sort_order?: number;
+  is_active?: boolean;
 }
 
 export interface Account {
@@ -54,7 +59,17 @@ export interface Account {
   name: string;
   type: 'bank' | 'ewallet' | 'cash' | 'marketplace' | 'other';
   balance: number;
-  icon: string;
+  is_active?: boolean;
+}
+
+export interface InstallmentMonth {
+  id: string;
+  installment_id: string;
+  month_number: number;
+  amount: number;
+  is_paid: boolean;
+  paid_date?: string;
+  transaction_id?: string;
 }
 
 export interface Installment {
@@ -68,11 +83,14 @@ export interface Installment {
   account_id?: string;
   category_id?: string;
   status: 'active' | 'completed' | 'paused' | 'cancelled';
-  schedule?: string;
   notes?: string;
+  months?: InstallmentMonth[];
+  paid_amount_total?: number;
+  remaining_amount_total?: number;
+  next_amount?: number;
+  has_variable_months?: boolean;
   account_name?: string;
   category_name?: string;
-  category_icon?: string;
   created_at?: string;
 }
 
@@ -89,7 +107,6 @@ export interface Summary {
 export interface CategoryBreakdown {
   category_id: string;
   category_name: string;
-  category_icon: string;
   category_color: string;
   total_amount: number;
   transaction_count: number;

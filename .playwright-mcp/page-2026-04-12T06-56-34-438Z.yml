@@ -1,0 +1,164 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - generic [ref=e6]: Finance
+          - paragraph [ref=e7]: Personal Dashboard
+        - navigation [ref=e9]:
+          - link [ref=e93] [cursor=pointer]:
+            - /url: /
+            - text: Overview
+          - link [ref=e94] [cursor=pointer]:
+            - /url: /transactions
+            - text: Transaksi
+          - link [ref=e95] [cursor=pointer]:
+            - /url: /analytics
+            - text: Analitik
+          - link [ref=e96] [cursor=pointer]:
+            - /url: /insights
+            - text: Insights AI
+          - link [ref=e97] [cursor=pointer]:
+            - /url: /budget
+            - text: Budget
+          - link [ref=e98] [cursor=pointer]:
+            - /url: /installments
+            - text: Cicilan
+          - link [ref=e99] [cursor=pointer]:
+            - /url: /settings
+            - text: Pengaturan
+        - paragraph [ref=e18]: "@aldi_monman_bot"
+    - main [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - heading [level=1] [ref=e100]: Cicilan
+          - paragraph [ref=e23]: Kelola semua cicilan aktif kamu
+        - generic [ref=e24]:
+          - generic [ref=e26]:
+            - paragraph [ref=e27]: Cicilan Aktif
+            - paragraph [ref=e28]: "2"
+          - generic [ref=e30]:
+            - paragraph [ref=e31]: Bulan Ini
+            - paragraph [ref=e32]: Rp 1.867.833
+          - generic [ref=e34]:
+            - paragraph [ref=e35]: Total Sisa
+            - paragraph [ref=e36]: Rp 8.469.540
+          - generic [ref=e38]:
+            - paragraph [ref=e39]: Sudah Lunas
+            - paragraph [ref=e40]: "0"
+        - generic [ref=e41]:
+          - heading [level=2] [ref=e101]: Cicilan Aktif (2)
+          - generic [ref=e43]:
+            - generic [ref=e45] [cursor=pointer]:
+              - generic [ref=e46]:
+                - generic [ref=e48]:
+                  - paragraph [ref=e49]: Cash Kredivo
+                  - generic [ref=e51]: Aktif
+                - generic [ref=e52]:
+                  - paragraph [ref=e53]: Rp 78.440
+                  - paragraph [ref=e54]: /bulan
+              - generic [ref=e55]:
+                - generic [ref=e56]:
+                  - generic [ref=e57]: 1 dari 8 bulan
+                  - generic [ref=e58]: 13%
+                - progressbar [ref=e59]: x
+              - generic [ref=e64]:
+                - generic [ref=e65]: Mulai Apr 2026
+                - generic [ref=e66]: · Jatuh tempo tgl 14
+                - generic [ref=e67]: · Sisa 7 bulan
+                - generic [ref=e68]: · BCA
+            - generic [ref=e70] [cursor=pointer]:
+              - generic [ref=e71]:
+                - generic [ref=e73]:
+                  - paragraph [ref=e74]: SPayLater
+                  - generic [ref=e76]: Aktif
+                - generic [ref=e77]:
+                  - paragraph [ref=e78]: Rp 1.789.393
+                  - paragraph [ref=e79]: /bulan
+              - generic [ref=e80]:
+                - generic [ref=e81]:
+                  - generic [ref=e82]: 0 dari 6 bulan
+                  - generic [ref=e83]: 0%
+                - progressbar [ref=e84]: x
+              - generic [ref=e87]:
+                - generic [ref=e88]: Mulai Apr 2026
+                - generic [ref=e89]: · Jatuh tempo tgl 1
+                - generic [ref=e90]: · Sisa 6 bulan
+                - generic [ref=e91]: · BCA
+  - alert [ref=e92]
+  - dialog "Detail Cicilan" [ref=e105]:
+    - heading "Detail Cicilan" [level=2] [ref=e107]
+    - generic [ref=e108]:
+      - generic [ref=e109]:
+        - paragraph [ref=e111]: Cash Kredivo
+        - paragraph [ref=e112]: "Tagihan selanjutnya: Rp 78.440"
+        - generic [ref=e113]: ACTIVE
+      - generic [ref=e114]:
+        - generic [ref=e115]:
+          - generic [ref=e116]: Kategori
+          - generic [ref=e117]: –
+        - generic [ref=e118]:
+          - generic [ref=e119]: Akun Pendebet
+          - generic [ref=e120]: BCA
+        - generic [ref=e121]:
+          - generic [ref=e122]: Tanggal Mulai
+          - generic [ref=e123]: 09 Apr 2026
+        - generic [ref=e124]:
+          - generic [ref=e125]: Jatuh Tempo
+          - generic [ref=e126]: Tanggal 14
+        - generic [ref=e127]:
+          - generic [ref=e128]: Catatan
+          - generic [ref=e129]: –
+      - generic [ref=e130]:
+        - heading "Jadwal Pembayaran 1 / 8 bulan" [level=3] [ref=e131]:
+          - generic [ref=e132]: Jadwal Pembayaran
+          - generic [ref=e133]: 1 / 8 bulan
+        - generic [ref=e134]:
+          - generic [ref=e135]:
+            - generic [ref=e136]:
+              - generic [ref=e137]: "1"
+              - generic [ref=e138]: Bulan ke-1
+            - generic [ref=e139]:
+              - generic [ref=e140]: Rp 78.440
+              - generic [ref=e141]: Paid
+          - generic [ref=e142]:
+            - generic [ref=e143]:
+              - generic [ref=e144]: "2"
+              - generic [ref=e145]: Bulan ke-2
+            - generic [ref=e147]: Rp 78.440
+          - generic [ref=e149]:
+            - generic [ref=e150]:
+              - generic [ref=e151]: "3"
+              - generic [ref=e152]: Bulan ke-3
+            - generic [ref=e154]: Rp 78.440
+          - generic [ref=e155]:
+            - generic [ref=e156]:
+              - generic [ref=e157]: "4"
+              - generic [ref=e158]: Bulan ke-4
+            - generic [ref=e160]: Rp 78.440
+          - generic [ref=e161]:
+            - generic [ref=e162]:
+              - generic [ref=e163]: "5"
+              - generic [ref=e164]: Bulan ke-5
+            - generic [ref=e166]: Rp 78.440
+          - generic [ref=e167]:
+            - generic [ref=e168]:
+              - generic [ref=e169]: "6"
+              - generic [ref=e170]: Bulan ke-6
+            - generic [ref=e172]: Rp 78.440
+          - generic [ref=e173]:
+            - generic [ref=e174]:
+              - generic [ref=e175]: "7"
+              - generic [ref=e176]: Bulan ke-7
+            - generic [ref=e178]: Rp 78.440
+          - generic [ref=e179]:
+            - generic [ref=e180]:
+              - generic [ref=e181]: "8"
+              - generic [ref=e182]: Bulan ke-8
+            - generic [ref=e184]: Rp 78.440
+      - button "Edit" [active] [ref=e186] [cursor=pointer]:
+        - img [ref=e187]
+        - text: Edit
+    - button "Close" [ref=e190] [cursor=pointer]:
+      - img
+      - generic [ref=e191]: Close

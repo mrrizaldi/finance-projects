@@ -1,0 +1,55 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - generic [ref=e4]:
+        - generic [ref=e5]:
+          - generic [ref=e6]: Finance
+          - paragraph [ref=e7]: Personal Dashboard
+        - navigation [ref=e9]:
+          - link "Overview" [ref=e10] [cursor=pointer]:
+            - /url: /
+          - link "Transaksi" [ref=e11] [cursor=pointer]:
+            - /url: /transactions
+          - link "Analitik" [ref=e12] [cursor=pointer]:
+            - /url: /analytics
+          - link "Insights AI" [ref=e13] [cursor=pointer]:
+            - /url: /insights
+          - link "Budget" [ref=e14] [cursor=pointer]:
+            - /url: /budget
+          - link "Cicilan" [ref=e15] [cursor=pointer]:
+            - /url: /installments
+          - link "Pengaturan" [ref=e16] [cursor=pointer]:
+            - /url: /settings
+        - paragraph [ref=e18]: "@aldi_monman_bot"
+    - main [ref=e19]:
+      - generic [ref=e20]:
+        - generic [ref=e21]:
+          - heading "Overview" [level=1] [ref=e22]
+          - paragraph [ref=e23]: Ringkasan keuangan bulan ini
+        - generic [ref=e24]:
+          - generic [ref=e27]:
+            - paragraph [ref=e28]: Total Pemasukan
+            - paragraph [ref=e29]: Rp 0
+            - paragraph [ref=e30]: 0 transaksi bulan ini
+          - generic [ref=e33]:
+            - paragraph [ref=e34]: Total Pengeluaran
+            - paragraph [ref=e35]: Rp 0
+            - paragraph [ref=e36]: "Terbesar: -"
+          - generic [ref=e39]:
+            - paragraph [ref=e40]: Net Cashflow
+            - paragraph [ref=e41]: Rp 0
+            - paragraph [ref=e42]: Surplus bulan ini
+        - generic [ref=e43]:
+          - generic [ref=e44]:
+            - generic [ref=e46]: Cashflow 6 Bulan Terakhir
+            - generic [ref=e48]: Belum ada data transaksi
+          - generic [ref=e49]:
+            - generic [ref=e51]: Pengeluaran per Kategori
+            - generic [ref=e53]: Belum ada data kategori
+        - generic [ref=e54]:
+          - generic [ref=e55]:
+            - heading "Transaksi Terbaru" [level=2] [ref=e56]
+            - link "Lihat semua" [ref=e57] [cursor=pointer]:
+              - /url: /transactions
+          - generic [ref=e58]: Belum ada transaksi
+  - alert [ref=e59]
