@@ -325,8 +325,13 @@ const HELP_MESSAGES = {
   transfer:
     `<b>Bantuan /transfer</b>\n\n` +
     `<code>/transfer</code>\n\n` +
-    `Flow interaktif: nominal → akun sumber → akun tujuan.\n` +
-    `Contoh penggunaan: pindah saldo BCA ke GoPay.`,
+    `Flow interaktif:\n` +
+    `1. Nominal keluar (dari akun sumber, termasuk biaya admin)\n` +
+    `2. Nominal masuk (ke akun tujuan — Enter jika sama)\n` +
+    `3. Pilih akun sumber\n` +
+    `4. Pilih akun tujuan\n` +
+    `5. Catatan (opsional)\n\n` +
+    `Contoh: transfer BCA ke GoPay dengan biaya admin Rp 500.`,
 
   withdraw:
     `<b>Bantuan /withdraw</b>\n\n` +
@@ -789,12 +794,30 @@ export function createBot() {
 
   // ── Conversation: Record Transfer ────────
   async function recordTransferConvo(conversation: MyConversation, ctx: MyContext) {
-    await ctx.reply('Masukkan nominal transfer:', { reply_markup: { force_reply: true } });
-    const amountMsg = await conversation.wait();
-    const amount = parseAmount(amountMsg.message?.text || '');
-    if (!amount) return ctx.reply('Nominal tidak valid. Coba lagi dengan /transfer');
+    // Step 1: from_amount (deducted from source)
+    await ctx.reply('Nominal keluar dari akun sumber?', { reply_markup: { force_reply: true } });
+    const fromMsg = await conversation.wait();
+    const fromAmount = parseAmount(fromMsg.message?.text || '');
+    if (!fromAmount) return ctx.reply('Nominal tidak valid. Coba lagi dengan /transfer');
 
-    // Pilih akun sumber
+    // Step 2: to_amount (credited to destination) — Enter/= means same as fromAmount
+    await ctx.reply(
+      `Keluar: ${formatRupiah(fromAmount)}\n\nNominal masuk ke akun tujuan?\n<i>(Enter atau ketik "=" jika sama, tanpa biaya admin)</i>`,
+      { parse_mode: 'HTML', reply_markup: { force_reply: true } }
+    );
+    const toMsg = await conversation.wait();
+    const toRaw = (toMsg.message?.text || '').trim();
+    let toAmount: number;
+    if (toRaw === '' || toRaw === '=' || toRaw === '-') {
+      toAmount = fromAmount;
+    } else {
+      const parsed = parseAmount(toRaw);
+      if (!parsed) return ctx.reply('Nominal tidak valid. Coba lagi dengan /transfer');
+      if (parsed > fromAmount) return ctx.reply('Nominal tujuan tidak boleh lebih besar dari nominal sumber. Coba lagi dengan /transfer');
+      toAmount = parsed;
+    }
+
+    // Step 3: pick source account
     const accounts = await db.getAccounts();
     const fromKeyboard = new InlineKeyboard();
     accounts.forEach((a, i) => {
@@ -802,13 +825,19 @@ export function createBot() {
       if (i % 3 === 2) fromKeyboard.row();
     });
 
-    await ctx.reply(`${formatRupiah(amount)}\n\nDari akun mana?`, { reply_markup: fromKeyboard });
+    const adminLine = toAmount !== fromAmount
+      ? ` (biaya: ${formatRupiah(fromAmount - toAmount)})`
+      : '';
+    await ctx.reply(
+      `Keluar: ${formatRupiah(fromAmount)} → Masuk: ${formatRupiah(toAmount)}${adminLine}\n\nDari akun mana?`,
+      { reply_markup: fromKeyboard }
+    );
     const fromCallback = await conversation.waitForCallbackQuery(/^from_/);
     const fromAccountId = fromCallback.callbackQuery.data?.replace('from_', '');
     const fromAccount = accounts.find((a) => a.id === fromAccountId);
     await fromCallback.answerCallbackQuery();
 
-    // Pilih akun tujuan (exclude akun sumber)
+    // Step 4: pick destination account (exclude source)
     const toKeyboard = new InlineKeyboard();
     accounts
       .filter((a) => a.id !== fromAccountId)
@@ -817,30 +846,32 @@ export function createBot() {
         if (i % 3 === 2) toKeyboard.row();
       });
 
-    await ctx.reply(`Ke akun mana? (dari ${fromAccount?.name})`, {
-      reply_markup: toKeyboard,
-    });
+    await ctx.reply(`Ke akun mana? (dari ${fromAccount?.name})`, { reply_markup: toKeyboard });
     const toCallback = await conversation.waitForCallbackQuery(/^to_/);
     const toAccountId = toCallback.callbackQuery.data?.replace('to_', '');
     const toAccount = accounts.find((a) => a.id === toAccountId);
     await toCallback.answerCallbackQuery();
 
-    await ctx.reply('Catatan (opsional, ketik "-" untuk skip):', {
-      reply_markup: { force_reply: true },
-    });
+    // Step 5: note
+    await ctx.reply('Catatan (opsional, ketik "-" untuk skip):', { reply_markup: { force_reply: true } });
     const noteMsg = await conversation.wait();
     const note = noteMsg.message?.text || '';
     const description = note === '-' ? `Transfer ${fromAccount?.name} → ${toAccount?.name}` : note;
 
-    const txn = await insertTransactionWithBalanceSnapshots({
+    const txnInput: Omit<Transaction, 'id'> = {
       type: 'transfer',
-      amount,
+      amount: fromAmount,
       description,
       account_id: fromAccountId,
       to_account_id: toAccountId,
       source: 'manual_telegram',
       transaction_date: new Date().toISOString(),
-    });
+    };
+    if (toAmount !== fromAmount) {
+      txnInput.to_amount = toAmount;
+    }
+
+    const txn = await insertTransactionWithBalanceSnapshots(txnInput);
 
     // Sheets sync (fire-and-forget)
     sheets.syncTransaction({ ...txn, account_name: fromAccount?.name }).catch(() => {});
@@ -848,7 +879,8 @@ export function createBot() {
     await ctx.reply(
       formatTransactionMessage({
         type: 'transfer',
-        amount,
+        amount: fromAmount,
+        to_amount: toAmount !== fromAmount ? toAmount : undefined,
         description,
         account_name: `${fromAccount?.name} → ${toAccount?.name}`,
         transaction_date: txn.transaction_date || new Date().toISOString(),
