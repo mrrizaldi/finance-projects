@@ -210,9 +210,11 @@ async function insertTransactionWithBalanceSnapshots(
       return db.insertTransaction(input);
     }
 
+    const toAmount = input.to_amount ?? input.amount;
+
     const fromMutation = await db.updateAccountBalance(input.account_id, -input.amount);
     try {
-      const toMutation = await db.updateAccountBalance(input.to_account_id, input.amount);
+      const toMutation = await db.updateAccountBalance(input.to_account_id, toAmount);
       try {
         return await db.insertTransaction({
           ...input,
@@ -224,7 +226,7 @@ async function insertTransactionWithBalanceSnapshots(
         });
       } catch (insertError) {
         await db.updateAccountBalance(input.account_id, input.amount);
-        await db.updateAccountBalance(input.to_account_id, -input.amount);
+        await db.updateAccountBalance(input.to_account_id, -toAmount);
         throw insertError;
       }
     } catch (toError) {
