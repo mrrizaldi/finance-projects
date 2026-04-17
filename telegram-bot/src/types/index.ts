@@ -2,6 +2,7 @@ export interface Transaction {
   id?: string;
   type: 'income' | 'expense' | 'transfer';
   amount: number;
+  to_amount?: number;
   description?: string;
   merchant?: string;
   category_id?: string;
