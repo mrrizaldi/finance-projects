@@ -16,6 +16,7 @@ export function formatDate(date: string | Date): string {
 export function formatTransactionMessage(txn: {
   type: string;
   amount: number;
+  to_amount?: number;
   description?: string;
   category_name?: string;
   account_name?: string;
@@ -23,11 +24,25 @@ export function formatTransactionMessage(txn: {
   source: string;
 }): string {
   const sign = txn.type === 'income' ? '+' : '-';
+  const effectiveToAmount = txn.to_amount ?? txn.amount;
+  const adminFee = txn.type === 'transfer' && txn.to_amount != null && txn.to_amount !== txn.amount
+    ? txn.amount - txn.to_amount
+    : null;
+
+  const amountLine = txn.type === 'transfer'
+    ? adminFee != null
+      ? [
+          `Keluar : -${formatRupiah(txn.amount)}`,
+          `Masuk  : +${formatRupiah(effectiveToAmount)}`,
+          `Biaya  : ${formatRupiah(adminFee)}`,
+        ].join('\n')
+      : `${sign}${formatRupiah(txn.amount)}`
+    : `${sign}${formatRupiah(txn.amount)}`;
 
   return [
     `<b>Transaksi ${txn.type === 'income' ? 'Masuk' : txn.type === 'expense' ? 'Keluar' : 'Transfer'}</b>`,
     `━━━━━━━━━━━━━━━━━━━━━`,
-    `${sign}${formatRupiah(txn.amount)}`,
+    amountLine,
     txn.description ? `Deskripsi: ${txn.description}` : '',
     txn.category_name ? `Kategori: ${txn.category_name}` : '',
     txn.account_name ? `Akun: ${txn.account_name}` : '',
