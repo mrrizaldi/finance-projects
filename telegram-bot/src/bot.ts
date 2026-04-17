@@ -1391,8 +1391,9 @@ export function createBot() {
     await db.softDeleteTransaction(lastTxn.id!);
 
     if (lastTxn.type === 'transfer') {
+      const toAmount = lastTxn.to_amount ?? lastTxn.amount;
       if (lastTxn.account_id) await db.updateAccountBalance(lastTxn.account_id, lastTxn.amount);
-      if (lastTxn.to_account_id) await db.updateAccountBalance(lastTxn.to_account_id, -lastTxn.amount);
+      if (lastTxn.to_account_id) await db.updateAccountBalance(lastTxn.to_account_id, -toAmount);
     } else if (lastTxn.account_id) {
       const delta = lastTxn.type === 'income' ? -lastTxn.amount : lastTxn.amount;
       await db.updateAccountBalance(lastTxn.account_id, delta);
@@ -2165,8 +2166,9 @@ export function createBot() {
     await db.softDeleteTransaction(txnId);
 
     if (txn.type === 'transfer') {
+      const toAmount = txn.to_amount ?? txn.amount;
       if (txn.account_id) await db.updateAccountBalance(txn.account_id, txn.amount);
-      if (txn.to_account_id) await db.updateAccountBalance(txn.to_account_id, -txn.amount);
+      if (txn.to_account_id) await db.updateAccountBalance(txn.to_account_id, -toAmount);
     } else if (txn.account_id) {
       const delta = txn.type === 'income' ? -txn.amount : txn.amount;
       await db.updateAccountBalance(txn.account_id, delta);
