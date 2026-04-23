@@ -8,3 +8,4 @@ dist/
 !tsconfig.json
 !next.config.json
 dashboard/.env.local
+.worktrees/
