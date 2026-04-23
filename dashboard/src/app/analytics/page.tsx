@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { unstable_cache } from 'next/cache';
-import { createServerClient } from '@/lib/supabase';
+import { createServiceClient } from '@/lib/supabase';
 import { CategoryBreakdown, MonthlyTrend, HeatmapEntry } from '@/types';
 import { formatRupiah } from '@/lib/utils';
 import CategoryChart from '@/components/charts/CategoryChart';
@@ -77,7 +77,7 @@ async function loadAnalyticsData(period: Period, start: string, end: string, tre
   const cacheKey = `analytics:${period}:${start}:${end}:${trendMonths}`;
   const load = unstable_cache(
     async () => {
-      const supabase = createServerClient();
+      const supabase = createServiceClient();
 
       const [expCatRes, incCatRes, trendRes, heatmapRes] = await Promise.all([
         supabase.rpc('get_category_breakdown', { p_start_date: start, p_end_date: end, p_type: 'expense' }),

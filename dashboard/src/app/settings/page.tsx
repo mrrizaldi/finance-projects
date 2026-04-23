@@ -1,5 +1,5 @@
 import { unstable_cache } from 'next/cache';
-import { createServerClient } from '@/lib/supabase';
+import { createServiceClient } from '@/lib/supabase';
 import { Account, Category } from '@/types';
 import { SettingsClient } from '@/components/settings/SettingsClient';
 
@@ -7,7 +7,7 @@ export const revalidate = 120;
 
 const getSettingsData = unstable_cache(
   async () => {
-    const supabase = createServerClient();
+    const supabase = createServiceClient();
     const [accountsRes, catsRes] = await Promise.all([
       supabase
         .from('accounts')

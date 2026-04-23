@@ -1,6 +1,6 @@
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase';
+import { createServiceClient } from '@/lib/supabase';
 
 type Params = { params: { id: string } };
 
@@ -22,7 +22,7 @@ function revalidateFinancePaths() {
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const supabase = createServerClient();
+    const supabase = createServiceClient();
     const body = await req.json();
 
     const targetBalance = Number(body?.target_balance);

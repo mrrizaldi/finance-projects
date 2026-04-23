@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase';
+import { createServiceClient } from '@/lib/supabase';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -8,7 +8,7 @@ export async function GET(req: NextRequest) {
   const end = searchParams.get('end');
   const sort = searchParams.get('sort') ?? 'date_desc';
 
-  const supabase = createServerClient();
+  const supabase = createServiceClient();
 
   let query = supabase
     .from('v_transactions')

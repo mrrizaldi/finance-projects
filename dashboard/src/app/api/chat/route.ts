@@ -1,7 +1,7 @@
 import { unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { createServerClient } from '@/lib/supabase';
+import { createServiceClient } from '@/lib/supabase';
 import { startOfMonth, endOfMonth } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +10,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const getChatContext = unstable_cache(
   async (yearMonth: string) => {
-    const supabase = createServerClient();
+    const supabase = createServiceClient();
     const [year, month] = yearMonth.split('-').map(Number);
     const now = new Date(year, (month || 1) - 1, 2);
     const start = startOfMonth(now);

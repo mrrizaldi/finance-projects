@@ -1,5 +1,5 @@
 import { unstable_cache } from 'next/cache';
-import { createServerClient } from '@/lib/supabase';
+import { createServiceClient } from '@/lib/supabase';
 import { formatRupiah, startOfMonth, endOfMonth } from '@/lib/utils';
 import { Summary, MonthlyTrend, CategoryBreakdown, VTransaction } from '@/types';
 import CashflowChart from '@/components/charts/CashflowChart';
@@ -17,7 +17,7 @@ export const revalidate = 60; // Revalidate every minute
 
 const getOverviewData = unstable_cache(
   async () => {
-    const supabase = createServerClient();
+    const supabase = createServiceClient();
     const now = new Date();
     const start = startOfMonth(now);
     const end = endOfMonth(now);

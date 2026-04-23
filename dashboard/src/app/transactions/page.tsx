@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { unstable_cache } from 'next/cache';
-import { createServerClient } from '@/lib/supabase';
+import { createServiceClient } from '@/lib/supabase';
 import { VTransaction, Category, Account, Installment } from '@/types';
 import TransactionListClient from '@/components/transactions/TransactionListClient';
 import TransactionFilters from './TransactionFilters';
@@ -54,7 +54,7 @@ interface Props {
 
 const getTransactionReferences = unstable_cache(
   async () => {
-    const supabase = createServerClient();
+    const supabase = createServiceClient();
     const [catRes, accRes, instRes] = await Promise.all([
       supabase
         .from('categories')
@@ -84,7 +84,7 @@ const getTransactionReferences = unstable_cache(
 );
 
 async function getData(searchParams: Props['searchParams']) {
-  const supabase = createServerClient();
+  const supabase = createServiceClient();
   const page = Math.max(1, parseInt(searchParams.page || '1'));
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE;

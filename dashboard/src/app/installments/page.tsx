@@ -1,5 +1,5 @@
 import { unstable_cache } from 'next/cache';
-import { createServerClient } from '@/lib/supabase';
+import { createServiceClient } from '@/lib/supabase';
 import { Installment, Category, Account } from '@/types';
 import { formatRupiah } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -9,7 +9,7 @@ export const revalidate = 60;
 
 const getInstallmentReferences = unstable_cache(
   async () => {
-    const supabase = createServerClient();
+    const supabase = createServiceClient();
     const [catRes, accRes] = await Promise.all([
       supabase
         .from('categories')
@@ -34,7 +34,7 @@ const getInstallmentReferences = unstable_cache(
 
 const getInstallmentListData = unstable_cache(
   async () => {
-    const supabase = createServerClient();
+    const supabase = createServiceClient();
     const [instRes, refs] = await Promise.all([
       supabase
         .from('installments')
