@@ -98,6 +98,7 @@ export default function InstallmentListClient({ installments, categories, accoun
         open={mode === 'detail'}
         onOpenChange={(o) => !o && closeAll()}
         onEdit={() => setMode('edit')}
+        accounts={accounts}
       />
 
       <InstallmentEditDialog

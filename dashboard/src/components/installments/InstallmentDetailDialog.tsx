@@ -1,5 +1,7 @@
 'use client';
 
+import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -7,7 +9,10 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Installment } from '@/types';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Installment, Account } from '@/types';
 import { formatRupiah, formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -20,6 +25,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: () => void;
+  accounts?: Account[];
 }
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
@@ -38,9 +44,60 @@ export default function InstallmentDetailDialog({
   open,
   onOpenChange,
   onEdit,
+  accounts = [],
 }: Props) {
+  const router = useRouter();
+  const [payDialog, setPayDialog] = useState(false);
+  const [appendDialog, setAppendDialog] = useState(false);
+  const [monthsToPay, setMonthsToPay] = useState('1');
+  const [payAccountId, setPayAccountId] = useState('');
+  const [monthsToAdd, setMonthsToAdd] = useState('1');
+  const [amountPerMonth, setAmountPerMonth] = useState('');
+  const [saving, setSaving] = useState(false);
+
   const current = inst ?? fallbackInst ?? null;
   if (!current) return null;
+
+  async function handlePay() {
+    if (!current) return;
+    setSaving(true);
+    const res = await fetch(`/api/installments/${current.id}/pay`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        months_to_pay: parseInt(monthsToPay) || 1,
+        account_id: payAccountId || undefined,
+      }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      setPayDialog(false);
+      setMonthsToPay('1');
+      setPayAccountId('');
+      router.refresh();
+    }
+  }
+
+  async function handleAppend() {
+    if (!current) return;
+    setSaving(true);
+    const parsed = parseFloat(amountPerMonth.replace(/\./g, '').replace(',', '.'));
+    const res = await fetch(`/api/installments/${current.id}/append`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        months_to_add: parseInt(monthsToAdd) || 1,
+        amount_per_month: isNaN(parsed) ? current.monthly_amount : parsed,
+      }),
+    });
+    setSaving(false);
+    if (res.ok) {
+      setAppendDialog(false);
+      setMonthsToAdd('1');
+      setAmountPerMonth('');
+      router.refresh();
+    }
+  }
 
   const baseAmount = Number(current.next_amount ?? current.monthly_amount);
   let amounts: number[] = Array(current.total_months).fill(baseAmount || Number(current.monthly_amount));
@@ -54,6 +111,7 @@ export default function InstallmentDetailDialog({
   const nextAmount = Number(current.next_amount ?? amounts[current.paid_months] ?? current.monthly_amount);
 
   return (
+    <>
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="p-4 pb-0 flex-shrink-0">
@@ -152,9 +210,100 @@ export default function InstallmentDetailDialog({
               <Pencil className="h-3 w-3" />
               Edit
             </button>
+            {current.status === 'active' && current.paid_months < current.total_months && (
+              <button
+                onClick={() => setPayDialog(true)}
+                className="flex-1 h-8 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors inline-flex items-center justify-center"
+              >
+                Bayar
+              </button>
+            )}
+            <button
+              onClick={() => {
+                setAmountPerMonth(String(current.monthly_amount));
+                setAppendDialog(true);
+              }}
+              className="flex-1 h-8 rounded-lg bg-muted text-foreground text-sm font-medium hover:bg-muted/80 transition-colors inline-flex items-center justify-center"
+            >
+              +Bulan
+            </button>
           </div>
         </ScrollArea>
       </DialogContent>
     </Dialog>
+
+    {/* Pay Dialog */}
+    <Dialog open={payDialog} onOpenChange={setPayDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Bayar Cicilan — {current?.name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div className="text-sm text-muted-foreground">
+            Tagihan berikutnya: {formatRupiah(nextAmount)}
+          </div>
+          <div className="space-y-2">
+            <Label>Jumlah Bulan</Label>
+            <Input
+              type="number"
+              min={1}
+              value={monthsToPay}
+              onChange={(e) => setMonthsToPay(e.target.value)}
+            />
+          </div>
+          {accounts.length > 0 && (
+            <div className="space-y-2">
+              <Label>Dari Akun</Label>
+              <select
+                value={payAccountId}
+                onChange={(e) => setPayAccountId(e.target.value)}
+                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+              >
+                <option value="">Default ({current?.account_name ?? 'Akun cicilan'})</option>
+                {accounts.map(a => (
+                  <option key={a.id} value={a.id}>{a.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+          <Button onClick={handlePay} className="w-full" disabled={saving}>
+            {saving ? 'Menyimpan...' : 'Bayar'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+
+    {/* Append Dialog */}
+    <Dialog open={appendDialog} onOpenChange={setAppendDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Tambah Bulan — {current?.name}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div className="space-y-2">
+            <Label>Jumlah Bulan Tambah</Label>
+            <Input
+              type="number"
+              min={1}
+              value={monthsToAdd}
+              onChange={(e) => setMonthsToAdd(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Nominal Per Bulan</Label>
+            <Input
+              type="text"
+              inputMode="decimal"
+              value={amountPerMonth}
+              onChange={(e) => setAmountPerMonth(e.target.value)}
+            />
+          </div>
+          <Button onClick={handleAppend} className="w-full" disabled={saving}>
+            {saving ? 'Menyimpan...' : 'Tambah'}
+          </Button>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 }

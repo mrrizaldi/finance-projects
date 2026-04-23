@@ -3,6 +3,7 @@ import { Installment, Category, Account } from '@/types';
 import { formatRupiah } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
 import InstallmentListClient from '@/components/installments/InstallmentListClient';
+import { InstallmentCreateButton } from '@/components/installments/InstallmentCreateButton';
 
 export const revalidate = 60;
 
@@ -105,9 +106,12 @@ export default async function InstallmentsPage() {
 
   return (
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Cicilan</h1>
-        <p className="text-muted-foreground text-sm mt-1">Kelola semua cicilan aktif kamu</p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground">Cicilan</h1>
+          <p className="text-muted-foreground text-sm mt-1">Kelola semua cicilan aktif kamu</p>
+        </div>
+        <InstallmentCreateButton accounts={accounts} categories={categories} />
       </div>
 
       {/* Summary */}
