@@ -1,6 +1,6 @@
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase';
+import { createApiClient, unauthorizedResponse } from '@/lib/supabase-api';
 
 const ACCOUNT_TYPES = ['bank', 'ewallet', 'cash', 'marketplace', 'other'];
 
@@ -22,7 +22,8 @@ function revalidateFinancePaths() {
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = createServiceClient();
+    const { supabase, unauthorized } = await createApiClient();
+    if (unauthorized || !supabase) return unauthorizedResponse();
 
     const { data: existing, error: fetchError } = await supabase
       .from('accounts')
@@ -75,7 +76,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = createServiceClient();
+    const { supabase, unauthorized } = await createApiClient();
+    if (unauthorized || !supabase) return unauthorizedResponse();
 
     const { error } = await supabase
       .from('accounts')

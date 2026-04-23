@@ -1,6 +1,6 @@
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase';
+import { createApiClient, unauthorizedResponse } from '@/lib/supabase-api';
 
 const CATEGORY_TYPES = ['income', 'expense', 'both'];
 
@@ -22,7 +22,8 @@ function revalidateFinancePaths() {
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createServiceClient();
+    const { supabase, user, unauthorized } = await createApiClient();
+    if (unauthorized || !supabase) return unauthorizedResponse();
     const body = await req.json();
 
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
@@ -40,7 +41,7 @@ export async function POST(req: NextRequest) {
 
     const color = typeof body.color === 'string' ? body.color.trim() : '#6B7280';
 
-    const insertData: Record<string, unknown> = { name, type: body.type, color, is_active: true };
+    const insertData: Record<string, unknown> = { name, type: body.type, color, is_active: true, user_id: user.id };
 
     if (body.budget_monthly !== undefined && body.budget_monthly !== null && body.budget_monthly !== '') {
       const budget = Number(body.budget_monthly);

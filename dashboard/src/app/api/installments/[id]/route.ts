@@ -1,6 +1,6 @@
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase';
+import { createApiClient, unauthorizedResponse } from '@/lib/supabase-api';
 
 type MonthPayload = {
   month_number: number;
@@ -71,7 +71,8 @@ function revalidateFinancePaths() {
 
 export async function GET(_: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = createServiceClient();
+    const { supabase, unauthorized } = await createApiClient();
+    if (unauthorized || !supabase) return unauthorizedResponse();
     const { data: installment, error: instErr } = await supabase
       .from('installments')
       .select(`
@@ -126,7 +127,8 @@ export async function GET(_: NextRequest, { params }: { params: { id: string } }
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = createServiceClient();
+    const { supabase, unauthorized } = await createApiClient();
+    if (unauthorized || !supabase) return unauthorizedResponse();
 
     const { data: existing, error: fetchError } = await supabase
       .from('installments')

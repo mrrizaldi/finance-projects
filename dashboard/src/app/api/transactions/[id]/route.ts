@@ -1,6 +1,7 @@
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase';
+import { createApiClient, unauthorizedResponse } from '@/lib/supabase-api';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 const VALID_TYPES = ['income', 'expense', 'transfer'] as const;
 type TransactionType = (typeof VALID_TYPES)[number];
@@ -58,7 +59,7 @@ function invertEffects(effects: Record<string, number>) {
 }
 
 async function applyBalanceDiffs(
-  supabase: ReturnType<typeof createServiceClient>,
+  supabase: SupabaseClient,
   diffs: Record<string, number>
 ): Promise<Map<string, { before: number; after: number }>> {
   const accountIds = Object.keys(diffs).filter((id) => Math.abs(diffs[id]) > 0.000001);
@@ -144,7 +145,7 @@ function buildSnapshotForState(
   };
 }
 
-async function getActiveTransaction(supabase: ReturnType<typeof createServiceClient>, id: string) {
+async function getActiveTransaction(supabase: SupabaseClient, id: string) {
   const { data, error } = await supabase
     .from('transactions')
     .select(
@@ -171,7 +172,8 @@ async function getActiveTransaction(supabase: ReturnType<typeof createServiceCli
 
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = createServiceClient();
+    const { supabase, unauthorized } = await createApiClient();
+    if (unauthorized || !supabase) return unauthorizedResponse();
     const existing = await getActiveTransaction(supabase, params.id);
 
     if (!existing) {
@@ -296,7 +298,8 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
 export async function DELETE(_: NextRequest, { params }: { params: { id: string } }) {
   try {
-    const supabase = createServiceClient();
+    const { supabase, unauthorized } = await createApiClient();
+    if (unauthorized || !supabase) return unauthorizedResponse();
     const existing = await getActiveTransaction(supabase, params.id);
 
     if (!existing) {

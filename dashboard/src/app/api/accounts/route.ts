@@ -1,6 +1,6 @@
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
-import { createServiceClient } from '@/lib/supabase';
+import { createApiClient, unauthorizedResponse } from '@/lib/supabase-api';
 
 const ACCOUNT_TYPES = ['bank', 'ewallet', 'cash', 'marketplace', 'other'];
 
@@ -21,7 +21,8 @@ function revalidateFinancePaths() {
 
 export async function POST(req: NextRequest) {
   try {
-    const supabase = createServiceClient();
+    const { supabase, user, unauthorized } = await createApiClient();
+    if (unauthorized || !supabase) return unauthorizedResponse();
     const body = await req.json();
 
     if (!body || typeof body !== 'object' || Array.isArray(body)) {
@@ -44,7 +45,7 @@ export async function POST(req: NextRequest) {
 
     const { data, error } = await supabase
       .from('accounts')
-      .insert({ name, type: body.type, balance, is_active: true })
+      .insert({ name, type: body.type, balance, is_active: true, user_id: user.id })
       .select()
       .single();
 

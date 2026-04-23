@@ -1,11 +1,11 @@
-import { createServiceClient } from '@/lib/supabase';
+import { createAuthServerClient } from '@/lib/supabase-server';
 import { Category, Account } from '@/types';
 import BudgetSimulatorClient from './BudgetSimulatorClient';
 
 export const revalidate = 120;
 
 async function getBudgetData() {
-  const supabase = createServiceClient();
+  const supabase = await createAuthServerClient();
 
   const [catRes, accountsRes] = await Promise.all([
     supabase

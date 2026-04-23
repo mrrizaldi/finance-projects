@@ -1,34 +1,29 @@
-import { unstable_cache } from 'next/cache';
-import { createServiceClient } from '@/lib/supabase';
+import { createAuthServerClient } from '@/lib/supabase-server';
 import { Account, Category } from '@/types';
 import { SettingsClient } from '@/components/settings/SettingsClient';
 
 export const revalidate = 120;
 
-const getSettingsData = unstable_cache(
-  async () => {
-    const supabase = createServiceClient();
-    const [accountsRes, catsRes] = await Promise.all([
-      supabase
-        .from('accounts')
-        .select('id, name, type, balance, is_active')
-        .order('type')
-        .order('name'),
-      supabase
-        .from('categories')
-        .select('id, name, type, color, budget_monthly, sort_order, is_active')
-        .order('type')
-        .order('sort_order'),
-    ]);
+async function getSettingsData() {
+  const supabase = await createAuthServerClient();
+  const [accountsRes, catsRes] = await Promise.all([
+    supabase
+      .from('accounts')
+      .select('id, name, type, balance, is_active')
+      .order('type')
+      .order('name'),
+    supabase
+      .from('categories')
+      .select('id, name, type, color, budget_monthly, sort_order, is_active')
+      .order('type')
+      .order('sort_order'),
+  ]);
 
-    return {
-      accounts: (accountsRes.data ?? []) as Account[],
-      categories: (catsRes.data ?? []) as Category[],
-    };
-  },
-  ['settings-data'],
-  { revalidate: 120, tags: ['accounts', 'categories', 'settings-data'] }
-);
+  return {
+    accounts: (accountsRes.data ?? []) as Account[],
+    categories: (catsRes.data ?? []) as Category[],
+  };
+}
 
 export default async function SettingsPage() {
   const { accounts, categories } = await getSettingsData();

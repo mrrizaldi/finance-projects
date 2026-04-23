@@ -1,18 +1,24 @@
-import { unstable_cache } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
-import { createServiceClient } from '@/lib/supabase';
+import { createApiClient, unauthorizedResponse } from '@/lib/supabase-api';
 import { startOfMonth, endOfMonth } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-const getChatContext = unstable_cache(
-  async (yearMonth: string) => {
-    const supabase = createServiceClient();
-    const [year, month] = yearMonth.split('-').map(Number);
-    const now = new Date(year, (month || 1) - 1, 2);
+export async function POST(req: NextRequest) {
+  try {
+    const { supabase, unauthorized } = await createApiClient();
+    if (unauthorized || !supabase) return unauthorizedResponse();
+
+    const { messages } = await req.json();
+
+    if (!messages || !Array.isArray(messages)) {
+      return NextResponse.json({ error: 'Invalid messages' }, { status: 400 });
+    }
+
+    const now = new Date();
     const start = startOfMonth(now);
     const end = endOfMonth(now);
 
@@ -22,27 +28,9 @@ const getChatContext = unstable_cache(
       supabase.from('accounts').select('name, type, balance').eq('is_active', true),
     ]);
 
-    return {
-      summary: summaryRes.data?.[0] ?? null,
-      breakdown: breakdownRes.data ?? [],
-      accounts: accountsRes.data ?? [],
-    };
-  },
-  ['chat-monthly-context'],
-  { revalidate: 45, tags: ['chat-context', 'overview', 'analytics', 'accounts', 'categories'] }
-);
-
-export async function POST(req: NextRequest) {
-  try {
-    const { messages } = await req.json();
-
-    if (!messages || !Array.isArray(messages)) {
-      return NextResponse.json({ error: 'Invalid messages' }, { status: 400 });
-    }
-
-    const now = new Date();
-    const yearMonth = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-    const { summary, breakdown, accounts } = await getChatContext(yearMonth);
+    const summary = summaryRes.data?.[0] ?? null;
+    const breakdown = breakdownRes.data ?? [];
+    const accounts = accountsRes.data ?? [];
 
     const formatRp = (n: number) => `Rp ${Number(n).toLocaleString('id-ID')}`;
 

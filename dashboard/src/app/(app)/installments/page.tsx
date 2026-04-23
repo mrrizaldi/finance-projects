@@ -1,5 +1,4 @@
-import { unstable_cache } from 'next/cache';
-import { createServiceClient } from '@/lib/supabase';
+import { createAuthServerClient } from '@/lib/supabase-server';
 import { Installment, Category, Account } from '@/types';
 import { formatRupiah } from '@/lib/utils';
 import { Card, CardContent } from '@/components/ui/card';
@@ -7,96 +6,88 @@ import InstallmentListClient from '@/components/installments/InstallmentListClie
 
 export const revalidate = 60;
 
-const getInstallmentReferences = unstable_cache(
-  async () => {
-    const supabase = createServiceClient();
-    const [catRes, accRes] = await Promise.all([
-      supabase
-        .from('categories')
-        .select('id, name, type, color, budget_monthly, sort_order, is_active')
-        .eq('is_active', true)
-        .order('sort_order'),
-      supabase
-        .from('accounts')
-        .select('id, name, type, balance, is_active')
-        .eq('is_active', true)
-        .order('name'),
-    ]);
+async function getInstallmentReferences() {
+  const supabase = await createAuthServerClient();
+  const [catRes, accRes] = await Promise.all([
+    supabase
+      .from('categories')
+      .select('id, name, type, color, budget_monthly, sort_order, is_active')
+      .eq('is_active', true)
+      .order('sort_order'),
+    supabase
+      .from('accounts')
+      .select('id, name, type, balance, is_active')
+      .eq('is_active', true)
+      .order('name'),
+  ]);
+
+  return {
+    categories: (catRes.data ?? []) as Category[],
+    accounts: (accRes.data ?? []) as Account[],
+  };
+}
+
+async function getInstallmentListData() {
+  const supabase = await createAuthServerClient();
+  const [instRes, refs] = await Promise.all([
+    supabase
+      .from('installments')
+      .select(`
+        id,
+        name,
+        monthly_amount,
+        total_months,
+        paid_months,
+        start_date,
+        due_day,
+        account_id,
+        category_id,
+        status,
+        notes,
+        created_at,
+        accounts(name),
+        categories(name),
+        installment_months(amount, is_paid)
+      `)
+      .order('status')
+      .order('created_at', { ascending: false }),
+    getInstallmentReferences(),
+  ]);
+
+  const installments = (instRes.data ?? []).map((row: any) => {
+    const months = row.installment_months ?? [];
+    const firstAmount = months[0]?.amount != null ? Number(months[0].amount) : Number(row.monthly_amount);
+    const hasVariableMonths = months.some((m: any) => Number(m.amount) !== firstAmount);
+    const paidAmountTotal = months.length
+      ? months
+          .filter((m: any) => m.is_paid)
+          .reduce((sum: number, m: any) => sum + Number(m.amount), 0)
+      : Number(row.monthly_amount) * Number(row.paid_months);
+    const remainingAmountTotal = months.length
+      ? months
+          .filter((m: any) => !m.is_paid)
+          .reduce((sum: number, m: any) => sum + Number(m.amount), 0)
+      : (Number(row.total_months) - Number(row.paid_months)) * Number(row.monthly_amount);
+    const nextAmount = Number(months.find((m: any) => !m.is_paid)?.amount ?? row.monthly_amount);
 
     return {
-      categories: (catRes.data ?? []) as Category[],
-      accounts: (accRes.data ?? []) as Account[],
+      ...row,
+      account_name: row.accounts?.name,
+      category_name: row.categories?.name,
+      months: undefined,
+      paid_amount_total: paidAmountTotal,
+      remaining_amount_total: remainingAmountTotal,
+      next_amount: nextAmount,
+      has_variable_months: hasVariableMonths,
     };
-  },
-  ['installments-references'],
-  { revalidate: 300, tags: ['accounts', 'categories', 'installments-references'] }
-);
+  }) as Installment[];
 
-const getInstallmentListData = unstable_cache(
-  async () => {
-    const supabase = createServiceClient();
-    const [instRes, refs] = await Promise.all([
-      supabase
-        .from('installments')
-        .select(`
-          id,
-          name,
-          monthly_amount,
-          total_months,
-          paid_months,
-          start_date,
-          due_day,
-          account_id,
-          category_id,
-          status,
-          notes,
-          created_at,
-          accounts(name),
-          categories(name),
-          installment_months(amount, is_paid)
-        `)
-        .order('status')
-        .order('created_at', { ascending: false }),
-      getInstallmentReferences(),
-    ]);
-
-    const installments = (instRes.data ?? []).map((row: any) => {
-      const months = row.installment_months ?? [];
-      const firstAmount = months[0]?.amount != null ? Number(months[0].amount) : Number(row.monthly_amount);
-      const hasVariableMonths = months.some((m: any) => Number(m.amount) !== firstAmount);
-      const paidAmountTotal = months.length
-        ? months
-            .filter((m: any) => m.is_paid)
-            .reduce((sum: number, m: any) => sum + Number(m.amount), 0)
-        : Number(row.monthly_amount) * Number(row.paid_months);
-      const remainingAmountTotal = months.length
-        ? months
-            .filter((m: any) => !m.is_paid)
-            .reduce((sum: number, m: any) => sum + Number(m.amount), 0)
-        : (Number(row.total_months) - Number(row.paid_months)) * Number(row.monthly_amount);
-      const nextAmount = Number(months.find((m: any) => !m.is_paid)?.amount ?? row.monthly_amount);
-
-      return {
-        ...row,
-        account_name: row.accounts?.name,
-        category_name: row.categories?.name,
-        months: undefined,
-        paid_amount_total: paidAmountTotal,
-        remaining_amount_total: remainingAmountTotal,
-        next_amount: nextAmount,
-        has_variable_months: hasVariableMonths,
-      };
-    }) as Installment[];
-
-    return {
-      installments,
-      categories: refs.categories,
-      accounts: refs.accounts,
-    };
-  },
-  ['installments-page-data'],
-  { revalidate: 60, tags: ['installments', 'installments-references', 'accounts', 'categories'] }
-);
+  return {
+    installments,
+    categories: refs.categories,
+    accounts: refs.accounts,
+  };
+}
 
 export default async function InstallmentsPage() {
   const { installments, categories, accounts } = await getInstallmentListData();
