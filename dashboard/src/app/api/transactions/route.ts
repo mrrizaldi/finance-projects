@@ -1,14 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase';
+import { createApiClient, unauthorizedResponse } from '@/lib/supabase-api';
 
 export async function GET(req: NextRequest) {
+  const { supabase, unauthorized } = await createApiClient();
+  if (unauthorized || !supabase) return unauthorizedResponse();
+
   const { searchParams } = req.nextUrl;
   const category_id = searchParams.get('category_id');
   const start = searchParams.get('start');
   const end = searchParams.get('end');
   const sort = searchParams.get('sort') ?? 'date_desc';
-
-  const supabase = createServerClient();
 
   let query = supabase
     .from('v_transactions')

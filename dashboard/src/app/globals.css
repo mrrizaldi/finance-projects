@@ -116,3 +116,26 @@
     @apply font-sans;
   }
 }
+
+/* PWA: Safe area for notch devices */
+.pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* Prevent overscroll bounce on iOS */
+html {
+  overscroll-behavior: none;
+}
+
+/* Standalone mode adjustments */
+@media (display-mode: standalone) {
+  body {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    user-select: text;
+  }
+}

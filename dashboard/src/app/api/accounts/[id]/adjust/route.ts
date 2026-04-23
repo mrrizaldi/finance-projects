@@ -1,6 +1,6 @@
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
-import { createServerClient } from '@/lib/supabase';
+import { createApiClient, unauthorizedResponse } from '@/lib/supabase-api';
 
 type Params = { params: { id: string } };
 
@@ -22,7 +22,8 @@ function revalidateFinancePaths() {
 
 export async function POST(req: NextRequest, { params }: Params) {
   try {
-    const supabase = createServerClient();
+    const { supabase, user, unauthorized } = await createApiClient();
+    if (unauthorized || !supabase) return unauthorizedResponse();
     const body = await req.json();
 
     const targetBalance = Number(body?.target_balance);
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest, { params }: Params) {
         adjustment_note: note || null,
         balance_before: before,
         balance_after: after,
+        user_id: user.id,
       });
 
       if (txError) throw new Error(`Gagal mencatat adjustment: ${txError.message}`);

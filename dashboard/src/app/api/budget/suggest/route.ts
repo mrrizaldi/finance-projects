@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
+import { createApiClient, unauthorizedResponse } from '@/lib/supabase-api';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,6 +8,9 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 export async function POST(req: NextRequest) {
   try {
+    const { unauthorized } = await createApiClient();
+    if (unauthorized) return unauthorizedResponse();
+
     const { income, savings_target, allocatable, categories } = await req.json();
 
     if (!income || !Array.isArray(categories) || categories.length === 0) {

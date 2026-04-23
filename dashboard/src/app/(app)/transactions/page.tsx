@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
-import { unstable_cache } from 'next/cache';
-import { createServerClient } from '@/lib/supabase';
+import { createAuthServerClient } from '@/lib/supabase-server';
 import { VTransaction, Category, Account, Installment } from '@/types';
 import TransactionListClient from '@/components/transactions/TransactionListClient';
 import TransactionFilters from './TransactionFilters';
@@ -37,7 +36,6 @@ const TX_LIST_COLUMNS = [
   'to_account_name',
   'installment_name',
 ].join(', ');
-const REFERENCE_TTL_SECONDS = 300;
 
 interface Props {
   searchParams: {
@@ -52,39 +50,35 @@ interface Props {
   };
 }
 
-const getTransactionReferences = unstable_cache(
-  async () => {
-    const supabase = createServerClient();
-    const [catRes, accRes, instRes] = await Promise.all([
-      supabase
-        .from('categories')
-        .select('id, name, type, color, budget_monthly, sort_order, is_active')
-        .eq('is_active', true)
-        .order('sort_order'),
-      supabase
-        .from('accounts')
-        .select('id, name, type, balance, is_active')
-        .eq('is_active', true)
-        .order('name'),
-      supabase
-        .from('installments')
-        .select('id, name, monthly_amount, status')
-        .eq('status', 'active')
-        .order('name'),
-    ]);
+async function getTransactionReferences() {
+  const supabase = await createAuthServerClient();
+  const [catRes, accRes, instRes] = await Promise.all([
+    supabase
+      .from('categories')
+      .select('id, name, type, color, budget_monthly, sort_order, is_active')
+      .eq('is_active', true)
+      .order('sort_order'),
+    supabase
+      .from('accounts')
+      .select('id, name, type, balance, is_active')
+      .eq('is_active', true)
+      .order('name'),
+    supabase
+      .from('installments')
+      .select('id, name, monthly_amount, status')
+      .eq('status', 'active')
+      .order('name'),
+  ]);
 
-    return {
-      categories: (catRes.data ?? []) as Category[],
-      accounts: (accRes.data ?? []) as Account[],
-      installments: (instRes.data ?? []) as Pick<Installment, 'id' | 'name' | 'monthly_amount' | 'status'>[],
-    };
-  },
-  ['transactions-references'],
-  { revalidate: REFERENCE_TTL_SECONDS, tags: ['accounts', 'categories', 'installments', 'transactions-references'] }
-);
+  return {
+    categories: (catRes.data ?? []) as Category[],
+    accounts: (accRes.data ?? []) as Account[],
+    installments: (instRes.data ?? []) as Pick<Installment, 'id' | 'name' | 'monthly_amount' | 'status'>[],
+  };
+}
 
 async function getData(searchParams: Props['searchParams']) {
-  const supabase = createServerClient();
+  const supabase = await createAuthServerClient();
   const page = Math.max(1, parseInt(searchParams.page || '1'));
   const from = (page - 1) * PAGE_SIZE;
   const to = from + PAGE_SIZE;

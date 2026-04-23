@@ -1,14 +1,26 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import Sidebar from '@/components/layout/Sidebar';
-import { cn } from '@/lib/utils';
 
-const inter = Inter({ subsets: ['latin'], variable: '--font-sans' });
+const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Finance Dashboard',
-  description: 'Personal finance tracking dashboard',
+  title: 'Finance Tracker',
+  description: 'Personal finance tracking app',
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'Finance',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#3b82f6',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({
@@ -17,14 +29,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="id" className={cn('font-sans dark', inter.variable)}>
+    <html lang="id" className="dark">
       <body className={inter.className}>
-        <div className="min-h-screen bg-background lg:flex">
-          <Sidebar />
-          <main className="min-w-0 flex-1 overflow-x-hidden">
-            {children}
-          </main>
-        </div>
+        {children}
       </body>
     </html>
   );

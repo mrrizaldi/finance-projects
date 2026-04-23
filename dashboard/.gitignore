@@ -1,1 +1,9 @@
-dashboard/.env.local
+.next
+node_modules
+*.local
+
+# PWA generated files
+public/sw.js
+public/workbox-*.js
+public/sw.js.map
+public/workbox-*.js.map

@@ -1,6 +1,5 @@
 import { Suspense } from 'react';
-import { unstable_cache } from 'next/cache';
-import { createServerClient } from '@/lib/supabase';
+import { createAuthServerClient } from '@/lib/supabase-server';
 import { CategoryBreakdown, MonthlyTrend, HeatmapEntry } from '@/types';
 import { formatRupiah } from '@/lib/utils';
 import CategoryChart from '@/components/charts/CategoryChart';
@@ -74,33 +73,24 @@ function getPeriodBounds(period: Period, anchor: string): { start: string; end: 
 }
 
 async function loadAnalyticsData(period: Period, start: string, end: string, trendMonths: number) {
-  const cacheKey = `analytics:${period}:${start}:${end}:${trendMonths}`;
-  const load = unstable_cache(
-    async () => {
-      const supabase = createServerClient();
+  const supabase = await createAuthServerClient();
 
-      const [expCatRes, incCatRes, trendRes, heatmapRes] = await Promise.all([
-        supabase.rpc('get_category_breakdown', { p_start_date: start, p_end_date: end, p_type: 'expense' }),
-        supabase.rpc('get_category_breakdown', { p_start_date: start, p_end_date: end, p_type: 'income' }),
-        supabase.rpc('get_monthly_trend', { p_months: trendMonths }),
-        supabase.rpc('get_expense_heatmap', {
-          p_start_date: start,
-          p_end_date: end,
-        }),
-      ]);
+  const [expCatRes, incCatRes, trendRes, heatmapRes] = await Promise.all([
+    supabase.rpc('get_category_breakdown', { p_start_date: start, p_end_date: end, p_type: 'expense' }),
+    supabase.rpc('get_category_breakdown', { p_start_date: start, p_end_date: end, p_type: 'income' }),
+    supabase.rpc('get_monthly_trend', { p_months: trendMonths }),
+    supabase.rpc('get_expense_heatmap', {
+      p_start_date: start,
+      p_end_date: end,
+    }),
+  ]);
 
-      return {
-        expCategories: (expCatRes.data ?? []) as CategoryBreakdown[],
-        incCategories: (incCatRes.data ?? []) as CategoryBreakdown[],
-        trend: (trendRes.data ?? []) as MonthlyTrend[],
-        heatmap: (heatmapRes.data ?? []) as HeatmapEntry[],
-      };
-    },
-    [cacheKey],
-    { revalidate: 60, tags: ['analytics'] }
-  );
-
-  return load();
+  return {
+    expCategories: (expCatRes.data ?? []) as CategoryBreakdown[],
+    incCategories: (incCatRes.data ?? []) as CategoryBreakdown[],
+    trend: (trendRes.data ?? []) as MonthlyTrend[],
+    heatmap: (heatmapRes.data ?? []) as HeatmapEntry[],
+  };
 }
 
 export default async function AnalyticsPage({ searchParams }: Props) {

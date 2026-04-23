@@ -132,3 +132,11 @@ export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
 }
+
+export interface Profile {
+  id: string;
+  display_name: string;
+  default_account_id: string | null;
+  created_at: string;
+  updated_at: string;
+}

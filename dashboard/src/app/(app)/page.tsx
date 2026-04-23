@@ -1,5 +1,4 @@
-import { unstable_cache } from 'next/cache';
-import { createServerClient } from '@/lib/supabase';
+import { createAuthServerClient } from '@/lib/supabase-server';
 import { formatRupiah, startOfMonth, endOfMonth } from '@/lib/utils';
 import { Summary, MonthlyTrend, CategoryBreakdown, VTransaction } from '@/types';
 import CashflowChart from '@/components/charts/CashflowChart';
@@ -15,36 +14,32 @@ import {
 
 export const revalidate = 60; // Revalidate every minute
 
-const getOverviewData = unstable_cache(
-  async () => {
-    const supabase = createServerClient();
-    const now = new Date();
-    const start = startOfMonth(now);
-    const end = endOfMonth(now);
+async function getOverviewData() {
+  const supabase = await createAuthServerClient();
+  const now = new Date();
+  const start = startOfMonth(now);
+  const end = endOfMonth(now);
 
-    const [summaryRes, trendRes, categoryRes, txRes] = await Promise.all([
-      supabase.rpc('get_summary', { p_start_date: start, p_end_date: end }),
-      supabase.rpc('get_monthly_trend', { p_months: 6 }),
-      supabase.rpc('get_category_breakdown', { p_start_date: start, p_end_date: end, p_type: 'expense' }),
-      supabase
-        .from('v_transactions')
-        .select(
-          'id, type, amount, description, merchant, category_id, account_id, to_account_id, installment_id, source, balance_after, is_adjustment, transaction_date, category_name, category_color, account_name, to_account_name, installment_name'
-        )
-        .order('transaction_date', { ascending: false })
-        .limit(10),
-    ]);
+  const [summaryRes, trendRes, categoryRes, txRes] = await Promise.all([
+    supabase.rpc('get_summary', { p_start_date: start, p_end_date: end }),
+    supabase.rpc('get_monthly_trend', { p_months: 6 }),
+    supabase.rpc('get_category_breakdown', { p_start_date: start, p_end_date: end, p_type: 'expense' }),
+    supabase
+      .from('v_transactions')
+      .select(
+        'id, type, amount, description, merchant, category_id, account_id, to_account_id, installment_id, source, balance_after, is_adjustment, transaction_date, category_name, category_color, account_name, to_account_name, installment_name'
+      )
+      .order('transaction_date', { ascending: false })
+      .limit(10),
+  ]);
 
-    return {
-      summary: (summaryRes.data?.[0] ?? null) as Summary | null,
-      trend: (trendRes.data ?? []) as MonthlyTrend[],
-      categories: (categoryRes.data ?? []) as CategoryBreakdown[],
-      transactions: (txRes.data ?? []) as VTransaction[],
-    };
-  },
-  ['overview-data'],
-  { revalidate: 60, tags: ['overview', 'analytics', 'chat-context'] }
-);
+  return {
+    summary: (summaryRes.data?.[0] ?? null) as Summary | null,
+    trend: (trendRes.data ?? []) as MonthlyTrend[],
+    categories: (categoryRes.data ?? []) as CategoryBreakdown[],
+    transactions: (txRes.data ?? []) as VTransaction[],
+  };
+}
 
 function StatCard({
   title,
