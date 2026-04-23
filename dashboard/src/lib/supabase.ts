@@ -1,27 +1,27 @@
 import { createClient } from '@supabase/supabase-js';
+import { createBrowserClient as createSSRBrowserClient } from '@supabase/ssr';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
 
-// Server-side client — uses service role key, bypasses RLS
-// Only import/use this in Server Components or API Routes
-export function createServerClient() {
+// Service role client — for API routes, bypasses RLS
+export function createServiceClient() {
   return createClient(supabaseUrl, supabaseServiceRoleKey, {
-    auth: {
-      persistSession: false,
-      autoRefreshToken: false,
-    },
+    auth: { persistSession: false, autoRefreshToken: false },
   });
 }
 
-// Browser client — uses anon key
+// Keep backward compat alias — some files may still use createServerClient
+export const createServerClient = createServiceClient;
+
+// Browser client — auth-aware, respects RLS
+let browserClient: ReturnType<typeof createSSRBrowserClient> | null = null;
+
 export function createBrowserClient() {
-  return createClient(supabaseUrl, supabaseAnonKey);
+  return createSSRBrowserClient(supabaseUrl, supabaseAnonKey);
 }
 
-// Singleton for browser
-let browserClient: ReturnType<typeof createBrowserClient> | null = null;
 export function getBrowserClient() {
   if (!browserClient) {
     browserClient = createBrowserClient();
