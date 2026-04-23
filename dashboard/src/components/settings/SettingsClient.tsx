@@ -2,11 +2,13 @@
 
 import { useState, useCallback, useEffect, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import { Account, Category } from '@/types';
+import { Account, Category, Profile } from '@/types';
 import { formatRupiah } from '@/lib/utils';
-import { Card, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { AccountEditDialog } from './AccountEditDialog';
 import { AccountAdjustDialog } from './AccountAdjustDialog';
 import { CategoryEditDialog } from './CategoryEditDialog';
@@ -15,9 +17,11 @@ import { ArrowUpDown, Ban, Pencil, Plus } from 'lucide-react';
 interface SettingsClientProps {
   initialAccounts: Account[];
   initialCategories: Category[];
+  profile: Profile | null;
+  email: string | null;
 }
 
-export function SettingsClient({ initialAccounts, initialCategories }: SettingsClientProps) {
+export function SettingsClient({ initialAccounts, initialCategories, profile, email }: SettingsClientProps) {
   const router = useRouter();
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
@@ -37,6 +41,29 @@ export function SettingsClient({ initialAccounts, initialCategories }: SettingsC
 
   const [deactivatingId, setDeactivatingId] = useState<string | null>(null);
   const [isRefreshing, startRefresh] = useTransition();
+
+  // Profile state
+  const [displayName, setDisplayName] = useState(profile?.display_name ?? '');
+  const [defaultAccountId, setDefaultAccountId] = useState(profile?.default_account_id ?? '');
+  const [savingProfile, setSavingProfile] = useState(false);
+  const [profileSaved, setProfileSaved] = useState(false);
+
+  async function handleSaveProfile() {
+    setSavingProfile(true);
+    const res = await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        display_name: displayName,
+        default_account_id: defaultAccountId || null,
+      }),
+    });
+    setSavingProfile(false);
+    if (res.ok) {
+      setProfileSaved(true);
+      setTimeout(() => setProfileSaved(false), 2000);
+    }
+  }
 
   useEffect(() => {
     setAccounts(initialAccounts);
@@ -98,6 +125,45 @@ export function SettingsClient({ initialAccounts, initialCategories }: SettingsC
           </div>
         </div>
       )}
+
+      {/* Profile */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="text-base">Profil</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {email && (
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Email</Label>
+              <p className="text-sm">{email}</p>
+            </div>
+          )}
+          <div className="space-y-2">
+            <Label>Nama Tampil</Label>
+            <Input
+              value={displayName}
+              onChange={(e) => setDisplayName(e.target.value)}
+              placeholder="Nama kamu"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Akun Default</Label>
+            <select
+              value={defaultAccountId}
+              onChange={(e) => setDefaultAccountId(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+            >
+              <option value="">Tidak ada</option>
+              {initialAccounts.filter(a => a.is_active).map(a => (
+                <option key={a.id} value={a.id}>{a.name}</option>
+              ))}
+            </select>
+          </div>
+          <Button onClick={handleSaveProfile} disabled={savingProfile} size="sm">
+            {profileSaved ? 'Tersimpan!' : savingProfile ? 'Menyimpan...' : 'Simpan Profil'}
+          </Button>
+        </CardContent>
+      </Card>
 
       {/* Accounts */}
       <Card className="mb-6">

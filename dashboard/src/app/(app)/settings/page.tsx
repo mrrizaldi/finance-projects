@@ -1,12 +1,12 @@
 import { createAuthServerClient } from '@/lib/supabase-server';
-import { Account, Category } from '@/types';
+import { Account, Category, Profile } from '@/types';
 import { SettingsClient } from '@/components/settings/SettingsClient';
 
 export const revalidate = 120;
 
 async function getSettingsData() {
   const supabase = await createAuthServerClient();
-  const [accountsRes, catsRes] = await Promise.all([
+  const [accountsRes, catsRes, profileRes, userRes] = await Promise.all([
     supabase
       .from('accounts')
       .select('id, name, type, balance, is_active')
@@ -17,16 +17,20 @@ async function getSettingsData() {
       .select('id, name, type, color, budget_monthly, sort_order, is_active')
       .order('type')
       .order('sort_order'),
+    supabase.from('profiles').select('*').single(),
+    supabase.auth.getUser(),
   ]);
 
   return {
     accounts: (accountsRes.data ?? []) as Account[],
     categories: (catsRes.data ?? []) as Category[],
+    profile: profileRes.data as Profile | null,
+    email: userRes.data.user?.email ?? null,
   };
 }
 
 export default async function SettingsPage() {
-  const { accounts, categories } = await getSettingsData();
+  const { accounts, categories, profile, email } = await getSettingsData();
 
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto">
@@ -35,7 +39,12 @@ export default async function SettingsPage() {
         <p className="text-muted-foreground text-sm mt-1">Kelola akun dan kategori transaksi</p>
       </div>
 
-      <SettingsClient initialAccounts={accounts} initialCategories={categories} />
+      <SettingsClient
+        initialAccounts={accounts}
+        initialCategories={categories}
+        profile={profile}
+        email={email}
+      />
     </div>
   );
 }
