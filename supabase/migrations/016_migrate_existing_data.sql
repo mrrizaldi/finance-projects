@@ -1,0 +1,32 @@
+-- ============================================
+-- 016: Migrate existing data to owner
+-- Run this AFTER the owner has registered.
+-- Replace <OWNER_UUID> with actual auth.users.id
+-- ============================================
+
+-- Step 1: Assign all existing data to owner
+-- IMPORTANT: Replace this UUID after owner registers
+-- You can find it in Supabase Dashboard → Authentication → Users
+
+-- DO NOT RUN until owner UUID is known.
+-- Template:
+--
+-- UPDATE accounts SET user_id = '<OWNER_UUID>' WHERE user_id IS NULL;
+-- UPDATE categories SET user_id = '<OWNER_UUID>' WHERE user_id IS NULL;
+-- UPDATE transactions SET user_id = '<OWNER_UUID>' WHERE user_id IS NULL;
+-- UPDATE installments SET user_id = '<OWNER_UUID>' WHERE user_id IS NULL;
+-- UPDATE budgets SET user_id = '<OWNER_UUID>' WHERE user_id IS NULL;
+-- UPDATE recurring_transactions SET user_id = '<OWNER_UUID>' WHERE user_id IS NULL;
+--
+-- -- Create profile for owner if not auto-created
+-- INSERT INTO profiles (id, display_name)
+-- VALUES ('<OWNER_UUID>', 'Rizaldi')
+-- ON CONFLICT (id) DO NOTHING;
+--
+-- -- Then enforce NOT NULL (run after confirming all data migrated)
+-- ALTER TABLE accounts ALTER COLUMN user_id SET NOT NULL;
+-- ALTER TABLE categories ALTER COLUMN user_id SET NOT NULL;
+-- ALTER TABLE transactions ALTER COLUMN user_id SET NOT NULL;
+-- ALTER TABLE installments ALTER COLUMN user_id SET NOT NULL;
+-- ALTER TABLE budgets ALTER COLUMN user_id SET NOT NULL;
+-- ALTER TABLE recurring_transactions ALTER COLUMN user_id SET NOT NULL;
