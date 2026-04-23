@@ -67,3 +67,15 @@ export const SOURCE_LABEL: Record<string, string> = {
 };
 
 export const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+
+export function parseAmountInput(raw: string): number {
+  const cleaned = raw.toLowerCase().replace(/[^0-9.,rbjt]/g, '');
+  if (cleaned.endsWith('jt')) return parseFloat(cleaned.replace('jt', '').replace(',', '.')) * 1_000_000;
+  if (cleaned.endsWith('rb')) return parseFloat(cleaned.replace('rb', '').replace(',', '.')) * 1_000;
+  return parseFloat(cleaned.replace(/\./g, '').replace(',', '.')) || 0;
+}
+
+export function formatRupiahInput(amount: number): string {
+  if (amount === 0) return '';
+  return new Intl.NumberFormat('id-ID').format(amount);
+}
