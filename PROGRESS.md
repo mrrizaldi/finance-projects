@@ -1466,6 +1466,69 @@ Setelah bulk input, user ingin bisa edit kategori yang salah.
 
 ---
 
+## Detail Eksekusi — Sesi 31 (23 April 2026) — PWA Feature Branch
+
+### Feature Branch: `feature/pwa` di `.worktrees/pwa-feature`
+
+**Tujuan:** Convert existing Next.js dashboard jadi installable PWA dengan Supabase Auth dan transaction input UI.
+
+**Spec:** `docs/superpowers/specs/2026-04-23-pwa-finance-app-design.md`
+**Plan:** `docs/superpowers/plans/2026-04-23-pwa-finance-app.md`
+
+**Implementasi selesai (17 task):**
+
+**Database & Auth:**
+- ✅ Migration `015_auth_and_profiles.sql` — profiles table, user_id di semua core table, per-user RLS, seed data trigger, update RPC functions
+- ✅ Migration `016_migrate_existing_data.sql` — template untuk assign data lama ke owner
+
+**Supabase Client Refactor:**
+- ✅ `supabase-server.ts` — auth-aware server client (cookie-based)
+- ✅ `supabase-middleware.ts` — middleware session updater
+- ✅ `supabase-api.ts` — API route helper dengan user auth check
+- ✅ `supabase.ts` — browser client (SSR-aware)
+
+**Auth & Navigation:**
+- ✅ `middleware.ts` — auth guard, redirect unauthenticated ke /login
+- ✅ `app/auth/callback/route.ts` — OAuth callback
+- ✅ Route groups: `(auth)/` (login/register/forgot-password) + `(app)/` (semua app pages)
+- ✅ `BottomNav.tsx` — mobile bottom tab bar (Home/Transaksi/Tambah/Cicilan/Lainnya)
+- ✅ `MoreMenu.tsx` — mobile "Lainnya" halaman
+- ✅ Sidebar diupdate dengan logout button + link ke halaman baru
+
+**Transaction Input:**
+- ✅ `/add` — smart form (expense/income + transfer), AI categorization on blur, shorthand amounts (50rb, 1.5jt)
+- ✅ `/bulk` — multi-line input parser dengan preview table
+- ✅ `/balances` — saldo per akun dengan adjust dialog
+
+**Installments:**
+- ✅ `POST /api/installments` — buat cicilan baru
+- ✅ `POST /api/installments/[id]/pay` — bayar cicilan
+- ✅ `POST /api/installments/[id]/append` — tambah bulan
+- ✅ InstallmentDetailDialog — tambah Bayar + Tambah Bulan buttons
+- ✅ InstallmentCreateButton — tambah cicilan dari halaman installments
+
+**PWA:**
+- ✅ `public/manifest.json` + icons (192, 512, maskable)
+- ✅ `next.config.js` — next-pwa config (disable di dev, register service worker di prod)
+- ✅ Root layout — manifest meta, apple-web-app meta, viewport settings
+- ✅ `globals.css` — safe area inset, overscroll none, standalone mode user-select
+
+**Settings:**
+- ✅ `PATCH /api/profile` — update display_name + default_account_id
+- ✅ Profile section di settings: nama, akun default, email read-only
+
+**API routes semua diprotect dengan auth check.**
+
+**Status:** Branch `feature/pwa` siap untuk review dan merge ke main.
+
+**Langkah selanjutnya sebelum deploy:**
+1. Register sebagai owner di dashboard → ambil UUID dari Supabase Dashboard
+2. Jalankan migration 016 dengan UUID owner (assign data lama)
+3. Setup Google OAuth di Supabase Dashboard (opsional)
+4. Deploy dashboard ke home server
+
+---
+
 ## Catatan Teknis Penting
 
 1. **Node.js path di home server**: selalu prefix `export PATH=/home/mrrizaldi/.nvm/versions/node/v22.20.0/bin:$PATH` sebelum menjalankan `pnpm`/`pm2`
