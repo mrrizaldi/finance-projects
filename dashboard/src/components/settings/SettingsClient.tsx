@@ -21,6 +21,132 @@ interface SettingsClientProps {
   email: string | null;
 }
 
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+  const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+  const rawData = window.atob(base64);
+  return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
+}
+
+type PushStatus = 'loading' | 'unsupported' | 'denied' | 'inactive' | 'active';
+
+function PushNotificationSection() {
+  const [status, setStatus] = useState<PushStatus>('loading');
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      setStatus('unsupported');
+      return;
+    }
+    if (Notification.permission === 'denied') {
+      setStatus('denied');
+      return;
+    }
+    navigator.serviceWorker.ready.then((reg) => {
+      reg.pushManager.getSubscription().then((sub) => {
+        setStatus(sub ? 'active' : 'inactive');
+      });
+    });
+  }, []);
+
+  async function handleEnable() {
+    setSaving(true);
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        setStatus('denied');
+        return;
+      }
+      const vapidRes = await fetch('/api/push/vapid-key');
+      const { publicKey } = await vapidRes.json();
+
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(publicKey),
+      });
+
+      await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'subscribe', subscription: sub.toJSON() }),
+      });
+      setStatus('active');
+    } catch (err) {
+      console.error('Push subscribe error:', err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDisable() {
+    setSaving(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await fetch('/api/push/subscribe', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'unsubscribe', subscription: sub.toJSON() }),
+        });
+        await sub.unsubscribe();
+      }
+      setStatus('inactive');
+    } catch (err) {
+      console.error('Push unsubscribe error:', err);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="text-base">Notifikasi Push</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {status === 'loading' && (
+          <p className="text-sm text-muted-foreground">Memeriksa status...</p>
+        )}
+        {status === 'unsupported' && (
+          <p className="text-sm text-muted-foreground">
+            Browser ini tidak mendukung push notification.
+          </p>
+        )}
+        {status === 'denied' && (
+          <p className="text-sm text-muted-foreground">
+            Notifikasi diblokir. Izinkan di pengaturan browser untuk mengaktifkan.
+          </p>
+        )}
+        {(status === 'inactive' || status === 'active') && (
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">
+                {status === 'active' ? 'Aktif' : 'Nonaktif'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {status === 'active'
+                  ? 'Notifikasi muncul saat ada transaksi baru'
+                  : 'Aktifkan untuk menerima notifikasi transaksi'}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant={status === 'active' ? 'outline' : 'default'}
+              onClick={status === 'active' ? handleDisable : handleEnable}
+              disabled={saving}
+            >
+              {saving ? 'Memproses...' : status === 'active' ? 'Nonaktifkan' : 'Aktifkan'}
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 export function SettingsClient({ initialAccounts, initialCategories, profile, email }: SettingsClientProps) {
   const router = useRouter();
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
@@ -164,6 +290,8 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
           </Button>
         </CardContent>
       </Card>
+
+      <PushNotificationSection />
 
       {/* Accounts */}
       <Card className="mb-6">
