@@ -33,6 +33,7 @@ type PushStatus = 'loading' | 'unsupported' | 'denied' | 'inactive' | 'active';
 function PushNotificationSection() {
   const [status, setStatus] = useState<PushStatus>('loading');
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -52,6 +53,7 @@ function PushNotificationSection() {
 
   async function handleEnable() {
     setSaving(true);
+    setError(null);
     try {
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
@@ -59,6 +61,10 @@ function PushNotificationSection() {
         return;
       }
       const vapidRes = await fetch('/api/push/vapid-key');
+      if (!vapidRes.ok) {
+        setError('Gagal mengambil konfigurasi notifikasi. Coba lagi.');
+        return;
+      }
       const { publicKey } = await vapidRes.json();
 
       const reg = await navigator.serviceWorker.ready;
@@ -67,14 +73,20 @@ function PushNotificationSection() {
         applicationServerKey: urlBase64ToUint8Array(publicKey),
       });
 
-      await fetch('/api/push/subscribe', {
+      const res = await fetch('/api/push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'subscribe', subscription: sub.toJSON() }),
       });
+      if (!res.ok) {
+        await sub.unsubscribe();
+        setError('Gagal menyimpan langganan notifikasi. Coba lagi.');
+        return;
+      }
       setStatus('active');
     } catch (err) {
       console.error('Push subscribe error:', err);
+      setError('Terjadi kesalahan. Coba lagi.');
     } finally {
       setSaving(false);
     }
@@ -82,20 +94,26 @@ function PushNotificationSection() {
 
   async function handleDisable() {
     setSaving(true);
+    setError(null);
     try {
       const reg = await navigator.serviceWorker.ready;
       const sub = await reg.pushManager.getSubscription();
       if (sub) {
-        await fetch('/api/push/subscribe', {
+        const res = await fetch('/api/push/subscribe', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ action: 'unsubscribe', subscription: sub.toJSON() }),
         });
+        if (!res.ok) {
+          setError('Gagal menonaktifkan notifikasi. Coba lagi.');
+          return;
+        }
         await sub.unsubscribe();
       }
       setStatus('inactive');
     } catch (err) {
       console.error('Push unsubscribe error:', err);
+      setError('Terjadi kesalahan. Coba lagi.');
     } finally {
       setSaving(false);
     }
@@ -107,6 +125,9 @@ function PushNotificationSection() {
         <CardTitle className="text-base">Notifikasi Push</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
+        {error && (
+          <p className="text-sm text-red-500">{error}</p>
+        )}
         {status === 'loading' && (
           <p className="text-sm text-muted-foreground">Memeriksa status...</p>
         )}
