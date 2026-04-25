@@ -1529,6 +1529,56 @@ Setelah bulk input, user ingin bisa edit kategori yang salah.
 
 ---
 
+## Detail Eksekusi — Sesi 32 (25 April 2026) — Push Notifications untuk PWA
+
+### Push Notifications (PWA)
+
+**Status:** ✅ Implemented (2026-04-25)
+
+**Tujuan:** Kirim notifikasi real-time ke PWA ketika ada transaksi baru (dari sumber manapun: n8n, dashboard, Telegram bot, adjustment).
+
+### Mekanisme
+
+1. Setiap INSERT ke tabel `transactions` (dari sumber manapun: n8n, dashboard, Telegram bot, adjustment) memicu PostgreSQL trigger `push_notify_on_insert`
+2. Trigger memanggil `net.http_post()` (pg_net extension) ke `https://finance-dashboard.mrrizaldi.my.id/api/push/notify` dengan header `X-Webhook-Secret`
+3. API memvalidasi secret, query `v_transactions` untuk data lengkap (category_name, account_name), query `push_subscriptions` untuk daftar device
+4. Notifikasi dikirim via **VAPID Web Push** (`web-push` package) ke semua device yang terdaftar
+5. **Service Worker** (custom handler di `dashboard/worker/index.js`, di-merge ke `public/sw.js` oleh next-pwa) menampilkan notifikasi
+
+### Format Notifikasi
+
+- **Title:** Transaksi Baru
+- **Body:** `{Pengeluaran|Pemasukan|Transfer|Penyesuaian} Rp {nominal} · {kategori} · {akun}`
+- Klik notif → buka `/transactions`
+
+### Komponen
+
+| File | Fungsi |
+|------|--------|
+| `supabase/migrations/005_push_subscriptions.sql` | Tabel push_subscriptions + RLS |
+| `supabase/migrations/006_push_notify_trigger.sql` | pg_net trigger on INSERT transactions |
+| `dashboard/worker/index.js` | Custom SW: push + notificationclick handlers |
+| `dashboard/src/lib/web-push.ts` | Configured web-push singleton + PushPayload type |
+| `dashboard/src/app/api/push/vapid-key/route.ts` | GET VAPID public key |
+| `dashboard/src/app/api/push/subscribe/route.ts` | POST subscribe/unsubscribe device |
+| `dashboard/src/app/api/push/notify/route.ts` | POST Supabase webhook → kirim push |
+| `dashboard/src/components/settings/SettingsClient.tsx` | UI toggle enable/disable notifikasi |
+
+### Konfigurasi
+
+- **VAPID keys + webhook secret:** `dashboard/.env.local` — VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY, VAPID_SUBJECT, PUSH_WEBHOOK_SECRET
+- **SUPABASE_SERVICE_ROLE_KEY:** `dashboard/.env.local` (dipakai notify route untuk bypass RLS)
+- **Trigger:** Di-deploy via SQL, lihat `supabase/migrations/006_push_notify_trigger.sql`
+
+### Catatan
+
+- Expired subscriptions (HTTP 410/404 dari push service) otomatis dihapus dari DB
+- PUSH_WEBHOOK_SECRET ter-embed di trigger function body di database — acceptable untuk personal app, perlu redeploy function jika rotate secret
+- E2E test verified: trigger fires → pg_net HTTP POST → API responds `{"ok":true,"sent":N}`
+- User harus aktifkan notifikasi manual dari Settings page di PWA yang terinstall
+
+---
+
 ## Catatan Teknis Penting
 
 1. **Node.js path di home server**: selalu prefix `export PATH=/home/mrrizaldi/.nvm/versions/node/v22.20.0/bin:$PATH` sebelum menjalankan `pnpm`/`pm2`
