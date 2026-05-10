@@ -140,3 +140,32 @@ export interface Profile {
   created_at: string;
   updated_at: string;
 }
+
+export interface PeriodComparison {
+  curr_income: number;
+  curr_expense: number;
+  curr_net: number;
+  curr_tx_count: number;
+  curr_avg_daily: number;
+  prev_income: number;
+  prev_expense: number;
+  prev_net: number;
+  prev_tx_count: number;
+  prev_avg_daily: number;
+}
+
+export interface DailySpending {
+  day: string;
+  daily_expense: number;
+  cumulative_expense: number;
+}
+
+export interface TopTransaction {
+  id: string;
+  amount: number;
+  description?: string;
+  merchant?: string;
+  category_name?: string;
+  category_color?: string;
+  transaction_date: string;
+}
