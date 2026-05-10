@@ -101,7 +101,6 @@ function getPeriodBounds(
 }
 
 async function loadAnalyticsData(
-  period: Period,
   start: string,
   end: string,
   prevStart: string,
@@ -150,11 +149,11 @@ export default async function AnalyticsPage({ searchParams }: Props) {
     ? searchParams.period
     : 'month') as Period;
 
-  const anchor = searchParams.anchor || dayjs().startOf('month').toISOString();
+  const anchor = searchParams.anchor || dayjs().startOf('month').format('YYYY-MM-DD');
   const { start, end, prevStart, prevEnd, label, trendMonths } = getPeriodBounds(period, anchor);
 
   const { expCategories, incCategories, trend, heatmap, comparison, dailySpending, topTransactions } =
-    await loadAnalyticsData(period, start, end, prevStart, prevEnd, trendMonths);
+    await loadAnalyticsData(start, end, prevStart, prevEnd, trendMonths);
 
   const totalExpense = expCategories.reduce((s, c) => s + Number(c.total_amount), 0);
   const totalIncome = incCategories.reduce((s, c) => s + Number(c.total_amount), 0);
