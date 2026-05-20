@@ -1,54 +1,13 @@
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiClient, unauthorizedResponse } from '@/lib/supabase-api';
-
-type MonthPayload = {
-  month_number: number;
-  amount: number;
-  is_paid: boolean;
-};
+import { parseMonths, type MonthPayload } from '@/lib/installment-utils';
 
 function normalizeNullableString(value: unknown, field: string) {
   if (value === undefined) return undefined;
   if (value === null || value === '') return null;
   if (typeof value !== 'string') throw new Error(`${field} harus berupa string`);
   return value;
-}
-
-function parseMonths(raw: unknown): MonthPayload[] {
-  if (!Array.isArray(raw) || raw.length === 0) {
-    throw new Error('Detail nominal bulanan wajib diisi');
-  }
-
-  const parsed = raw.map((row, idx) => {
-    if (!row || typeof row !== 'object' || Array.isArray(row)) {
-      throw new Error(`Baris bulan ke-${idx + 1} tidak valid`);
-    }
-
-    const monthNumber = Number((row as any).month_number);
-    const amount = Number((row as any).amount);
-    const isPaid = Boolean((row as any).is_paid);
-
-    if (!Number.isInteger(monthNumber) || monthNumber < 1) {
-      throw new Error(`month_number pada baris ke-${idx + 1} tidak valid`);
-    }
-    if (!Number.isFinite(amount) || amount <= 0) {
-      throw new Error(`amount pada baris ke-${idx + 1} harus lebih dari 0`);
-    }
-
-    return { month_number: monthNumber, amount, is_paid: isPaid };
-  });
-
-  parsed.sort((a, b) => a.month_number - b.month_number);
-
-  for (let i = 0; i < parsed.length; i++) {
-    const expected = i + 1;
-    if (parsed[i].month_number !== expected) {
-      throw new Error('Urutan bulan harus berurutan mulai dari 1');
-    }
-  }
-
-  return parsed;
 }
 
 function revalidateFinancePaths() {
