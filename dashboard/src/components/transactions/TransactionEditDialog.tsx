@@ -20,6 +20,12 @@ import {
 import { VTransaction, Category, Account, Installment } from '@/types';
 import { TRANSACTION_TYPE_LABEL } from '@/lib/utils';
 
+// Convert a UTC timestamptz string to WIB datetime-local format (for input display)
+function toWIBDatetimeLocal(utcString: string): string {
+  const wib = new Date(new Date(utcString).getTime() + 7 * 60 * 60 * 1000);
+  return wib.toISOString().slice(0, 16);
+}
+
 interface Props {
   tx: VTransaction | null;
   open: boolean;
@@ -44,7 +50,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
   const [installmentId, setInstallmentId] = useState(tx?.installment_id || '');
   const [useInstallment, setUseInstallment] = useState(!!tx?.installment_id);
   const [transactionDate, setTransactionDate] = useState(
-    tx ? tx.transaction_date.slice(0, 16) : ''
+    tx ? toWIBDatetimeLocal(tx.transaction_date) : ''
   );
 
   // Sync form state when tx changes (e.g. switching between rows)
@@ -59,7 +65,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
       setToAccountId(tx.to_account_id || '');
       setInstallmentId(tx.installment_id || '');
       setUseInstallment(!!tx.installment_id);
-      setTransactionDate(tx.transaction_date.slice(0, 16));
+      setTransactionDate(toWIBDatetimeLocal(tx.transaction_date));
       setError(null);
     }
   }, [tx?.id]);
@@ -86,7 +92,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
       account_id: (type === 'expense' && useInstallment) ? null : (accountId || null),
       to_account_id: type === 'transfer' ? (toAccountId || null) : null,
       installment_id: (type === 'expense' && useInstallment) ? (installmentId || null) : null,
-      transaction_date: transactionDate,
+      transaction_date: transactionDate + ':00+07:00',
     };
 
     try {
@@ -203,7 +209,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
                   <button
                     type="button"
                     onClick={() => setUseInstallment(false)}
-                    className={`px-2 py-0.5 rounded transition-colors border ${
+                    className={`px-2 py-0.5 rounded-lg transition-colors border ${
                       !useInstallment
                         ? 'bg-primary/15 text-primary border-primary/30'
                         : 'bg-muted text-muted-foreground border-border'
@@ -214,7 +220,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
                   <button
                     type="button"
                     onClick={() => setUseInstallment(true)}
-                    className={`px-2 py-0.5 rounded transition-colors border ${
+                    className={`px-2 py-0.5 rounded-lg transition-colors border ${
                       useInstallment
                         ? 'bg-purple-500/15 text-purple-400 border-purple-500/30'
                         : 'bg-muted text-muted-foreground border-border'

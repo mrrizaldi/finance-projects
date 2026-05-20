@@ -28,6 +28,23 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
   return Uint8Array.from([...rawData].map((c) => c.charCodeAt(0)));
 }
 
+// Returns an active ServiceWorkerRegistration without hanging.
+// navigator.serviceWorker.ready blocks forever if SW is stuck in waiting.
+async function getActiveReg(timeoutMs = 5000): Promise<ServiceWorkerRegistration> {
+  const timeout = new Promise<never>((_, reject) =>
+    setTimeout(() => reject(new Error('sw-timeout')), timeoutMs)
+  );
+  try {
+    return await Promise.race([navigator.serviceWorker.ready, timeout]);
+  } catch {
+    // ready timed out — find any registration that already has an active worker
+    const regs = await navigator.serviceWorker.getRegistrations();
+    const active = regs.find((r) => r.active);
+    if (active) return active;
+    throw new Error('Tidak ada service worker aktif. Coba tutup dan buka ulang aplikasi.');
+  }
+}
+
 type PushStatus = 'loading' | 'unsupported' | 'denied' | 'inactive' | 'active';
 
 function PushNotificationSection() {
@@ -44,11 +61,16 @@ function PushNotificationSection() {
       setStatus('denied');
       return;
     }
-    navigator.serviceWorker.ready.then((reg) => {
-      reg.pushManager.getSubscription().then((sub) => {
-        setStatus(sub ? 'active' : 'inactive');
+
+    getActiveReg()
+      .then((reg) => reg.pushManager.getSubscription())
+      .then((sub) => setStatus(sub ? 'active' : 'inactive'))
+      .catch((err) => {
+        console.error('SW check error:', err);
+        // Browser supports push (passed check above) but SW not ready yet.
+        // Show inactive so user can still try to enable.
+        setStatus('inactive');
       });
-    });
   }, []);
 
   async function handleEnable() {
@@ -67,7 +89,7 @@ function PushNotificationSection() {
       }
       const { publicKey } = await vapidRes.json();
 
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await getActiveReg();
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(publicKey),
@@ -96,7 +118,7 @@ function PushNotificationSection() {
     setSaving(true);
     setError(null);
     try {
-      const reg = await navigator.serviceWorker.ready;
+      const reg = await getActiveReg();
       const sub = await reg.pushManager.getSubscription();
       if (sub) {
         const res = await fetch('/api/push/subscribe', {

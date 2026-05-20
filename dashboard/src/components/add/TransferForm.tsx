@@ -142,7 +142,11 @@ export function TransferForm({ accounts }: Props) {
         <Label>Dari Akun</Label>
         <select
           value={fromAccountId}
-          onChange={(e) => setFromAccountId(e.target.value)}
+          onChange={(e) => {
+            const newFrom = e.target.value;
+            if (newFrom === toAccountId) setToAccountId(fromAccountId);
+            setFromAccountId(newFrom);
+          }}
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
         >
           {accounts.map((a) => (

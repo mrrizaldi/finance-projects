@@ -2,13 +2,13 @@
 
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Home, Receipt, Plus, CreditCard, Menu } from 'lucide-react';
+import { Home, Receipt, Plus, BarChart3, Menu } from 'lucide-react';
 
 const tabs = [
   { href: '/', label: 'Home', icon: Home },
   { href: '/transactions', label: 'Transaksi', icon: Receipt },
   { href: '/add', label: 'Tambah', icon: Plus, isCenter: true },
-  { href: '/installments', label: 'Cicilan', icon: CreditCard },
+  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
   { href: '/more', label: 'Lainnya', icon: Menu },
 ];
 

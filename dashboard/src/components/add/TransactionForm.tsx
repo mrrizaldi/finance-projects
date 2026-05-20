@@ -41,7 +41,11 @@ export function TransactionForm({ accounts, categories, defaultAccountId }: Prop
   const [description, setDescription] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [accountId, setAccountId] = useState('');
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(() => {
+    // Use WIB date, not UTC date
+    const wib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+    return wib.toISOString().split('T')[0];
+  });
   const [aiSuggested, setAiSuggested] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -115,7 +119,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId }: Prop
       description: description || null,
       category_id: categoryId || null,
       account_id: accountId || null,
-      transaction_date: date,
+      transaction_date: date + 'T00:00:00+07:00',
       source: 'manual_web',
       balance_before: balanceBefore,
       balance_after: balanceAfter,

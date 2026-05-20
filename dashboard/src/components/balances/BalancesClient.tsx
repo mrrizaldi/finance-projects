@@ -53,7 +53,7 @@ export function BalancesClient({ accounts: initialAccounts }: Props) {
     const res = await fetch(`/api/accounts/${adjustAccount.id}/adjust`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ new_balance: parsed, note: adjustNote || 'Adjustment dari PWA' }),
+      body: JSON.stringify({ target_balance: parsed, note: adjustNote || 'Adjustment dari PWA' }),
     });
 
     if (res.ok) {

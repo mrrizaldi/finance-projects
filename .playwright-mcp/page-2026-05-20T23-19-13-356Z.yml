@@ -1,0 +1,65 @@
+- main [ref=e3]:
+  - generic:
+    - generic:
+      - img
+      - generic: Tarik untuk refresh
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - heading "Cicilan" [level=1] [ref=e7]
+        - paragraph [ref=e8]: Kelola semua cicilan aktif kamu
+      - button "Tambah Cicilan" [ref=e9] [cursor=pointer]:
+        - img
+        - text: Tambah Cicilan
+    - generic [ref=e10]:
+      - generic [ref=e12]:
+        - paragraph [ref=e13]: Cicilan Aktif
+        - paragraph [ref=e14]: "2"
+      - generic [ref=e16]:
+        - paragraph [ref=e17]: Bulan Ini
+        - paragraph [ref=e18]: Rp 1.382.974
+      - generic [ref=e20]:
+        - paragraph [ref=e21]: Total Sisa
+        - paragraph [ref=e22]: Rp 6.601.708
+      - generic [ref=e24]:
+        - paragraph [ref=e25]: Sudah Lunas
+        - paragraph [ref=e26]: "0"
+    - generic [ref=e27]:
+      - heading "Cicilan Aktif (2)" [level=2] [ref=e28]
+      - generic [ref=e29]:
+        - generic [ref=e31] [cursor=pointer]:
+          - generic [ref=e32]:
+            - generic [ref=e34]:
+              - paragraph [ref=e35]: Cash Kredivo
+              - generic [ref=e37]: Aktif
+            - generic [ref=e38]:
+              - paragraph [ref=e39]: Rp 78.440
+              - paragraph [ref=e40]: /bulan
+          - generic [ref=e41]:
+            - generic [ref=e42]:
+              - generic [ref=e43]: 2 dari 8 bulan
+              - generic [ref=e44]: 25%
+            - progressbar [ref=e45]: x
+          - generic [ref=e50]:
+            - generic [ref=e51]: Mulai Apr 2026
+            - generic [ref=e52]: · Jatuh tempo tgl 14
+            - generic [ref=e53]: · Sisa 6 bulan
+            - generic [ref=e54]: · BCA
+        - generic [ref=e56] [cursor=pointer]:
+          - generic [ref=e57]:
+            - generic [ref=e59]:
+              - paragraph [ref=e60]: SPayLater
+              - generic [ref=e62]: Aktif
+            - generic [ref=e63]:
+              - paragraph [ref=e64]: Rp 1.304.534
+              - paragraph [ref=e65]: /bulan
+          - generic [ref=e66]:
+            - generic [ref=e67]:
+              - generic [ref=e68]: 1 dari 6 bulan
+              - generic [ref=e69]: 17%
+            - progressbar [ref=e70]: x
+          - generic [ref=e75]:
+            - generic [ref=e76]: Mulai Apr 2026
+            - generic [ref=e77]: · Jatuh tempo tgl 1
+            - generic [ref=e78]: · Sisa 5 bulan
+            - generic [ref=e79]: · BCA

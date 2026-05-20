@@ -1,0 +1,24 @@
+- generic [active] [ref=e1]:
+  - main [ref=e3]:
+    - generic:
+      - generic:
+        - img
+        - generic: Tarik untuk refresh
+    - generic [ref=e4]:
+      - heading "Bulk Input" [level=1] [ref=e5]
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - paragraph [ref=e8]: "Format per baris:"
+          - code [ref=e9]: DD/MM nominal deskripsi [akun]
+          - paragraph [ref=e10]:
+            - text: Prefix
+            - code [ref=e11]: +
+            - text: "untuk pemasukan. Contoh:"
+          - code [ref=e12]: 23/04 35rb Makan siang
+          - code [ref=e13]: +23/04 8.5jt Gaji [BCA]
+        - generic [ref=e14]:
+          - generic [ref=e15]: Input Transaksi
+          - textbox "23/04 35rb Makan siang 23/04 28rb Grab ke kantor +23/04 8.5jt Gaji [BCA]" [ref=e16]:
+            - /placeholder: "23/04 35rb Makan siang\n23/04 28rb Grab ke kantor\n+23/04 8.5jt Gaji [BCA]"
+        - button "Parse & Preview" [disabled]
+  - alert [ref=e17]

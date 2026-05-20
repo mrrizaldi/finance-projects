@@ -2,17 +2,8 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { buttonVariants } from '@/components/ui/button';
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-} from '@/components/ui/sheet';
 import {
   Home,
   Receipt,
@@ -142,36 +133,10 @@ function SidebarPanel({ pathname, onNavigate }: { pathname: string; onNavigate?:
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
-    <>
-      <div className="lg:hidden sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur px-4 h-14 flex items-center justify-between">
-        <div>
-          <span className="text-sm font-semibold text-foreground">Finance</span>
-        </div>
-
-        <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
-          <button
-            type="button"
-            onClick={() => setMobileOpen(true)}
-            className={buttonVariants({ variant: 'outline', size: 'sm' })}
-          >
-            Menu
-          </button>
-          <SheetContent side="left" className="w-72 p-0 border-r-0">
-            <SheetHeader className="sr-only">
-              <SheetTitle>Menu navigasi</SheetTitle>
-              <SheetDescription>Pilih halaman dashboard</SheetDescription>
-            </SheetHeader>
-            <SidebarPanel pathname={pathname} onNavigate={() => setMobileOpen(false)} />
-          </SheetContent>
-        </Sheet>
-      </div>
-
-      <aside className="hidden lg:flex w-64 min-h-screen flex-shrink-0">
-        <SidebarPanel pathname={pathname} />
-      </aside>
-    </>
+    <aside className="hidden lg:flex fixed left-0 top-0 h-screen w-64 z-30">
+      <SidebarPanel pathname={pathname} />
+    </aside>
   );
 }

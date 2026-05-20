@@ -1,16 +1,21 @@
 import { NextResponse } from 'next/server';
 import { createApiClient, unauthorizedResponse } from '@/lib/supabase-api';
-import { revalidateTag, revalidatePath } from 'next/cache';
+import { revalidatePath } from 'next/cache';
 
 export async function POST(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  const { supabase, user, unauthorized } = await createApiClient();
+  const { supabase, unauthorized } = await createApiClient();
   if (unauthorized || !supabase) return unauthorizedResponse();
 
-  const { months_to_pay = 1, account_id } = await request.json();
+  const { transaction_id } = await request.json();
 
+  if (!transaction_id) {
+    return NextResponse.json({ error: 'transaction_id diperlukan' }, { status: 400 });
+  }
+
+  // Get installment + months
   const { data: installment, error: fetchError } = await supabase
     .from('installments')
     .select('*, installment_months(*)')
@@ -21,79 +26,59 @@ export async function POST(
     return NextResponse.json({ error: 'Cicilan tidak ditemukan' }, { status: 404 });
   }
 
-  const unpaidMonths = (installment.installment_months ?? [])
+  // Find next unpaid month
+  const nextUnpaid = (installment.installment_months ?? [])
     .filter((m: { is_paid: boolean }) => !m.is_paid)
-    .sort((a: { month_number: number }, b: { month_number: number }) => a.month_number - b.month_number)
-    .slice(0, months_to_pay);
+    .sort((a: { month_number: number }, b: { month_number: number }) => a.month_number - b.month_number)[0];
 
-  if (unpaidMonths.length === 0) {
+  if (!nextUnpaid) {
     return NextResponse.json({ error: 'Semua bulan sudah dibayar' }, { status: 400 });
   }
 
-  const payAccountId = account_id || installment.account_id;
-  const totalAmount = unpaidMonths.reduce((sum: number, m: { amount: number }) => sum + m.amount, 0);
-
-  let balanceBefore = 0;
-  let balanceAfter = 0;
-  if (payAccountId) {
-    const { data: account } = await supabase
-      .from('accounts')
-      .select('balance')
-      .eq('id', payAccountId)
-      .single();
-    balanceBefore = account?.balance ?? 0;
-    balanceAfter = balanceBefore - totalAmount;
-  }
-
+  // Get the selected transaction
   const { data: tx, error: txError } = await supabase
     .from('transactions')
-    .insert({
-      type: 'expense',
-      amount: totalAmount,
-      description: `Bayar cicilan ${installment.name} (${unpaidMonths.length} bulan)`,
-      category_id: installment.category_id,
-      account_id: payAccountId,
-      installment_id: installment.id,
-      transaction_date: new Date().toISOString().split('T')[0],
-      source: 'manual_web',
-      balance_before: balanceBefore,
-      balance_after: balanceAfter,
-      user_id: user.id,
-    })
-    .select()
+    .select('id, amount, transaction_date, description')
+    .eq('id', transaction_id)
     .single();
 
-  if (txError) {
-    return NextResponse.json({ error: txError.message }, { status: 500 });
+  if (txError || !tx) {
+    return NextResponse.json({ error: 'Transaksi tidak ditemukan' }, { status: 404 });
   }
 
-  for (const month of unpaidMonths) {
-    await supabase
-      .from('installment_months')
-      .update({
-        is_paid: true,
-        paid_date: new Date().toISOString().split('T')[0],
-        transaction_id: tx.id,
-      })
-      .eq('id', month.id);
-  }
+  const txAmount = Number(tx.amount);
+  const monthAmount = Number(nextUnpaid.amount);
 
+  // Mark month as paid, sync amount if different, link transaction
+  await supabase
+    .from('installment_months')
+    .update({
+      is_paid: true,
+      paid_date: tx.transaction_date.split('T')[0].split(' ')[0],
+      transaction_id: tx.id,
+      amount: txAmount !== monthAmount ? txAmount : monthAmount,
+    })
+    .eq('id', nextUnpaid.id);
+
+  // Increment paid_months
   await supabase
     .from('installments')
-    .update({ paid_months: installment.paid_months + unpaidMonths.length })
+    .update({ paid_months: installment.paid_months + 1 })
     .eq('id', installment.id);
 
-  if (payAccountId) {
-    await supabase
-      .from('accounts')
-      .update({ balance: balanceAfter })
-      .eq('id', payAccountId);
-  }
+  // Link transaction back to installment
+  await supabase
+    .from('transactions')
+    .update({ installment_id: installment.id })
+    .eq('id', tx.id);
 
-  revalidateTag('installments-references');
-  revalidateTag('overview');
   revalidatePath('/installments');
   revalidatePath('/');
 
-  return NextResponse.json({ paid: unpaidMonths.length, total_amount: totalAmount });
+  return NextResponse.json({
+    paid: 1,
+    amount_used: txAmount,
+    amount_synced: txAmount !== monthAmount,
+    original_amount: monthAmount,
+  });
 }

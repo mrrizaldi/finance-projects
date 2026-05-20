@@ -1,0 +1,48 @@
+- generic [ref=e1]:
+  - main [ref=e3]:
+    - generic:
+      - generic:
+        - img
+        - generic: Tarik untuk refresh
+    - generic [ref=e4]:
+      - heading "Tambah Transaksi" [level=1] [ref=e5]
+      - generic [ref=e6]:
+        - generic [ref=e7]:
+          - button "Pengeluaran / Pemasukan" [ref=e8] [cursor=pointer]
+          - button "Transfer" [active] [ref=e9] [cursor=pointer]
+        - generic [ref=e33]:
+          - generic [ref=e34]:
+            - generic [ref=e35]: Jumlah Keluar
+            - textbox "0" [ref=e36]
+          - generic [ref=e38]:
+            - generic [ref=e39]: Jumlah Masuk
+            - generic [ref=e40]:
+              - checkbox "Sama" [checked] [ref=e41]
+              - text: Sama
+          - generic [ref=e42]:
+            - generic [ref=e43]: Dari Akun
+            - combobox [ref=e44]:
+              - option "BCA" [selected]
+              - option "BSI"
+              - option "Cash"
+              - option "Dana"
+              - option "GoPay"
+              - option "OVO"
+              - option "ShopeePay"
+          - generic [ref=e45]:
+            - generic [ref=e46]: Ke Akun
+            - combobox [ref=e47]:
+              - option "BSI" [selected]
+              - option "Cash"
+              - option "Dana"
+              - option "GoPay"
+              - option "OVO"
+              - option "ShopeePay"
+          - generic [ref=e48]:
+            - generic [ref=e49]: Catatan
+            - textbox "Opsional" [ref=e50]
+          - generic [ref=e51]:
+            - generic [ref=e52]: Tanggal
+            - textbox [ref=e53]: 2026-05-20
+          - button "Simpan Transfer" [disabled]
+  - alert [ref=e54]

@@ -1,7 +1,7 @@
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { AddPageClient } from '@/components/add/AddPageClient';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
 
 export default async function AddPage() {
   const supabase = await createAuthServerClient();

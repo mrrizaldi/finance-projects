@@ -116,7 +116,7 @@ export function CategoryEditDialog({ category, open, onOpenChange, onSuccess }: 
                 type="color"
                 value={color}
                 onChange={(e) => setColor(e.target.value)}
-                className="w-9 h-9 rounded cursor-pointer border border-border p-0.5 bg-transparent"
+                className="w-9 h-9 rounded-md cursor-pointer border border-border p-0.5 bg-transparent"
               />
               <Input value={color} onChange={(e) => setColor(e.target.value)} placeholder="#6B7280" className="flex-1" />
             </div>

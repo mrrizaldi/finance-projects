@@ -1,11 +1,11 @@
 'use client';
 
 import Link from 'next/link';
-import { BarChart3, Wallet, FileText, Landmark, Sparkles, Settings, LogOut } from 'lucide-react';
+import { CreditCard, Wallet, FileText, Landmark, Sparkles, Settings, LogOut } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase';
 
 const menuItems = [
-  { href: '/analytics', label: 'Analytics', description: 'Chart, breakdown, heatmap', icon: BarChart3 },
+  { href: '/installments', label: 'Cicilan', description: 'Lihat & kelola cicilan', icon: CreditCard },
   { href: '/budget', label: 'Budget', description: 'Simulasi & alokasi budget', icon: Wallet },
   { href: '/bulk', label: 'Bulk Input', description: 'Input banyak transaksi sekaligus', icon: FileText },
   { href: '/balances', label: 'Saldo Akun', description: 'Lihat & adjust saldo', icon: Landmark },

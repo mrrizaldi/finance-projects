@@ -12,7 +12,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 
-export const revalidate = 60; // Revalidate every minute
+export const dynamic = 'force-dynamic';
 
 async function getOverviewData() {
   const supabase = await createAuthServerClient();

@@ -1,5 +1,6 @@
 import Sidebar from '@/components/layout/Sidebar';
 import { BottomNav } from '@/components/layout/BottomNav';
+import { PullToRefresh } from '@/components/layout/PullToRefresh';
 
 export default function AppLayout({
   children,
@@ -7,11 +8,11 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="flex min-h-screen bg-background lg:pl-64">
       <Sidebar />
-      <main className="flex-1 overflow-auto pb-20 md:pb-0">
+      <PullToRefresh>
         {children}
-      </main>
+      </PullToRefresh>
       <BottomNav />
     </div>
   );

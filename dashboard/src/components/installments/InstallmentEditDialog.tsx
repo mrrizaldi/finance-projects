@@ -335,7 +335,7 @@ export default function InstallmentEditDialog({ inst, open, onOpenChange, catego
             )}
           </div>
 
-          <DialogFooter className="px-4 py-3 border-t border-border flex-shrink-0">
+          <DialogFooter className="px-4 pt-3 pb-5 border-t border-border flex-shrink-0">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
             <Button type="submit" disabled={loading}>{loading ? 'Menyimpan...' : 'Simpan'}</Button>
           </DialogFooter>
