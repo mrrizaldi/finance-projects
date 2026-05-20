@@ -2,61 +2,16 @@ import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiClient, unauthorizedResponse } from '@/lib/supabase-api';
 import { SupabaseClient } from '@supabase/supabase-js';
+import {
+  type TxBalanceState,
+  getEffects,
+  diffEffects,
+  invertEffects,
+  buildSnapshotForState,
+} from '@/lib/balance-math';
 
 const VALID_TYPES = ['income', 'expense', 'transfer'] as const;
 type TransactionType = (typeof VALID_TYPES)[number];
-
-type TxBalanceState = {
-  type: TransactionType;
-  amount: number;
-  account_id: string | null;
-  to_account_id: string | null;
-};
-
-type BalanceSnapshot = {
-  balance_before: number | null;
-  balance_after: number | null;
-  to_balance_before: number | null;
-  to_balance_after: number | null;
-};
-
-function getEffects(tx: TxBalanceState): Record<string, number> {
-  const effects: Record<string, number> = {};
-
-  if (tx.type === 'income') {
-    if (tx.account_id) effects[tx.account_id] = (effects[tx.account_id] ?? 0) + tx.amount;
-    return effects;
-  }
-
-  if (tx.type === 'expense') {
-    if (tx.account_id) effects[tx.account_id] = (effects[tx.account_id] ?? 0) - tx.amount;
-    return effects;
-  }
-
-  if (tx.account_id) effects[tx.account_id] = (effects[tx.account_id] ?? 0) - tx.amount;
-  if (tx.to_account_id) effects[tx.to_account_id] = (effects[tx.to_account_id] ?? 0) + tx.amount;
-  return effects;
-}
-
-function diffEffects(before: Record<string, number>, after: Record<string, number>) {
-  const out: Record<string, number> = {};
-  const keys = Array.from(new Set([...Object.keys(before), ...Object.keys(after)]));
-
-  for (const key of keys) {
-    const delta = (after[key] ?? 0) - (before[key] ?? 0);
-    if (Math.abs(delta) > 0.000001) out[key] = delta;
-  }
-
-  return out;
-}
-
-function invertEffects(effects: Record<string, number>) {
-  const out: Record<string, number> = {};
-  for (const [id, value] of Object.entries(effects)) {
-    out[id] = -value;
-  }
-  return out;
-}
 
 async function applyBalanceDiffs(
   supabase: SupabaseClient,
@@ -129,21 +84,6 @@ function revalidateFinancePaths() {
   revalidatePath('/insights');
 }
 
-function buildSnapshotForState(
-  state: TxBalanceState,
-  updates: Map<string, { before: number; after: number }>,
-  fallback?: BalanceSnapshot
-): BalanceSnapshot {
-  const from = state.account_id ? updates.get(state.account_id) : undefined;
-  const to = state.to_account_id ? updates.get(state.to_account_id) : undefined;
-
-  return {
-    balance_before: from?.before ?? fallback?.balance_before ?? null,
-    balance_after: from?.after ?? fallback?.balance_after ?? null,
-    to_balance_before: state.type === 'transfer' ? (to?.before ?? fallback?.to_balance_before ?? null) : null,
-    to_balance_after: state.type === 'transfer' ? (to?.after ?? fallback?.to_balance_after ?? null) : null,
-  };
-}
 
 async function getActiveTransaction(supabase: SupabaseClient, id: string) {
   const { data, error } = await supabase
@@ -267,7 +207,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 
     const balanceSnapshots = await applyBalanceDiffs(supabase, balanceDiffs);
 
-    const nextSnapshot = buildSnapshotForState(nextState, balanceSnapshots, {
+    const nextSnapshot = buildSnapshotForState(nextState, existing, balanceSnapshots, {
       balance_before: existing.balance_before,
       balance_after: existing.balance_after,
       to_balance_before: existing.to_balance_before,
