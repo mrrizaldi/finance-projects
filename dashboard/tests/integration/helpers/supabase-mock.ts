@@ -25,8 +25,20 @@ export function makeQueryChain(response: { data?: any; error?: any } = { data: n
     return eqChain;
   });
   chain.in = vi.fn().mockResolvedValue(response);
-  chain.update = vi.fn().mockReturnValue({
-    eq: vi.fn().mockResolvedValue(response),
+  // update() must support multiple chained .eq() calls before awaiting
+  chain.update = vi.fn().mockImplementation(() => {
+    const updateChain: any = {};
+    updateChain.eq = vi.fn().mockImplementation(() => {
+      const eq2Chain: any = {};
+      eq2Chain.eq = vi.fn().mockResolvedValue(response);
+      // Make eq2Chain itself awaitable for single-eq patterns
+      Object.assign(eq2Chain, Promise.resolve(response));
+      eq2Chain.then = (res: any, rej: any) => Promise.resolve(response).then(res, rej);
+      return eq2Chain;
+    });
+    // Make updateChain itself awaitable for zero-eq patterns
+    updateChain.then = (res: any, rej: any) => Promise.resolve(response).then(res, rej);
+    return updateChain;
   });
   chain.insert = vi.fn().mockResolvedValue(response);
   chain.delete = vi.fn().mockReturnValue({
