@@ -78,10 +78,14 @@ export function buildSnapshotForState(
 
   return {
     balance_before,
-    balance_after: from?.after ?? fallback?.balance_after ?? null,
+    balance_after: nextState.account_id !== existingState.account_id
+      ? (from?.after ?? null)
+      : (from?.after ?? fallback?.balance_after ?? null),
     to_balance_before,
     to_balance_after: nextState.type === 'transfer'
-      ? (to?.after ?? fallback?.to_balance_after ?? null)
+      ? (nextState.to_account_id !== existingState.to_account_id
+          ? (to?.after ?? null)
+          : (to?.after ?? fallback?.to_balance_after ?? null))
       : null,
   };
 }
