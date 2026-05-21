@@ -65,8 +65,8 @@ function NavSection({
             className={cn(
               'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
               isActive
-                ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-600/30'
-                : 'text-white/50 hover:bg-white/5 hover:text-white/80'
+                ? 'bg-sidebar-primary/15 text-sidebar-primary border border-sidebar-primary/25'
+                : 'text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground/80'
             )}
           >
             <Icon className="h-4 w-4 shrink-0" />
@@ -90,11 +90,11 @@ function SidebarNav({
       <div className="space-y-4">
         <NavSection items={mainNav} pathname={pathname} onNavigate={onNavigate} />
 
-        <div className="border-t border-white/8 pt-4">
+        <div className="border-t border-sidebar-border pt-4">
           <NavSection items={secondaryNav} pathname={pathname} onNavigate={onNavigate} />
         </div>
 
-        <div className="border-t border-white/8 pt-4">
+        <div className="border-t border-sidebar-border pt-4">
           <NavSection items={settingsNav} pathname={pathname} onNavigate={onNavigate} />
         </div>
       </div>
@@ -104,28 +104,28 @@ function SidebarNav({
 
 function SidebarPanel({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   return (
-    <div className="h-full bg-[oklch(0.15_0.015_145)] flex flex-col">
-      <div className="px-6 py-5 border-b border-white/8">
+    <div className="h-full bg-sidebar flex flex-col">
+      <div className="px-6 py-5 border-b border-sidebar-border">
         <div>
-          <span className="text-white font-semibold text-lg">Finance</span>
+          <span className="text-sidebar-foreground font-semibold text-lg">Finance</span>
         </div>
-        <p className="text-white/40 text-xs mt-0.5">Personal Dashboard</p>
+        <p className="text-sidebar-foreground/40 text-xs mt-0.5">Personal Dashboard</p>
       </div>
 
       <SidebarNav pathname={pathname} onNavigate={onNavigate} />
 
-      <div className="px-3 py-4 border-t border-white/8">
+      <div className="px-3 py-4 border-t border-sidebar-border">
         <button
           onClick={handleLogout}
           className={cn(
             'flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-            'text-white/50 hover:bg-white/5 hover:text-red-400'
+            'text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-red-400'
           )}
         >
           <LogOut className="h-4 w-4 shrink-0" />
           Logout
         </button>
-        <p className="text-white/30 text-xs mt-3 px-3">@aldi_monman_bot</p>
+        <p className="text-sidebar-foreground/30 text-xs mt-3 px-3">@aldi_monman_bot</p>
       </div>
     </div>
   );
