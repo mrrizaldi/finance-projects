@@ -11,9 +11,18 @@ const config: Config = {
     extend: {
       colors: {
         sidebar: {
-          DEFAULT: '#111827',
-          hover: '#1f2937',
-          active: '#374151',
+          DEFAULT: 'oklch(var(--sidebar) / <alpha-value>)',
+          foreground: 'oklch(var(--sidebar-foreground) / <alpha-value>)',
+          primary: {
+            DEFAULT: 'oklch(var(--sidebar-primary) / <alpha-value>)',
+            foreground: 'oklch(var(--sidebar-primary-foreground) / <alpha-value>)',
+          },
+          accent: {
+            DEFAULT: 'oklch(var(--sidebar-accent) / <alpha-value>)',
+            foreground: 'oklch(var(--sidebar-accent-foreground) / <alpha-value>)',
+          },
+          border: 'oklch(var(--sidebar-border) / <alpha-value>)',
+          ring: 'oklch(var(--sidebar-ring) / <alpha-value>)',
         },
         background: 'oklch(var(--background) / <alpha-value>)',
         foreground: 'oklch(var(--foreground) / <alpha-value>)',
