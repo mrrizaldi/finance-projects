@@ -73,6 +73,36 @@
     --sidebar-accent-foreground: 0.20 0.01 145;
     --sidebar-border: 0.88 0.01 85;
     --sidebar-ring: 0.28 0.09 145;
+    /* === New design tokens (parallel to shadcn vars) === */
+    --bg: oklch(0.96 0.012 85);
+    --bg-2: oklch(0.93 0.010 85);
+    --surface: oklch(1 0 0);
+    --surface-2: oklch(0.98 0.006 85);
+    --surface-hi: oklch(0.93 0.010 85);
+    --border-strong: oklch(0.82 0.015 85);
+    --border-faint: oklch(0.91 0.008 85);
+    --text-mid: oklch(0.35 0.015 145);
+    --text-mute: oklch(0.52 0.010 85);
+    --text-dim: oklch(0.68 0.008 85);
+    --accent-hi: oklch(0.28 0.09 145);
+    --accent-soft: oklch(0.90 0.04 145);
+    --accent-line: oklch(0.70 0.08 145);
+    --positive: oklch(0.45 0.17 145);
+    --positive-soft: oklch(0.90 0.05 145);
+    --negative: oklch(0.55 0.22 27);
+    --negative-soft: oklch(0.94 0.04 27);
+    --warn: oklch(0.65 0.18 75);
+    --warn-soft: oklch(0.95 0.04 85);
+    --info: oklch(0.52 0.14 230);
+    --info-soft: oklch(0.94 0.04 230);
+    --c1: oklch(0.28 0.09 145);
+    --c2: oklch(0.52 0.14 160);
+    --c3: oklch(0.65 0.12 120);
+    --c4: oklch(0.48 0.10 200);
+    --c5: oklch(0.38 0.08 145);
+    --c6: oklch(0.65 0.15 75);
+    --c7: oklch(0.55 0.20 27);
+    --c8: oklch(0.50 0.12 260);
   }
   .dark {
     color-scheme: dark;
@@ -107,6 +137,36 @@
     --sidebar-accent-foreground: 0.90 0 0;
     --sidebar-border: 0.26 0.010 75;
     --sidebar-ring: 0.55 0.12 145;
+    /* === New design tokens (dark) === */
+    --bg: oklch(0.14 0.012 75);
+    --bg-2: oklch(0.12 0.010 75);
+    --surface: oklch(0.18 0.012 75);
+    --surface-2: oklch(0.21 0.012 75);
+    --surface-hi: oklch(0.24 0.010 75);
+    --border-strong: oklch(0.34 0.012 75);
+    --border-faint: oklch(0.22 0.010 75);
+    --text-mid: oklch(0.78 0.010 145);
+    --text-mute: oklch(0.58 0.008 75);
+    --text-dim: oklch(0.40 0.006 75);
+    --accent-hi: oklch(0.55 0.12 145);
+    --accent-soft: oklch(0.22 0.040 145);
+    --accent-line: oklch(0.38 0.07 145);
+    --positive: oklch(0.58 0.15 145);
+    --positive-soft: oklch(0.21 0.04 145);
+    --negative: oklch(0.65 0.19 22);
+    --negative-soft: oklch(0.22 0.04 22);
+    --warn: oklch(0.72 0.14 75);
+    --warn-soft: oklch(0.22 0.04 75);
+    --info: oklch(0.65 0.12 230);
+    --info-soft: oklch(0.21 0.04 230);
+    --c1: oklch(0.55 0.12 145);
+    --c2: oklch(0.60 0.10 175);
+    --c3: oklch(0.62 0.12 120);
+    --c4: oklch(0.58 0.08 200);
+    --c5: oklch(0.45 0.10 145);
+    --c6: oklch(0.65 0.13 75);
+    --c7: oklch(0.60 0.18 22);
+    --c8: oklch(0.55 0.10 260);
   }
   * {
     @apply border-border outline-ring/50;
@@ -139,5 +199,21 @@ html {
   input, textarea, [contenteditable] {
     -webkit-user-select: text;
     user-select: text;
+  }
+}
+
+@layer utilities {
+  .num {
+    font-family: var(--font-geist-mono), ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+
+  .label-up {
+    font-size: 0.625rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
   }
 }
