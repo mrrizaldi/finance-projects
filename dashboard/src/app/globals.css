@@ -40,10 +40,6 @@
 }
 
 @layer base {
-  .theme {
-    --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
-  }
   :root {
     --background: 0.96 0.012 85;
     --foreground: 0.14 0.01 145;
