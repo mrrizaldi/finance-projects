@@ -13,6 +13,8 @@ import { AccountEditDialog } from './AccountEditDialog';
 import { AccountAdjustDialog } from './AccountAdjustDialog';
 import { CategoryEditDialog } from './CategoryEditDialog';
 import { ArrowUpDown, Ban, Pencil, Plus } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface SettingsClientProps {
   initialAccounts: Account[];
@@ -190,6 +192,36 @@ function PushNotificationSection() {
   );
 }
 
+function ThemeSection() {
+  const { theme, setTheme } = useTheme();
+
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="text-base">Tampilan</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">Tema</p>
+            <p className="text-xs text-muted-foreground">Pilih tampilan aplikasi</p>
+          </div>
+          <Select value={theme} onValueChange={(v) => v && setTheme(v)}>
+            <SelectTrigger className="w-36">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="light">Terang</SelectItem>
+              <SelectItem value="dark">Gelap</SelectItem>
+              <SelectItem value="system">Ikuti sistem</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 export function SettingsClient({ initialAccounts, initialCategories, profile, email }: SettingsClientProps) {
   const router = useRouter();
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
@@ -334,6 +366,7 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
         </CardContent>
       </Card>
 
+      <ThemeSection />
       <PushNotificationSection />
 
       {/* Accounts */}
