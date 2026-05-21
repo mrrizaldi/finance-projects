@@ -79,3 +79,25 @@ export function formatRupiahInput(amount: number): string {
   if (amount === 0) return '';
   return new Intl.NumberFormat('id-ID').format(amount);
 }
+
+/**
+ * Compact rupiah formatter for data-dense displays.
+ * compact=false: "Rp 1.500.000"
+ * compact=true: "1.5jt", "800rb", "500"
+ * Uses en-dash (−) for negatives, Bloomberg-style.
+ */
+export function rp(amount: number, compact = false): string {
+  if (compact) {
+    const abs = Math.abs(amount);
+    const sign = amount < 0 ? '\u2212' : '';
+    if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1)}jt`;
+    if (abs >= 1_000) return `${sign}${Math.round(abs / 1_000)}rb`;
+    return `${sign}${abs}`;
+  }
+  return new Intl.NumberFormat('id-ID', {
+    style: 'currency',
+    currency: 'IDR',
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(amount);
+}
