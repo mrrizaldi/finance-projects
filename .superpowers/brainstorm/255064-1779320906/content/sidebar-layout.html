@@ -1,0 +1,116 @@
+<h2>Struktur Sidebar Desktop</h2>
+<p class="subtitle">Current app: single left sidebar. Desain barumu: dual sidebar. Mana yang dipakai?</p>
+
+<div class="cards">
+
+  <!-- Option A: Single sidebar (current, updated colors) -->
+  <div class="card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0;overflow:hidden;border-radius:8px 8px 0 0;">
+      <div style="background:#f5f3ee;display:flex;height:180px;font-family:system-ui">
+        <!-- Left sidebar -->
+        <div style="background:#fff;width:140px;border-right:1px solid #e5e1d8;padding:10px;flex-shrink:0">
+          <div style="font-size:9px;font-weight:700;color:#1B4332;margin-bottom:8px">Finance</div>
+          <div style="background:#e8f2ec;border-radius:4px;padding:5px 7px;margin-bottom:3px;border-left:3px solid #1B4332">
+            <span style="font-size:9px;color:#1B4332;font-weight:600">Analytics</span>
+          </div>
+          <div style="padding:5px 7px;margin-bottom:3px">
+            <span style="font-size:9px;color:#888">Transaksi</span>
+          </div>
+          <div style="padding:5px 7px;margin-bottom:3px">
+            <span style="font-size:9px;color:#888">Budget</span>
+          </div>
+          <div style="padding:5px 7px">
+            <span style="font-size:9px;color:#888">Settings</span>
+          </div>
+        </div>
+        <!-- Main content -->
+        <div style="flex:1;padding:12px;background:#f5f3ee">
+          <div style="font-size:11px;font-weight:700;color:#1B4332;margin-bottom:8px">Analitik</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px">
+            <div style="background:#fff;border-radius:5px;padding:7px">
+              <div style="font-size:7px;color:#888">PEMASUKAN</div>
+              <div style="font-size:10px;color:#1B4332;font-weight:700">Rp 3.8jt</div>
+            </div>
+            <div style="background:#fff;border-radius:5px;padding:7px">
+              <div style="font-size:7px;color:#888">PENGELUARAN</div>
+              <div style="font-size:10px;color:#c0392b;font-weight:700">Rp 4.2jt</div>
+            </div>
+            <div style="background:#fff;border-radius:5px;padding:7px">
+              <div style="font-size:7px;color:#888">NET</div>
+              <div style="font-size:10px;color:#c0392b;font-weight:700">−Rp 421k</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>A — Single Sidebar (Current, Updated)</h3>
+      <p>Sidebar kiri dengan label + icon. Lebih simpel, more content space. Sesuai current codebase — perubahan minimal pada layout structure.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pro</h4><ul><li>Implementasi lebih cepat</li><li>Lebih banyak ruang konten</li></ul></div>
+        <div class="cons"><h4>Con</h4><ul><li>Beda dari mockup desainmu</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Option B: Dual sidebar (from mockup) -->
+  <div class="card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="card-image" style="padding:0;overflow:hidden;border-radius:8px 8px 0 0;">
+      <div style="background:#f5f3ee;display:flex;height:180px;font-family:system-ui">
+        <!-- Left sidebar full -->
+        <div style="background:#fff;width:120px;border-right:1px solid #e5e1d8;padding:8px;flex-shrink:0">
+          <div style="font-size:8px;font-weight:700;color:#1B4332;margin-bottom:6px">Finance</div>
+          <div style="background:#e8f2ec;border-radius:4px;padding:4px 6px;margin-bottom:2px;border-left:2px solid #1B4332">
+            <span style="font-size:8px;color:#1B4332;font-weight:600">Analytics</span>
+          </div>
+          <div style="padding:4px 6px;margin-bottom:2px">
+            <span style="font-size:8px;color:#888">Transaksi</span>
+          </div>
+          <div style="padding:4px 6px;margin-bottom:2px">
+            <span style="font-size:8px;color:#888">Budget</span>
+          </div>
+          <div style="padding:4px 6px">
+            <span style="font-size:8px;color:#888">Settings</span>
+          </div>
+        </div>
+        <!-- Main content -->
+        <div style="flex:1;padding:10px;background:#f5f3ee">
+          <div style="font-size:10px;font-weight:700;color:#1B4332;margin-bottom:6px">Analitik</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">
+            <div style="background:#fff;border-radius:4px;padding:6px">
+              <div style="font-size:6px;color:#888">PEMASUKAN</div>
+              <div style="font-size:9px;color:#1B4332;font-weight:700">Rp 3.8jt</div>
+            </div>
+            <div style="background:#fff;border-radius:4px;padding:6px">
+              <div style="font-size:6px;color:#888">PENGELUARAN</div>
+              <div style="font-size:9px;color:#c0392b;font-weight:700">Rp 4.2jt</div>
+            </div>
+          </div>
+        </div>
+        <!-- Right mini sidebar (dark green) -->
+        <div style="background:#1B4332;width:36px;border-left:1px solid #163a2a;padding:8px 4px;flex-shrink:0;display:flex;flex-direction:column;gap:8px;align-items:center">
+          <div style="width:18px;height:18px;background:#2d6a4f;border-radius:4px;display:flex;align-items:center;justify-content:center">
+            <div style="width:8px;height:8px;background:#95d5b2;border-radius:50%"></div>
+          </div>
+          <div style="width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center">
+            <div style="width:8px;height:1px;background:#52b788;border-radius:1px;box-shadow:0 3px 0 #52b788, 0 6px 0 #52b788"></div>
+          </div>
+          <div style="width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center">
+            <div style="width:8px;height:8px;border:1.5px solid #52b788;border-radius:2px"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card-body">
+      <h3>B — Dual Sidebar (Sesuai Mockup)</h3>
+      <p>Left sidebar (full nav + label) + right mini sidebar (icon only, dark green). Persis seperti mockup desainmu. Lebih "app-like", visual hierarchy lebih kuat.</p>
+      <div class="pros-cons" style="margin-top:8px">
+        <div class="pros"><h4>Pro</h4><ul><li>Sesuai desain mockup</li><li>Visual lebih polish</li></ul></div>
+        <div class="cons"><h4>Con</h4><ul><li>Konten area lebih sempit</li><li>Implementasi lebih kompleks</li></ul></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px">Rekomendasiku: <strong>B (Dual Sidebar)</strong> — sesuai mockup, dan konten area masih cukup di layar 1280px+. Tapi kalau mau lebih simpel, A tetap bagus.</p>

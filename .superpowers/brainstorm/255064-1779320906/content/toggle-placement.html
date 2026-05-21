@@ -1,0 +1,76 @@
+<h2>Lokasi Theme Toggle</h2>
+<p class="subtitle">Di mana tombol switch light ↔ dark diletakkan?</p>
+
+<div class="options">
+
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Sidebar — bawah, sebelum Logout</h3>
+      <p>Toggle Sun/Moon icon di footer sidebar, satu baris sama logout. Selalu visible, mudah dijangkau. Tidak ganggu konten utama.</p>
+      <div style="margin-top:10px;background:#f5f3ee;border-radius:8px;padding:10px;font-family:system-ui">
+        <div style="display:flex;gap:8px;height:60px">
+          <div style="background:#fff;width:120px;border-radius:6px;border:1px solid #e5e1d8;padding:8px;font-size:8px">
+            <div style="color:#888;padding:3px 5px">Home</div>
+            <div style="color:#888;padding:3px 5px">Transaksi</div>
+            <div style="color:#888;padding:3px 5px;margin-top:2px;border-top:1px solid #e5e1d8;display:flex;justify-content:space-between;align-items:center">
+              <span style="color:#1B4332">🌙 Dark</span>
+              <span style="background:#1B4332;color:#fff;padding:1px 5px;border-radius:10px;font-size:7px">toggle</span>
+            </div>
+          </div>
+          <div style="flex:1;background:#f5f3ee;border-radius:6px;border:1px solid #e5e1d8;padding:8px">
+            <div style="font-size:8px;color:#1B4332;font-weight:700">Analitik</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Header halaman — pojok kanan atas konten</h3>
+      <p>Toggle di header setiap page, sejajar dengan judul halaman. Visible saat buka page, tapi harus ada di setiap page.</p>
+      <div style="margin-top:10px;background:#f5f3ee;border-radius:8px;padding:10px;font-family:system-ui">
+        <div style="display:flex;gap:8px;height:60px">
+          <div style="background:#fff;width:80px;border-radius:6px;border:1px solid #e5e1d8;padding:8px;font-size:8px">
+            <div style="color:#888;padding:2px 4px">Home</div>
+            <div style="color:#888;padding:2px 4px">Transaksi</div>
+          </div>
+          <div style="flex:1;background:#f5f3ee;border-radius:6px;border:1px solid #e5e1d8;padding:8px">
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <span style="font-size:8px;color:#1B4332;font-weight:700">Analitik</span>
+              <span style="font-size:7px;background:#1B4332;color:#fff;padding:2px 6px;border-radius:10px">🌙</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Settings page</h3>
+      <p>Toggle hanya ada di halaman Settings. Tidak visible dari mana-mana, user perlu tau ada di sana. Paling bersih UI-nya, tapi paling susah ditemukan.</p>
+      <div style="margin-top:10px;background:#f5f3ee;border-radius:8px;padding:10px;font-family:system-ui">
+        <div style="display:flex;gap:8px;height:60px">
+          <div style="background:#fff;width:80px;border-radius:6px;border:1px solid #e5e1d8;padding:8px;font-size:8px">
+            <div style="color:#888;padding:2px 4px">Home</div>
+            <div style="background:#e8f2ec;color:#1B4332;padding:2px 4px;border-radius:3px;font-weight:600">Settings</div>
+          </div>
+          <div style="flex:1;background:#f5f3ee;border-radius:6px;border:1px solid #e5e1d8;padding:8px">
+            <div style="font-size:8px;color:#1B4332;font-weight:700;margin-bottom:4px">Settings</div>
+            <div style="display:flex;justify-content:space-between;align-items:center;background:#fff;border-radius:4px;padding:4px 6px">
+              <span style="font-size:7px;color:#555">Tema</span>
+              <span style="font-size:7px;background:#1B4332;color:#fff;padding:1px 5px;border-radius:8px">🌙 Dark</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="subtitle" style="margin-top:16px">Rekomendasiku: <strong>A (sidebar footer)</strong> — always accessible, tidak perlu ubah semua page.</p>
