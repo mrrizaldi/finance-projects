@@ -63,10 +63,10 @@ function NavSection({
             href={href}
             onClick={onNavigate}
             className={cn(
-              'flex items-center gap-3 py-2.5 text-sm font-medium transition-colors rounded-lg',
+              'flex items-center gap-3 py-2.5 text-sm font-medium transition-colors px-3',
               isActive
-                ? 'px-3 border-l-2 rounded-l-none font-semibold'
-                : 'px-3 hover:bg-[var(--surface-hi)]'
+                ? 'border-l-2 rounded-r-lg font-semibold'
+                : 'rounded-lg hover:bg-[var(--surface-hi)]'
             )}
             style={
               isActive
