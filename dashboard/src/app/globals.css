@@ -92,7 +92,7 @@
     --negative: oklch(0.55 0.22 27);
     --negative-soft: oklch(0.94 0.04 27);
     --warn: oklch(0.65 0.18 75);
-    --warn-soft: oklch(0.95 0.04 85);
+    --warn-soft: oklch(0.95 0.04 75);
     --info: oklch(0.52 0.14 230);
     --info-soft: oklch(0.94 0.04 230);
     --c1: oklch(0.28 0.09 145);
