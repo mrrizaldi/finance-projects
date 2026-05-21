@@ -21,7 +21,7 @@ export default function HeatmapChart({ data }: Props) {
 
   if (!data.length) {
     return (
-      <div className="h-40 flex items-center justify-center text-gray-400 text-sm">
+      <div className="h-40 flex items-center justify-center text-muted-foreground text-sm">
         Belum ada data heatmap
       </div>
     );
@@ -33,7 +33,7 @@ export default function HeatmapChart({ data }: Props) {
   }
 
   function getBg(intensity: number): string {
-    if (intensity === 0) return 'bg-gray-100';
+    if (intensity === 0) return 'bg-muted';
     if (intensity < 0.2) return 'bg-red-100';
     if (intensity < 0.4) return 'bg-red-200';
     if (intensity < 0.6) return 'bg-red-300';
@@ -52,7 +52,7 @@ export default function HeatmapChart({ data }: Props) {
           {/* Hour labels */}
           <div className="flex ml-10 mb-1">
             {hours.map((h) => (
-              <div key={h} className="flex-1 text-center text-[9px] text-gray-400">
+              <div key={h} className="flex-1 text-center text-[9px] text-muted-foreground">
                 {h % 3 === 0 ? `${h}` : ''}
               </div>
             ))}
@@ -61,7 +61,7 @@ export default function HeatmapChart({ data }: Props) {
           {/* Grid rows */}
           {days.map((day) => (
             <div key={day} className="flex items-center gap-1 mb-1">
-              <span className="w-8 text-right text-xs text-gray-500 pr-1 flex-shrink-0">
+              <span className="w-8 text-right text-xs text-muted-foreground pr-1 flex-shrink-0">
                 {DAY_NAMES[day]}
               </span>
               {hours.map((hour) => {
@@ -88,11 +88,11 @@ export default function HeatmapChart({ data }: Props) {
 
           {/* Legend */}
           <div className="flex items-center gap-2 mt-3 ml-10">
-            <span className="text-xs text-gray-400">Rendah</span>
-            {['bg-gray-100', 'bg-red-100', 'bg-red-200', 'bg-red-300', 'bg-red-400', 'bg-red-500'].map((cls) => (
+            <span className="text-xs text-muted-foreground">Rendah</span>
+            {['bg-muted', 'bg-red-100', 'bg-red-200', 'bg-red-300', 'bg-red-400', 'bg-red-500'].map((cls) => (
               <div key={cls} className={cn('w-4 h-3 rounded-sm', cls)} />
             ))}
-            <span className="text-xs text-gray-400">Tinggi</span>
+            <span className="text-xs text-muted-foreground">Tinggi</span>
           </div>
         </div>
       </div>
