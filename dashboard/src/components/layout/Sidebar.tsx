@@ -63,11 +63,16 @@ function NavSection({
             href={href}
             onClick={onNavigate}
             className={cn(
-              'flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
+              'flex items-center gap-3 py-2.5 text-sm font-medium transition-colors rounded-lg',
               isActive
-                ? 'bg-sidebar-primary/15 text-sidebar-primary border border-sidebar-primary/25'
-                : 'text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-sidebar-foreground/80'
+                ? 'px-3 border-l-2 rounded-l-none font-semibold'
+                : 'px-3 hover:bg-[var(--surface-hi)]'
             )}
+            style={
+              isActive
+                ? { borderColor: 'var(--accent-hi)', color: 'var(--accent-hi)', background: 'var(--accent-soft)' }
+                : { color: 'var(--text-mute)' }
+            }
           >
             <Icon className="h-4 w-4 shrink-0" />
             {label}
@@ -90,11 +95,11 @@ function SidebarNav({
       <div className="space-y-4">
         <NavSection items={mainNav} pathname={pathname} onNavigate={onNavigate} />
 
-        <div className="border-t border-sidebar-border pt-4">
+        <div className="border-t border-[var(--border-faint)] pt-4">
           <NavSection items={secondaryNav} pathname={pathname} onNavigate={onNavigate} />
         </div>
 
-        <div className="border-t border-sidebar-border pt-4">
+        <div className="border-t border-[var(--border-faint)] pt-4">
           <NavSection items={settingsNav} pathname={pathname} onNavigate={onNavigate} />
         </div>
       </div>
@@ -104,28 +109,42 @@ function SidebarNav({
 
 function SidebarPanel({ pathname, onNavigate }: { pathname: string; onNavigate?: () => void }) {
   return (
-    <div className="h-full bg-sidebar flex flex-col">
-      <div className="px-6 py-5 border-b border-sidebar-border">
+    <div className="h-full flex flex-col" style={{ background: 'var(--bg-2)' }}>
+      <div className="px-6 py-5 border-b border-[var(--border-faint)]">
         <div>
-          <span className="text-sidebar-foreground font-semibold text-lg">Finance</span>
+          <span className="font-semibold text-lg" style={{ color: 'var(--text-mid)' }}>Finance</span>
         </div>
-        <p className="text-sidebar-foreground/40 text-xs mt-0.5">Personal Dashboard</p>
+        <p className="text-xs mt-0.5" style={{ color: 'var(--text-dim)' }}>Personal Dashboard</p>
       </div>
 
       <SidebarNav pathname={pathname} onNavigate={onNavigate} />
 
-      <div className="px-3 py-4 border-t border-sidebar-border">
+      <div className="px-3 py-4 border-t border-[var(--border-faint)]">
+        <div
+          className="flex items-center gap-2 px-3 py-2 rounded-lg mb-1"
+          style={{ background: 'var(--surface-hi)' }}
+        >
+          <div
+            className="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold text-white shrink-0"
+            style={{ background: 'var(--accent-hi)' }}
+          >
+            A
+          </div>
+          <span className="text-xs truncate" style={{ color: 'var(--text-mute)' }}>
+            @aldi_monman_bot
+          </span>
+        </div>
         <button
           onClick={handleLogout}
           className={cn(
             'flex items-center gap-3 w-full px-3 py-2.5 rounded-lg text-sm font-medium transition-colors',
-            'text-sidebar-foreground/50 hover:bg-sidebar-accent hover:text-red-400'
+            'hover:bg-[var(--negative-soft)] hover:text-[var(--negative)]'
           )}
+          style={{ color: 'var(--text-mute)' }}
         >
           <LogOut className="h-4 w-4 shrink-0" />
           Logout
         </button>
-        <p className="text-sidebar-foreground/30 text-xs mt-3 px-3">@aldi_monman_bot</p>
       </div>
     </div>
   );
