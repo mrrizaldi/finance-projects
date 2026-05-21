@@ -5,17 +5,16 @@ import { DailyCumulativeChart, DailyDataPoint } from '@/components/charts/DailyC
 import { DateStepper } from '@/components/home/DateStepper';
 import TransactionRow from '@/components/transactions/TransactionRow';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import {
   Plus,
   TrendingUp,
   TrendingDown,
   Minus,
   Sparkles,
-  Utensils,
-  Car,
-  MoreHorizontal,
 } from 'lucide-react';
 import dayjs from 'dayjs';
+import type { Dayjs } from 'dayjs';
 import 'dayjs/locale/id';
 
 dayjs.locale('id');
@@ -97,7 +96,7 @@ async function getHomeData(start: string, end: string) {
 
 // --- Helpers ---
 
-function buildDailyData(transactions: MonthTx[], start: Date, end: Date): DailyDataPoint[] {
+function buildDailyData(transactions: MonthTx[], startDate: Dayjs, endDate: Dayjs): DailyDataPoint[] {
   const map = new Map<string, { income: number; expense: number }>();
   for (const tx of transactions) {
     if (tx.type === 'transfer') continue;
@@ -109,14 +108,14 @@ function buildDailyData(transactions: MonthTx[], start: Date, end: Date): DailyD
   }
 
   const result: DailyDataPoint[] = [];
-  const cursor = new Date(start);
-  const today = new Date();
-  const cap = today < end ? today : end;
+  const today = dayjs();
+  const cap = today.isBefore(endDate) ? today : endDate;
+  let cursor = startDate;
 
-  while (cursor <= cap) {
-    const dateStr = cursor.toISOString().slice(0, 10);
+  while (!cursor.isAfter(cap)) {
+    const dateStr = cursor.format('YYYY-MM-DD');
     result.push({ date: dateStr, ...(map.get(dateStr) ?? { income: 0, expense: 0 }) });
-    cursor.setDate(cursor.getDate() + 1);
+    cursor = cursor.add(1, 'day');
   }
   return result;
 }
@@ -148,7 +147,7 @@ function SectionCard({
   children,
   className = '',
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }) {
   return (
@@ -296,27 +295,25 @@ function QuickAddCard() {
   return (
     <SectionCard className="p-4">
       <p className="label-up mb-3">Tambah Cepat</p>
-      <Link href="/add">
-        <button
-          className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white mb-3 transition-opacity hover:opacity-90"
-          style={{ background: 'var(--accent-hi)' }}
-        >
-          <Plus className="h-4 w-4" />
-          Tambah Transaksi
-        </button>
+      <Link
+        href="/add"
+        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white mb-3 transition-opacity hover:opacity-90"
+        style={{ background: 'var(--accent-hi)' }}
+      >
+        <Plus className="h-4 w-4" />
+        Tambah Transaksi
       </Link>
       <div className="grid grid-cols-3 gap-2">
         {[
-          { label: 'Makan', icon: Utensils, href: '/add?type=expense' },
-          { label: 'Transport', icon: Car, href: '/add?type=expense' },
-          { label: 'Lainnya', icon: MoreHorizontal, href: '/add' },
-        ].map(({ label, icon: Icon, href }) => (
+          { label: 'Pengeluaran', href: '/add?type=expense' },
+          { label: 'Pemasukan', href: '/add?type=income' },
+          { label: 'Transfer', href: '/add?type=transfer' },
+        ].map(({ label, href }) => (
           <Link key={label} href={href}>
             <div
-              className="w-full flex flex-col items-center gap-1 py-2 rounded-lg text-xs font-medium cursor-pointer"
+              className="w-full flex items-center justify-center py-2 rounded-lg text-xs font-medium cursor-pointer"
               style={{ background: 'var(--surface-2)', color: 'var(--text-mute)' }}
             >
-              <Icon className="h-4 w-4" />
               {label}
             </div>
           </Link>
@@ -408,13 +405,12 @@ function AiInsightCard() {
       <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--text-mute)' }}>
         Aktifkan AI Insights untuk mendapatkan analisis otomatis pengeluaran kamu setiap bulan.
       </p>
-      <Link href="/insights">
-        <button
-          className="w-full py-2 rounded-lg text-xs font-semibold transition-colors"
-          style={{ background: 'var(--accent-soft)', color: 'var(--accent-hi)' }}
-        >
-          Lihat Insights
-        </button>
+      <Link
+        href="/insights"
+        className="w-full py-2 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center"
+        style={{ background: 'var(--accent-soft)', color: 'var(--accent-hi)' }}
+      >
+        Lihat Insights
       </Link>
     </SectionCard>
   );
@@ -445,7 +441,7 @@ export default async function OverviewPage({
   const expense = summary?.total_expense ?? 0;
   const net = income - expense;
 
-  const dailyData = buildDailyData(monthlyTx, startDate.toDate(), endDate.toDate());
+  const dailyData = buildDailyData(monthlyTx, startDate, endDate);
   const budgetSnapshot = buildBudgetSnapshot(budgetCategories, categoryBreakdown);
 
   return (
@@ -453,14 +449,13 @@ export default async function OverviewPage({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <DateStepper month={month} />
-        <Link href="/add">
-          <button
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
-            style={{ background: 'var(--accent-hi)' }}
-          >
-            <Plus className="h-3.5 w-3.5" />
-            Tambah
-          </button>
+        <Link
+          href="/add"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          style={{ background: 'var(--accent-hi)' }}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          Tambah
         </Link>
       </div>
 
