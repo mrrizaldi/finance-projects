@@ -25,6 +25,7 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onEdit: () => void;
+  onPaySuccess?: (id: string) => Promise<void>;
   accounts?: Account[];
 }
 
@@ -56,6 +57,7 @@ export default function InstallmentDetailDialog({
   open,
   onOpenChange,
   onEdit,
+  onPaySuccess,
   accounts = [],
 }: Props) {
   const router = useRouter();
@@ -131,7 +133,7 @@ export default function InstallmentDetailDialog({
     if (res.ok) {
       setPayDialog(false);
       setSelectedTx(null);
-      router.refresh();
+      await onPaySuccess?.(current.id);
     }
   }
 

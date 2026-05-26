@@ -68,6 +68,15 @@ export default function InstallmentListClient({ installments, categories, accoun
     });
   }
 
+  const handlePaySuccess = useCallback(async (id: string) => {
+    try {
+      const detail = await loadDetail(id);
+      setSelected(detail);
+      setSelectedDetail(detail);
+    } catch { /* keep showing existing data */ }
+    startRefresh(() => router.refresh());
+  }, [loadDetail, router]);
+
   return (
     <div className="mb-6">
       {isRefreshing && (
@@ -98,6 +107,7 @@ export default function InstallmentListClient({ installments, categories, accoun
         open={mode === 'detail'}
         onOpenChange={(o) => !o && closeAll()}
         onEdit={() => setMode('edit')}
+        onPaySuccess={handlePaySuccess}
         accounts={accounts}
       />
 
