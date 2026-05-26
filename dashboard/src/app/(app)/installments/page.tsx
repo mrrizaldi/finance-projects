@@ -1,8 +1,7 @@
 import { createAuthServerClient } from '@/lib/supabase-server';
 import { Installment, Category, Account } from '@/types';
-import { formatRupiah } from '@/lib/utils';
-import { Card, CardContent } from '@/components/ui/card';
 import InstallmentListClient from '@/components/installments/InstallmentListClient';
+import InstallmentSummaryCards from '@/components/installments/InstallmentSummaryCards';
 import { InstallmentCreateButton } from '@/components/installments/InstallmentCreateButton';
 
 export const revalidate = 60;
@@ -97,7 +96,16 @@ export default async function InstallmentsPage() {
   const completed = installments.filter(i => i.status === 'completed');
   const other = installments.filter(i => i.status !== 'active' && i.status !== 'completed');
 
-  const totalMonthly = active.reduce((s, i) => s + Number(i.next_amount ?? i.monthly_amount), 0);
+  // "Bulan Ini" = only installments whose next due month == current month
+  const now = new Date();
+  const thisMonthInstallments = active.filter(i => {
+    if (i.paid_months >= i.total_months) return false;
+    const start = new Date(i.start_date + 'T00:00:00');
+    const nextDue = new Date(start.getFullYear(), start.getMonth() + i.paid_months, 1);
+    return nextDue.getFullYear() === now.getFullYear() && nextDue.getMonth() === now.getMonth();
+  });
+
+  const totalMonthly = thisMonthInstallments.reduce((s, i) => s + Number(i.next_amount ?? i.monthly_amount), 0);
 
   const totalAllTime = active.reduce(
     (s, i) => s + Number(i.remaining_amount_total ?? (i.total_months - i.paid_months) * Number(i.monthly_amount)),
@@ -114,41 +122,21 @@ export default async function InstallmentsPage() {
         <InstallmentCreateButton accounts={accounts} categories={categories} />
       </div>
 
-      {/* Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Cicilan Aktif</p>
-            <p className="text-2xl font-bold text-foreground mt-1">{active.length}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Bulan Ini</p>
-            <p className="text-xl font-bold text-red-500 mt-1">{formatRupiah(totalMonthly)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Total Sisa</p>
-            <p className="text-xl font-bold text-orange-500 mt-1">{formatRupiah(totalAllTime)}</p>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardContent className="p-4">
-            <p className="text-xs text-muted-foreground uppercase tracking-wide">Sudah Lunas</p>
-            <p className="text-2xl font-bold text-emerald-600 mt-1">{completed.length}</p>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Summary Cards — clickable, shows breakdown per card */}
+      <InstallmentSummaryCards
+        activeInstallments={active}
+        completedInstallments={completed}
+        thisMonthInstallments={thisMonthInstallments}
+        totalMonthly={totalMonthly}
+        totalSisa={totalAllTime}
+        accounts={accounts}
+      />
 
       {installments.length === 0 ? (
-        <Card>
-          <CardContent className="py-16 text-center text-muted-foreground">
-            <p className="text-sm">Belum ada cicilan</p>
-            <p className="text-xs text-muted-foreground/60 mt-1">Tambah via Telegram: /installment add</p>
-          </CardContent>
-        </Card>
+        <div className="py-16 text-center text-muted-foreground border border-border rounded-xl">
+          <p className="text-sm">Belum ada cicilan</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">Tambah via Telegram: /installment add</p>
+        </div>
       ) : (
         <>
           <InstallmentListClient installments={active} categories={categories} accounts={accounts} title="Cicilan Aktif" count={active.length} />
