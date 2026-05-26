@@ -25,15 +25,6 @@ export default function InstallmentListClient({ installments, categories, accoun
   const [mode, setMode] = useState<DialogMode>(null);
   const [isRefreshing, startRefresh] = useTransition();
 
-  if (installments.length === 0) return null;
-
-  function closeAll() {
-    setMode(null);
-    setLoadingDetailId(null);
-    setSelected(null);
-    setSelectedDetail(null);
-  }
-
   const loadDetail = useCallback(async (id: string) => {
     const res = await fetch(`/api/installments/${id}`);
     const data = await res.json();
@@ -61,21 +52,30 @@ export default function InstallmentListClient({ installments, categories, accoun
     [loadDetail]
   );
 
-  function handleWriteSuccess() {
-    closeAll();
-    startRefresh(() => {
-      router.refresh();
-    });
-  }
-
   const handlePaySuccess = useCallback(async (id: string) => {
     try {
       const detail = await loadDetail(id);
       setSelected(detail);
       setSelectedDetail(detail);
     } catch { /* keep showing existing data */ }
-    startRefresh(() => router.refresh());
+    router.refresh();
   }, [loadDetail, router]);
+
+  if (installments.length === 0) return null;
+
+  function closeAll() {
+    setMode(null);
+    setLoadingDetailId(null);
+    setSelected(null);
+    setSelectedDetail(null);
+  }
+
+  function handleWriteSuccess() {
+    closeAll();
+    startRefresh(() => {
+      router.refresh();
+    });
+  }
 
   return (
     <div className="mb-6">
