@@ -64,6 +64,7 @@ export default function InstallmentDetailDialog({
   const [monthsToAdd, setMonthsToAdd] = useState('1');
   const [amountPerMonth, setAmountPerMonth] = useState('');
   const [saving, setSaving] = useState(false);
+  const [monthsCount, setMonthsCount] = useState(1);
 
   // Select-transaction modal state
   const [transactions, setTransactions] = useState<TxRow[]>([]);
@@ -90,6 +91,7 @@ export default function InstallmentDetailDialog({
     if (payDialog) {
       setSelectedTx(null);
       setSearch('');
+      setMonthsCount(1);
       fetchTransactions();
     }
   }, [payDialog, fetchTransactions]);
@@ -123,7 +125,7 @@ export default function InstallmentDetailDialog({
     const res = await fetch(`/api/installments/${current.id}/pay`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ transaction_id: selectedTx.id }),
+      body: JSON.stringify({ transaction_id: selectedTx.id, months_count: monthsCount }),
     });
     setSaving(false);
     if (res.ok) {
@@ -154,7 +156,13 @@ export default function InstallmentDetailDialog({
     }
   }
 
-  const amountDiff = selectedTx ? selectedTx.amount - nextAmount : 0;
+  const remainingMonths = current.total_months - current.paid_months;
+  const cappedCount = Math.min(monthsCount, remainingMonths);
+  const totalTarget = amounts
+    .slice(current.paid_months, current.paid_months + cappedCount)
+    .reduce((sum, a) => sum + a, 0);
+  const amountDiff = selectedTx ? selectedTx.amount - totalTarget : 0;
+  const lastPayMonth = current.paid_months + cappedCount;
 
   return (
     <>
@@ -270,8 +278,35 @@ export default function InstallmentDetailDialog({
         <DialogHeader className="px-4 pt-4 pb-3 border-b border-border flex-shrink-0">
           <DialogTitle className="text-base">Pilih Transaksi Pembayaran</DialogTitle>
           <p className="text-xs text-muted-foreground mt-0.5">
-            {current.name} · Bulan ke-{current.paid_months + 1} · Target: <span className="font-medium text-foreground">{formatRupiah(nextAmount)}</span>
+            {current.name} ·{' '}
+            {cappedCount === 1
+              ? `Bulan ke-${current.paid_months + 1}`
+              : `Bulan ke-${current.paid_months + 1} s/d ke-${lastPayMonth}`}
+            {' '}· Total:{' '}
+            <span className="font-medium text-foreground">{formatRupiah(totalTarget)}</span>
           </p>
+
+          {/* Months count stepper */}
+          {remainingMonths > 1 && (
+            <div className="flex items-center gap-2 mt-2">
+              <span className="text-xs text-muted-foreground">Bayar sekaligus:</span>
+              <div className="flex items-center gap-1 ml-auto">
+                <button
+                  onClick={() => setMonthsCount((n) => Math.max(1, n - 1))}
+                  className="h-6 w-6 rounded-md border border-border text-sm font-medium hover:bg-muted/60 transition-colors flex items-center justify-center"
+                >
+                  −
+                </button>
+                <span className="w-12 text-center text-sm font-semibold">{cappedCount} bln</span>
+                <button
+                  onClick={() => setMonthsCount((n) => Math.min(remainingMonths, n + 1))}
+                  className="h-6 w-6 rounded-md border border-border text-sm font-medium hover:bg-muted/60 transition-colors flex items-center justify-center"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Search + Sort */}
           <div className="flex gap-2 mt-3">
@@ -315,7 +350,7 @@ export default function InstallmentDetailDialog({
             <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">Tidak ada transaksi</div>
           ) : (
             filteredTx.map((tx) => {
-              const diff = tx.amount - nextAmount;
+              const diff = tx.amount - totalTarget;
               const isMatch = Math.abs(diff) < 100;
               const isSelected = selectedTx?.id === tx.id;
               return (
@@ -363,8 +398,10 @@ export default function InstallmentDetailDialog({
               'mb-3 px-3 py-2 rounded-lg text-xs',
               amountDiff > 0 ? 'bg-orange-500/10 text-orange-400' : 'bg-blue-500/10 text-blue-400'
             )}>
-              Selisih <span className="font-semibold">{amountDiff > 0 ? '+' : ''}{formatRupiah(amountDiff)}</span> dari target.
-              Nominal bulan ke-{current.paid_months + 1} akan diperbarui ke <span className="font-semibold">{formatRupiah(selectedTx.amount)}</span>.
+              Selisih <span className="font-semibold">{amountDiff > 0 ? '+' : ''}{formatRupiah(Math.abs(amountDiff))}</span> dari total target{cappedCount > 1 ? ` (${cappedCount} bulan)` : ''}.
+              {cappedCount === 1 && (
+                <> Nominal bulan ke-{current.paid_months + 1} akan diperbarui ke <span className="font-semibold">{formatRupiah(selectedTx.amount)}</span>.</>
+              )}
             </div>
           )}
           <div className="flex gap-2">
@@ -374,7 +411,7 @@ export default function InstallmentDetailDialog({
               disabled={!selectedTx || saving}
               onClick={handlePayWithTx}
             >
-              {saving ? 'Menyimpan...' : selectedTx ? `Tandai Dibayar` : 'Pilih Transaksi'}
+              {saving ? 'Menyimpan...' : selectedTx ? `Tandai ${cappedCount > 1 ? `${cappedCount} Bulan` : ''} Dibayar` : 'Pilih Transaksi'}
             </Button>
           </div>
         </div>
