@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useNavigate, useSearchParams, useLocation } from 'react-router';
 import { ChevronLeft, ChevronRight, Calendar, Download, Search, Bell } from 'lucide-react';
 import dayjs from 'dayjs';
 import quarterOfYear from 'dayjs/plugin/quarterOfYear';
@@ -25,15 +25,15 @@ interface Props {
 }
 
 export default function AnalyticsPeriodSwitcher({ period, anchor, label }: Props) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
 
-  function navigate(newPeriod: Period, newAnchor: string) {
+  function go(newPeriod: Period, newAnchor: string) {
     const params = new URLSearchParams(searchParams.toString());
     params.set('period', newPeriod);
     params.set('anchor', newAnchor);
-    router.push(`${pathname}?${params.toString()}`);
+    navigate(`${pathname}?${params.toString()}`);
   }
 
   function shift(direction: 1 | -1) {
@@ -45,7 +45,7 @@ export default function AnalyticsPeriodSwitcher({ period, anchor, label }: Props
       case 'quarter': newAnchor = d.add(direction * 3, 'month').startOf('month').toISOString(); break;
       case 'year': newAnchor = d.add(direction, 'year').startOf('year').toISOString(); break;
     }
-    navigate(period, newAnchor);
+    go(period, newAnchor);
   }
 
   function switchPeriod(p: Period) {
@@ -57,7 +57,7 @@ export default function AnalyticsPeriodSwitcher({ period, anchor, label }: Props
       case 'year': newAnchor = now.startOf('year').toISOString(); break;
       default: newAnchor = now.startOf('month').toISOString();
     }
-    navigate(p, newAnchor);
+    go(p, newAnchor);
   }
 
   return (

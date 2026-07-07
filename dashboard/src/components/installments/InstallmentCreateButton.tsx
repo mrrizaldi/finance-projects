@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRevalidator } from 'react-router';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function InstallmentCreateButton({ accounts, categories }: Props) {
-  const router = useRouter();
+  const revalidator = useRevalidator();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -62,7 +62,7 @@ export function InstallmentCreateButton({ accounts, categories }: Props) {
         account_id: '',
         category_id: '',
       });
-      router.refresh();
+      revalidator.revalidate();
     }
   }
 

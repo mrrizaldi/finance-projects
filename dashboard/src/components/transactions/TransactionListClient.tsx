@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRevalidator } from 'react-router';
 import TransactionRow, { TransactionRowMobile, TX_GRID } from './TransactionRow';
 import TransactionDetailDialog from './TransactionDetailDialog';
 import TransactionEditDialog from './TransactionEditDialog';
@@ -20,7 +20,7 @@ type DialogMode = 'detail' | 'edit' | 'delete' | null;
 const TABLE_HEADERS = ['TANGGAL', 'DESKRIPSI', 'KATEGORI', 'AKUN', 'JUMLAH', ''];
 
 export default function TransactionListClient({ transactions, categories, accounts, installments }: Props) {
-  const router = useRouter();
+  const revalidator = useRevalidator();
   const [selected, setSelected] = useState<VTransaction | null>(null);
   const [mode, setMode] = useState<DialogMode>(null);
   const [isRefreshing, startRefresh] = useTransition();
@@ -37,7 +37,7 @@ export default function TransactionListClient({ transactions, categories, accoun
   function handleWriteSuccess() {
     closeAll();
     startRefresh(() => {
-      router.refresh();
+      revalidator.revalidate();
     });
   }
 

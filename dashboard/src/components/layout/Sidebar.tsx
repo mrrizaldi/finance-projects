@@ -1,7 +1,6 @@
 'use client';
 
-import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { Link, useLocation } from 'react-router';
 import { useAddTransaction } from '@/lib/add-transaction-context';
 import {
   Sidebar,
@@ -51,7 +50,7 @@ async function handleLogout() {
 }
 
 export function AppSidebar() {
-  const pathname = usePathname();
+  const { pathname } = useLocation();
   const { openModal } = useAddTransaction();
 
   const isActive = (href: string) =>
@@ -90,7 +89,7 @@ export function AppSidebar() {
               {mainNav.map(({ href, label, icon: Icon }) => (
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton
-                    render={<Link href={href} />}
+                    render={<Link to={href} />}
                     isActive={isActive(href)}
                   >
                     <Icon className="h-4 w-4" />
@@ -111,7 +110,7 @@ export function AppSidebar() {
               {secondaryNav.map(({ href, label, icon: Icon }) => (
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton
-                    render={<Link href={href} />}
+                    render={<Link to={href} />}
                     isActive={isActive(href)}
                   >
                     <Icon className="h-4 w-4" />
@@ -131,7 +130,7 @@ export function AppSidebar() {
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton
-                  render={<Link href="/settings" />}
+                  render={<Link to="/settings" />}
                   isActive={isActive('/settings')}
                 >
                   <Settings className="h-4 w-4" />

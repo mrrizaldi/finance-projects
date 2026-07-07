@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useEffect, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRevalidator } from 'react-router';
 import { Account, Category, Profile } from '@/types';
 import { formatRupiah } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
@@ -223,7 +223,7 @@ function ThemeSection() {
 }
 
 export function SettingsClient({ initialAccounts, initialCategories, profile, email }: SettingsClientProps) {
-  const router = useRouter();
+  const revalidator = useRevalidator();
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
 
@@ -276,15 +276,15 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
 
   const refreshAccounts = useCallback(() => {
     startRefresh(() => {
-      router.refresh();
+      revalidator.revalidate();
     });
-  }, [router]);
+  }, [revalidator]);
 
   const refreshCategories = useCallback(() => {
     startRefresh(() => {
-      router.refresh();
+      revalidator.revalidate();
     });
-  }, [router]);
+  }, [revalidator]);
 
   async function handleDeactivateAccount(acc: Account) {
     if (!confirm(`Nonaktifkan akun "${acc.name}"? Akun tidak akan terhapus.`)) return;

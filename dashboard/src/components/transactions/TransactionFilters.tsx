@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useNavigate, useLocation, useSearchParams } from 'react-router';
 import { Category, Account } from '@/types';
 import {
   Select,
@@ -62,9 +62,9 @@ function FilterTrigger({
 }
 
 export default function TransactionFilters({ categories, accounts, defaultStart, defaultEnd }: Props) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
 
   const createQueryString = useCallback(
     (updates: Record<string, string | null>) => {
@@ -80,7 +80,7 @@ export default function TransactionFilters({ categories, accounts, defaultStart,
   );
 
   const push = (updates: Record<string, string | null>) =>
-    router.push(`${pathname}?${createQueryString(updates)}`);
+    navigate(`${pathname}?${createQueryString(updates)}`);
 
   const type = searchParams.get('type') || '';
   const category = searchParams.get('category') || '';
@@ -252,7 +252,7 @@ export default function TransactionFilters({ categories, accounts, defaultStart,
           </div>
           {hasFilters && (
             <button
-              onClick={() => router.push(pathname)}
+              onClick={() => navigate(pathname)}
               className="h-9 px-3 rounded-lg text-sm font-medium transition-colors hover:bg-[var(--surface-hi)]"
               style={{ color: 'var(--negative)', border: '1px solid var(--border-faint)' }}
             >

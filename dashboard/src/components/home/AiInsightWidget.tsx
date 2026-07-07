@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Sparkles, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from 'react-router';
 
 interface Props {
   month: string; // YYYY-MM, for display only (API always uses current month)
@@ -92,7 +92,7 @@ export function AiInsightWidget({ hasOverrun }: Props) {
 
       {/* Footer */}
       <Link
-        href="/insights"
+        to="/insights"
         className="mt-3 flex items-center gap-1 text-xs font-medium"
         style={{ color: 'var(--accent-hi)' }}
       >

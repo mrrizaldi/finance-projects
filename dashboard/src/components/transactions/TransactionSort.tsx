@@ -1,12 +1,12 @@
 'use client';
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useNavigate, useLocation, useSearchParams } from 'react-router';
 import { useCallback } from 'react';
 
 export default function TransactionSort({ currentSort }: { currentSort: string }) {
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
 
   const handleSortChange = useCallback(
     (sortValue: string) => {
@@ -16,9 +16,9 @@ export default function TransactionSort({ currentSort }: { currentSort: string }
       } else {
         params.delete('sort');
       }
-      router.push(`${pathname}?${params.toString()}`);
+      navigate(`${pathname}?${params.toString()}`);
     },
-    [searchParams, pathname, router]
+    [searchParams, pathname, navigate]
   );
 
   return (

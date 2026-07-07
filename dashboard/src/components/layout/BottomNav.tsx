@@ -1,7 +1,6 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
-import Link from 'next/link';
+import { Link, useLocation } from 'react-router';
 import { Home, Receipt, Plus, BarChart3, Menu } from 'lucide-react';
 
 const tabs = [
@@ -13,7 +12,7 @@ const tabs = [
 ];
 
 export function BottomNav() {
-  const pathname = usePathname();
+  const { pathname } = useLocation();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background md:hidden">
@@ -28,7 +27,7 @@ export function BottomNav() {
             return (
               <Link
                 key={tab.href}
-                href={tab.href}
+                to={tab.href}
                 className="flex flex-col items-center -mt-4"
               >
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
@@ -44,7 +43,7 @@ export function BottomNav() {
           return (
             <Link
               key={tab.href}
-              href={tab.href}
+              to={tab.href}
               className={`flex flex-col items-center py-2 px-3 ${
                 isActive ? 'text-primary' : 'text-muted-foreground'
               }`}

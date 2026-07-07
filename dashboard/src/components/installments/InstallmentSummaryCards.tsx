@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRevalidator } from 'react-router';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Installment, Account } from '@/types';
@@ -27,7 +27,7 @@ export default function InstallmentSummaryCards({
   totalSisa,
   accounts,
 }: Props) {
-  const router = useRouter();
+  const revalidator = useRevalidator();
   const [openCard, setOpenCard] = useState<CardKey | null>(null);
   const [detailInst, setDetailInst] = useState<Installment | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -55,8 +55,8 @@ export default function InstallmentSummaryCards({
       const detail = await loadDetail(id);
       setDetailInst(detail);
     } catch { /* keep existing */ }
-    router.refresh();
-  }, [loadDetail, router]);
+    revalidator.revalidate();
+  }, [loadDetail, revalidator]);
 
   const cards: { key: CardKey; label: string; value: React.ReactNode }[] = [
     {

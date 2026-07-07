@@ -2,7 +2,7 @@
 
 import { useAddTransaction } from '@/lib/add-transaction-context';
 import { ArrowUp, ArrowDown, ArrowLeftRight, Layers, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
+import { Link } from 'react-router';
 
 export function QuickAddCard() {
   const { openModal } = useAddTransaction();
@@ -55,7 +55,7 @@ export function QuickAddCard() {
           href ? (
             <Link
               key={label}
-              href={href}
+              to={href}
               className="flex items-center gap-2 px-3 py-3 rounded-xl text-sm font-medium transition-opacity hover:opacity-80"
               style={{ background: 'var(--surface-2)', color: 'var(--text-mute)', border: '1px solid var(--border-faint)' }}
             >
@@ -89,7 +89,7 @@ export function QuickAddCard() {
 
       {/* Forward email row */}
       <Link
-        href="/insights"
+        to="/insights"
         className="flex items-center justify-between px-3 py-2.5 rounded-xl text-xs transition-opacity hover:opacity-80"
         style={{
           border: '1px dashed var(--border-faint)',

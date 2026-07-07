@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
+import { useNavigate, useLocation, useSearchParams } from 'react-router';
 import { ChevronLeft, ChevronRight, Calendar, Download, Plus, Search, Bell } from 'lucide-react';
 import { useAddTransaction } from '@/lib/add-transaction-context';
 import dayjs from 'dayjs';
@@ -15,9 +15,9 @@ interface Props {
 
 export default function TransactionPageHeader({ txCount, estimatedTotal }: Props) {
   const { openModal } = useAddTransaction();
-  const router = useRouter();
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const navigate = useNavigate();
+  const { pathname } = useLocation();
+  const [searchParams] = useSearchParams();
 
   const startParam = searchParams.get('start');
   const anchor = startParam ? dayjs(startParam) : dayjs().startOf('month');
@@ -29,7 +29,7 @@ export default function TransactionPageHeader({ txCount, estimatedTotal }: Props
     params.set('start', newAnchor.startOf('month').format('YYYY-MM-DD'));
     params.set('end', newAnchor.endOf('month').format('YYYY-MM-DD'));
     params.delete('page');
-    router.push(`${pathname}?${params.toString()}`);
+    navigate(`${pathname}?${params.toString()}`);
   }
 
   return (

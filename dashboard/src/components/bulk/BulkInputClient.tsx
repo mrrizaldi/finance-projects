@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRevalidator } from 'react-router';
 import { getBrowserClient } from '@/lib/supabase';
 import { parseBulkInput, type ParsedLine } from '@/lib/bulk-parser';
 import { Button } from '@/components/ui/button';
@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function BulkInputClient({ accounts, defaultAccountId }: Props) {
-  const router = useRouter();
+  const revalidator = useRevalidator();
   const [text, setText] = useState('');
   const [parsed, setParsed] = useState<ParsedLine[]>([]);
   const [saving, setSaving] = useState(false);
@@ -90,7 +90,7 @@ export function BulkInputClient({ accounts, defaultAccountId }: Props) {
     setSaving(false);
     setText('');
     setParsed([]);
-    router.refresh();
+    revalidator.revalidate();
   }
 
   return (

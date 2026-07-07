@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRevalidator } from 'react-router';
 import { getBrowserClient } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,7 +35,7 @@ function formatRupiahInput(amount: number): string {
 }
 
 export function TransactionForm({ accounts, categories, defaultAccountId, onSuccess }: Props) {
-  const router = useRouter();
+  const revalidator = useRevalidator();
   const [type, setType] = useState<TxType>('expense');
   const [amountRaw, setAmountRaw] = useState('');
   const [amount, setAmount] = useState(0);
@@ -157,7 +157,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onSucc
       setCategoryId('');
       setAiSuggested(false);
       setSuccess(false);
-      router.refresh();
+      revalidator.revalidate();
       onSuccess?.();
     }, 1500);
   }

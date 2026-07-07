@@ -1,13 +1,13 @@
 'use client';
 
 import { useRef, useCallback, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRevalidator } from 'react-router';
 
 const THRESHOLD = 64; // px to pull before triggering refresh
 const MAX_PULL = 80;  // max visual stretch
 
 export function PullToRefresh({ children }: { children: React.ReactNode }) {
-  const router = useRouter();
+  const revalidator = useRevalidator();
   const containerRef = useRef<HTMLElement>(null);
   const startYRef = useRef(0);
   const [pullY, setPullY] = useState(0);
@@ -43,12 +43,12 @@ export function PullToRefresh({ children }: { children: React.ReactNode }) {
     if (pullY >= THRESHOLD * 0.5) {
       setRefreshing(true);
       setPullY(0);
-      router.refresh();
+      revalidator.revalidate();
       setTimeout(() => setRefreshing(false), 1200);
     } else {
       setPullY(0);
     }
-  }, [pullY, router]);
+  }, [pullY, revalidator]);
 
   useEffect(() => {
     const el = containerRef.current;

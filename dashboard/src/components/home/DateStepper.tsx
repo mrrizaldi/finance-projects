@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
@@ -8,19 +8,19 @@ import 'dayjs/locale/id';
 dayjs.locale('id');
 
 export function DateStepper({ month }: { month: string }) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const current = dayjs(`${month}-01`);
   const isCurrentMonth = month === dayjs().format('YYYY-MM');
 
-  const navigate = (direction: -1 | 1) => {
+  const shift = (direction: -1 | 1) => {
     const next = current.add(direction, 'month').format('YYYY-MM');
-    router.push(`/?month=${next}`);
+    navigate(`/?month=${next}`);
   };
 
   return (
     <div className="flex items-center gap-1">
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => shift(-1)}
         className="p-1.5 rounded-md transition-colors hover:bg-[var(--surface-hi)]"
         style={{ color: 'var(--text-mute)' }}
         aria-label="Bulan sebelumnya"
@@ -34,7 +34,7 @@ export function DateStepper({ month }: { month: string }) {
         {current.format('MMMM YYYY')}
       </span>
       <button
-        onClick={() => navigate(1)}
+        onClick={() => shift(1)}
         disabled={isCurrentMonth}
         className="p-1.5 rounded-md transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:not-disabled:bg-[var(--surface-hi)]"
         style={{ color: 'var(--text-mute)' }}

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRevalidator } from 'react-router';
 import {
   Dialog,
   DialogContent,
@@ -60,7 +60,7 @@ export default function InstallmentDetailDialog({
   onPaySuccess,
   accounts = [],
 }: Props) {
-  const router = useRouter();
+  const revalidator = useRevalidator();
   const [payDialog, setPayDialog] = useState(false);
   const [appendDialog, setAppendDialog] = useState(false);
   const [monthsToAdd, setMonthsToAdd] = useState('1');
@@ -154,7 +154,7 @@ export default function InstallmentDetailDialog({
       setAppendDialog(false);
       setMonthsToAdd('1');
       setAmountPerMonth('');
-      router.refresh();
+      revalidator.revalidate();
     }
   }
 

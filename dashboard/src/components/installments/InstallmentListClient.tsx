@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRevalidator } from 'react-router';
 import { Installment, Category, Account } from '@/types';
 import InstallmentCard from './InstallmentCard';
 import InstallmentDetailDialog from './InstallmentDetailDialog';
@@ -18,7 +18,7 @@ interface Props {
 type DialogMode = 'detail' | 'edit' | null;
 
 export default function InstallmentListClient({ installments, categories, accounts, title, count }: Props) {
-  const router = useRouter();
+  const revalidator = useRevalidator();
   const [selected, setSelected] = useState<Installment | null>(null);
   const [selectedDetail, setSelectedDetail] = useState<Installment | null>(null);
   const [loadingDetailId, setLoadingDetailId] = useState<string | null>(null);
@@ -58,8 +58,8 @@ export default function InstallmentListClient({ installments, categories, accoun
       setSelected(detail);
       setSelectedDetail(detail);
     } catch { /* keep showing existing data */ }
-    router.refresh();
-  }, [loadDetail, router]);
+    revalidator.revalidate();
+  }, [loadDetail, revalidator]);
 
   if (installments.length === 0) return null;
 
@@ -73,7 +73,7 @@ export default function InstallmentListClient({ installments, categories, accoun
   function handleWriteSuccess() {
     closeAll();
     startRefresh(() => {
-      router.refresh();
+      revalidator.revalidate();
     });
   }
 

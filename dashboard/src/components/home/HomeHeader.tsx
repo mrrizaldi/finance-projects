@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useNavigate } from 'react-router';
 import { ChevronLeft, ChevronRight, Calendar, Plus, Search, Bell } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
@@ -9,15 +9,15 @@ import { useAddTransaction } from '@/lib/add-transaction-context';
 dayjs.locale('id');
 
 export function HomeHeader({ month }: { month: string }) {
-  const router = useRouter();
+  const navigate = useNavigate();
   const { openModal } = useAddTransaction();
   const current = dayjs(`${month}-01`);
   const isCurrentMonth = month === dayjs().format('YYYY-MM');
   const monthLabel = current.format('MMMM YYYY');
 
-  const navigate = (direction: -1 | 1) => {
+  const shift = (direction: -1 | 1) => {
     const next = current.add(direction, 'month').format('YYYY-MM');
-    router.push(`/?month=${next}`);
+    navigate(`/?month=${next}`);
   };
 
   return (
@@ -41,7 +41,7 @@ export function HomeHeader({ month }: { month: string }) {
           style={{ border: '1px solid var(--border-faint)' }}
         >
           <button
-            onClick={() => navigate(-1)}
+            onClick={() => shift(-1)}
             className="p-1.5 rounded-l-lg transition-colors hover:bg-[var(--surface-hi)]"
             style={{ color: 'var(--text-mute)' }}
             aria-label="Bulan sebelumnya"
@@ -61,7 +61,7 @@ export function HomeHeader({ month }: { month: string }) {
             </span>
           </div>
           <button
-            onClick={() => navigate(1)}
+            onClick={() => shift(1)}
             disabled={isCurrentMonth}
             className="p-1.5 rounded-r-lg transition-colors disabled:opacity-30 disabled:cursor-not-allowed hover:not-disabled:bg-[var(--surface-hi)]"
             style={{ color: 'var(--text-mute)' }}

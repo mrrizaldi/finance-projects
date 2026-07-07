@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRevalidator } from 'react-router';
 import { getBrowserClient } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +26,7 @@ function formatRupiahInput(amount: number): string {
 }
 
 export function TransferForm({ accounts, onSuccess }: Props) {
-  const router = useRouter();
+  const revalidator = useRevalidator();
   const [amountOutRaw, setAmountOutRaw] = useState('');
   const [amountOut, setAmountOut] = useState(0);
   const [amountInRaw, setAmountInRaw] = useState('');
@@ -90,7 +90,7 @@ export function TransferForm({ accounts, onSuccess }: Props) {
       setAmountOutRaw(''); setAmountOut(0);
       setAmountInRaw(''); setAmountIn(0);
       setNote(''); setSuccess(false);
-      router.refresh();
+      revalidator.revalidate();
       onSuccess?.();
     }, 1500);
   }

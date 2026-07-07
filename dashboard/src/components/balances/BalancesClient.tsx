@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useTransition } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRevalidator } from 'react-router';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -33,7 +33,7 @@ function groupByType(accounts: Account[]): AccountsByType {
 }
 
 export function BalancesClient({ accounts: initialAccounts }: Props) {
-  const router = useRouter();
+  const revalidator = useRevalidator();
   const [, startTransition] = useTransition();
   const [adjustAccount, setAdjustAccount] = useState<Account | null>(null);
   const [newBalance, setNewBalance] = useState('');
@@ -60,7 +60,7 @@ export function BalancesClient({ accounts: initialAccounts }: Props) {
       setAdjustAccount(null);
       setNewBalance('');
       setAdjustNote('');
-      startTransition(() => router.refresh());
+      startTransition(() => { revalidator.revalidate(); });
     }
     setSaving(false);
   }

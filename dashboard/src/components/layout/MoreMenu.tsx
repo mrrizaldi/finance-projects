@@ -1,6 +1,6 @@
 'use client';
 
-import Link from 'next/link';
+import { Link } from 'react-router';
 import { CreditCard, Wallet, FileText, Landmark, Sparkles, Settings, LogOut } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase';
 
@@ -28,7 +28,7 @@ export function MoreMenu() {
           return (
             <Link
               key={item.href}
-              href={item.href}
+              to={item.href}
               className={`flex items-center justify-between p-4 hover:bg-muted/50 transition-colors ${
                 idx > 0 ? 'border-t border-border' : ''
               }`}
