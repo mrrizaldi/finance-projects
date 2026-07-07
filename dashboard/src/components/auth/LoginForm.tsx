@@ -1,8 +1,5 @@
-'use client';
-
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import Link from 'next/link';
+import { useNavigate, Link } from 'react-router';
 import { getBrowserClient } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -10,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function LoginForm() {
-  const router = useRouter();
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -32,8 +29,7 @@ export function LoginForm() {
       return;
     }
 
-    router.push('/');
-    router.refresh();
+    navigate('/');
   }
 
   async function handleGoogleLogin() {
@@ -68,7 +64,7 @@ export function LoginForm() {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label htmlFor="password">Password</Label>
-              <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-primary">
+              <Link to="/forgot-password" className="text-xs text-muted-foreground hover:text-primary">
                 Lupa password?
               </Link>
             </div>
@@ -106,7 +102,7 @@ export function LoginForm() {
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">
           Belum punya akun?{' '}
-          <Link href="/register" className="text-primary hover:underline">
+          <Link to="/register" className="text-primary hover:underline">
             Daftar
           </Link>
         </p>

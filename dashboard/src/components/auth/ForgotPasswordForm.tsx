@@ -1,7 +1,5 @@
-'use client';
-
 import { useState } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router';
 import { getBrowserClient } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -40,7 +38,7 @@ export function ForgotPasswordForm() {
           <CardDescription>Link reset password dikirim ke <strong>{email}</strong>.</CardDescription>
         </CardHeader>
         <CardFooter className="justify-center">
-          <Link href="/login" className="text-sm text-primary hover:underline">Kembali ke login</Link>
+          <Link to="/login" className="text-sm text-primary hover:underline">Kembali ke login</Link>
         </CardFooter>
       </Card>
     );
@@ -65,7 +63,7 @@ export function ForgotPasswordForm() {
         </form>
       </CardContent>
       <CardFooter className="justify-center">
-        <Link href="/login" className="text-sm text-muted-foreground hover:text-primary">Kembali ke login</Link>
+        <Link to="/login" className="text-sm text-muted-foreground hover:text-primary">Kembali ke login</Link>
       </CardFooter>
     </Card>
   );

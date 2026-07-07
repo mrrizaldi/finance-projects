@@ -1,7 +1,5 @@
-'use client';
-
 import { useState } from 'react';
-import Link from 'next/link';
+import { Link } from 'react-router';
 import { getBrowserClient } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,7 +54,7 @@ export function RegisterForm() {
           </CardDescription>
         </CardHeader>
         <CardFooter className="justify-center">
-          <Link href="/login" className="text-sm text-primary hover:underline">Kembali ke login</Link>
+          <Link to="/login" className="text-sm text-primary hover:underline">Kembali ke login</Link>
         </CardFooter>
       </Card>
     );
@@ -95,7 +93,7 @@ export function RegisterForm() {
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">
           Sudah punya akun?{' '}
-          <Link href="/login" className="text-primary hover:underline">Masuk</Link>
+          <Link to="/login" className="text-primary hover:underline">Masuk</Link>
         </p>
       </CardFooter>
     </Card>
