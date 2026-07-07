@@ -1,8 +1,8 @@
 # Design: Migrasi Dashboard Next.js → React Router v7
 
 **Tanggal**: 2026-07-07
-**Status**: Approved
-**Scope**: `dashboard/` saja. Telegram bot, n8n, Supabase schema tidak disentuh.
+**Status**: Approved — **DIREVISI di hari yang sama, lihat bagian "Revisi: API terpisah (Fastify)" di bawah; revisi menggantikan keputusan SSR/resource-routes di dokumen ini**
+**Scope**: `dashboard/` + projek baru `api/`. Telegram bot, n8n, Supabase schema tidak disentuh.
 
 ## Motivasi
 
@@ -109,3 +109,41 @@ adapter cookies yang ditulis ulang.
 - **Playwright e2e** mungkin perlu penyesuaian startup command (`webServer` di config).
 - **PWA update**: user yang sudah install versi Next punya sw.js workbox lama; sw.js baru
   perlu `self.skipWaiting()` + clients.claim agar takeover bersih.
+
+---
+
+## Revisi: API terpisah (Fastify) — 2026-07-07
+
+Keputusan user setelah Task 2: API dipisah jadi projek sendiri supaya rapi dan reusable
+(bukan cuma untuk web). Konsekuensi: alasan pakai SSR (secret di server app) hilang →
+dashboard jadi **SPA murni**.
+
+### Arsitektur final
+
+```
+dashboard/  → RR7 framework mode, ssr:false (SPA). clientLoader → supabase-js
+              langsung dari browser (session cookie via @supabase/ssr, RLS enforce).
+api/        → Fastify (TypeScript). Semua 19 endpoint /api/* pindah ke sini:
+              mutasi kompleks (balance, installment), AI (chat/categorize/suggest),
+              web push. Verifikasi session dari cookie Supabase yang sama.
+              Production: Fastify juga serve static build SPA (@fastify/static,
+              fallback index.html) di port 3000 — satu proses pm2.
+Dev:          vite dev :3000 (proxy /api → :3001) + fastify dev :3001.
+```
+
+### Yang berubah dari desain awal
+
+| Desain awal | Revisi |
+|---|---|
+| SSR + loader server-side | SPA + `clientLoader` (browser supabase-js, RLS) |
+| RR middleware refresh session + cookie adapter | Tidak ada — session di browser, guard di `clientLoader` layout |
+| Resource routes `/api/*` di RR | Fastify routes di projek `api/` (URL sama, cookie sama → 27 call `fetch('/api/...')` tidak berubah) |
+| `@react-router/node`/`serve`, `isbot` | Dihapus — tidak ada server RR |
+| `supabase.server.ts` di dashboard | Pindah/adaptasi ke `api/src/lib/` |
+| Integration tests (5 file, test API handlers) | Pindah ke `api/tests/`, pakai `fastify.inject()` |
+| `DISABLE_AUTH` bypass di seluruh app | Hanya berlaku di `api/`; dev dashboard perlu login beneran (RLS) |
+| pm2 `finance-dashboard` jalan Next server | pm2 satu proses Fastify (serve SPA + API) port 3000 |
+
+Deps yang ikut pindah ke `api/`: `openai`, `web-push`, helper Supabase server.
+Lib pure yang dipakai API routes di-copy/pindah ke `api/src/lib/` (tanpa pnpm
+workspace — dua projek kecil, duplikasi file pure acceptable).
