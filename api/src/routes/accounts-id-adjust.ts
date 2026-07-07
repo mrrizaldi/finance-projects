@@ -37,23 +37,28 @@ export default async function plugin(app: FastifyInstance) {
       const after = Number(row.balance_after);
       const delta = Number(row.delta);
 
-      if (Math.abs(delta) > 0.000001) {
-        const txType = delta > 0 ? 'income' : 'expense';
-        const { error: txError } = await (supabase as any).from('transactions').insert({
-          type: txType,
-          amount: Math.abs(delta),
-          description: `Balance adjustment ${account.name}`,
-          account_id: account.id,
-          source: 'manual_web',
-          transaction_date: new Date().toISOString(),
-          is_adjustment: true,
-          adjustment_note: note || null,
-          balance_before: before,
-          balance_after: after,
-          user_id: user.id,
-        });
-        if (txError) throw new Error(`Gagal mencatat adjustment: ${txError.message}`);
+      if (Math.abs(delta) <= 0.000001) {
+        return {
+          success: true,
+          data: { account_id: account.id, balance_before: before, balance_after: after, delta },
+        };
       }
+
+      const txType = delta > 0 ? 'income' : 'expense';
+      const { error: txError } = await (supabase as any).from('transactions').insert({
+        type: txType,
+        amount: Math.abs(delta),
+        description: `Balance adjustment ${account.name}`,
+        account_id: account.id,
+        source: 'manual_web',
+        transaction_date: new Date().toISOString(),
+        is_adjustment: true,
+        adjustment_note: note || null,
+        balance_before: before,
+        balance_after: after,
+        user_id: user.id,
+      });
+      if (txError) throw new Error(`Gagal mencatat adjustment: ${txError.message}`);
 
       await recalculateForAccounts(supabase, [account.id]);
 

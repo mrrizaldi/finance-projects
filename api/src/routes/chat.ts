@@ -5,7 +5,7 @@ import { startOfMonth, endOfMonth } from '../lib/utils.js';
 
 const openai = new OpenAI({
   baseURL: process.env.LLM_BASE_URL || 'https://api.deepseek.com/v1',
-  apiKey: process.env.LLM_API_KEY,
+  apiKey: process.env.LLM_API_KEY ?? 'noop',
 });
 
 export default async function plugin(app: FastifyInstance) {

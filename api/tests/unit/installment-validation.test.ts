@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { parseMonths } from '@/lib/installment-utils';
+import { parseMonths } from '../../src/lib/installment-utils.js';
 
 describe('parseMonths', () => {
   it('valid sequential months returned sorted', () => {

@@ -1,7 +1,8 @@
+import { useEffect } from 'react';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 import '@fontsource-variable/geist';
 import '@fontsource-variable/geist-mono';
-import './app/globals.css';
+import './globals.css';
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
 
 export const meta = () => [
@@ -49,5 +50,10 @@ export function HydrateFallback() {
 }
 
 export default function Root() {
+  useEffect(() => {
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(console.error);
+    }
+  }, []);
   return <Outlet />;
 }

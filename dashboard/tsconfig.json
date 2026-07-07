@@ -19,5 +19,5 @@
     "rootDirs": [".", "./.react-router/types"]
   },
   "include": ["**/*.ts", "**/*.tsx", ".react-router/types/**/*.ts"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "tests/e2e", "tests/integration"]
 }

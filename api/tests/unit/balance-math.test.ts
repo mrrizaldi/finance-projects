@@ -6,7 +6,7 @@ import {
   buildSnapshotForState,
   type TxBalanceState,
   type BalanceSnapshot,
-} from '@/lib/balance-math';
+} from '../../src/lib/balance-math.js';
 
 // ── getEffects ────────────────────────────────────────────────────────────────
 
