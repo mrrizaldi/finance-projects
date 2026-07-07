@@ -11,7 +11,12 @@ try {
 
 export default defineConfig({
   plugins: [reactRouter(), tsconfigPaths()],
-  server: { port: 3000 },
+  server: {
+    port: 3000,
+    proxy: {
+      '/api': 'http://localhost:3001',
+    },
+  },
   define: {
     'process.env.NEXT_PUBLIC_SUPABASE_URL': JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_URL),
     'process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY': JSON.stringify(process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),

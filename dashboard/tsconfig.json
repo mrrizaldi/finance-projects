@@ -15,7 +15,8 @@
     "types": ["vite/client"],
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "rootDirs": [".", "./.react-router/types"]
   },
   "include": ["**/*.ts", "**/*.tsx", ".react-router/types/**/*.ts"],
   "exclude": ["node_modules"]

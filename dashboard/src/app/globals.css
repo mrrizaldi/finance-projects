@@ -28,6 +28,10 @@
   background: oklch(0.38 0.03 75);
 }
 
+body {
+  font-family: var(--font-geist-sans);
+}
+
 /* Sidebar scrollbar */
 .sidebar-scroll::-webkit-scrollbar-track {
   background: transparent;
@@ -106,6 +110,8 @@
     --c6: oklch(0.65 0.15 75);
     --c7: oklch(0.55 0.20 27);
     --c8: oklch(0.50 0.12 260);
+    --font-geist-sans: 'Geist Variable', ui-sans-serif, system-ui, sans-serif;
+    --font-geist-mono: 'Geist Mono Variable', ui-monospace, monospace;
   }
   .dark {
     color-scheme: dark;
