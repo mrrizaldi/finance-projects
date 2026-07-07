@@ -27,7 +27,8 @@ Personal finance automation system (Indonesian language). Parses transaction ema
 - **Database**: Supabase (PostgreSQL) as primary, Google Sheets as readable backup
 - **Email Parsing**: n8n (self-hosted, Docker) with IMAP polling for Gmail
 - **AI**: OpenAI GPT API (via OpenClaw) for transaction categorization and financial insights
-- **Dashboard**: Next.js (App Router) + Tailwind CSS + Supabase client
+- **Dashboard**: React Router v7 (SPA, ssr:false) + Vite + Tailwind CSS + Supabase browser client
+- **API**: Fastify (TypeScript, ESM) — serves 19 REST endpoints + static SPA in production
 - **Package Manager**: pnpm
 
 ## Architecture & Data Flow
@@ -35,12 +36,16 @@ Personal finance automation system (Indonesian language). Parses transaction ema
 ```
 Gmail (IMAP) → n8n Workflows → OpenAI (categorization) → Supabase (primary DB)
                                                             ├→ Google Sheets (backup sync)
-                                                            ├→ Next.js Dashboard
+                                                            ├→ React Router v7 SPA (dashboard/) + Fastify API (api/)
                                                             └→ Telegram Bot (reports)
 Telegram Bot → manual input → Supabase
 ```
 
-Key services are independent: the Telegram bot, n8n workflows, and dashboard all connect directly to Supabase. OpenClaw skills provide AI-powered analysis and reporting.
+Key services are independent: the Telegram bot, n8n workflows, and dashboard all connect directly to Supabase.
+
+**Dashboard/API architecture:**
+- Dev: `vite dev :3000` (proxy `/api → :3001`) + `fastify dev :3001`
+- Production: Fastify (`api/`) serves SPA static files (`dashboard/build/client`) + all `/api/*` routes on port 3000 (one pm2 process)
 
 ## Project Structure
 
@@ -48,27 +53,25 @@ Key services are independent: the Telegram bot, n8n workflows, and dashboard all
 telegram-bot/          # grammY bot (TypeScript) — commands/, conversations/, keyboards/, services/
 n8n-workflows/         # Exported n8n workflow JSONs (one per email source + sheets sync)
 openclaw-skills/       # Custom OpenClaw skill definitions (SKILL.md files)
-dashboard/             # Next.js App Router — pages: transactions, analytics, insights, budget, settings
+dashboard/             # React Router v7 SPA — src/routes/, src/components/, src/lib/
+api/                   # Fastify API — src/routes/ (19 endpoints), src/lib/ (supabase, utils, etc.)
 supabase/migrations/   # SQL migrations: schema → seeds → functions/views → RLS
 scripts/               # Setup and migration helper scripts
 ```
 
-## Next.js Dashboard — Gunakan MCP + shadcn/ui
+## Dashboard (React Router v7 SPA)
 
-**WAJIB untuk semua pekerjaan di `dashboard/`:**
+- Data fetching: `clientLoader()` per route → `useLoaderData()`, supabase browser client via `getBrowserClient()` di `src/lib/supabase.ts`
+- Mutation/revalidation: `fetch('/api/...')` lalu `useRevalidator().revalidate()` (auto re-run semua loader aktif)
+- UI components: **shadcn/ui** (`pnpm dlx shadcn@latest add <component>`), chart: recharts
+- Auth guard di `app-layout.tsx` clientLoader — redirect ke `/login` kalau session null
 
-1. **next-devtools MCP** — untuk inspect routes, komponen, data fetching, dan debugging Next.js. Gunakan ini sebelum edit kode dashboard secara manual.
-2. **shadcn MCP** — untuk install dan browse komponen shadcn/ui. Gunakan ini daripada buat komponen UI dari scratch.
+## API (Fastify)
 
-**Konvensi komponen:**
-- Semua komponen UI (button, card, table, input, select, badge, dialog, dll) → pakai dari **shadcn/ui** (`pnpm dlx shadcn@latest add <component>`)
-- Chart tetap pakai **recharts** (sudah terintegrasi di shadcn chart)
-- Jangan buat komponen UI primitif dari scratch jika sudah ada di shadcn
-
-**Install komponen shadcn:**
-```bash
-cd dashboard && pnpm dlx shadcn@latest add button card table badge input select
-```
+- Routes di `api/src/routes/*.ts`, terdaftar di `api/src/app.ts`
+- Auth: `requireUser(request)` dari `api/src/lib/supabase.ts` — baca cookie session Supabase
+- LLM calls pakai env var `LLM_API_KEY`/`LLM_BASE_URL`/`LLM_MODEL` (bukan `OPENAI_API_KEY`)
+- Env vars: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (tanpa prefix `NEXT_PUBLIC_`)
 
 ## Database Access — Gunakan Supabase MCP
 
@@ -90,10 +93,20 @@ pnpm dev              # Development with hot reload (tsx watch)
 pnpm build            # TypeScript compile
 pnpm start            # Production (node dist/index.js)
 
-# Dashboard
+# Dashboard (React Router v7 SPA)
 cd dashboard && pnpm install
-pnpm dev              # Next.js dev server
-pnpm build            # Production build
+pnpm dev              # Vite dev server :3000 (proxy /api → :3001)
+pnpm build            # Production build (output: build/client/)
+pnpm typecheck        # tsc --noEmit
+pnpm test             # vitest unit tests
+
+# API (Fastify)
+cd api && pnpm install
+pnpm dev              # tsx watch :3001
+pnpm build            # tsc → dist/
+pnpm start            # node dist/server.js (serves SPA + /api/* on :3001 dev, :3000 prod)
+pnpm typecheck        # tsc --noEmit
+pnpm test             # vitest (integration + unit)
 
 # n8n (Docker)
 docker run -d --name n8n --restart always -p 5678:5678 -v ~/n8n-data:/home/node/.n8n n8nio/n8n

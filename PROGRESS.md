@@ -10,12 +10,53 @@
 | Key | Value |
 |-----|-------|
 | Spec versi | 1.0 (4 April 2026) |
-| Progress terakhir | 16 April 2026 (Sesi 30) |
+| Progress terakhir | 8 Juli 2026 (Sesi 31) |
 | Bot Telegram | @aldi_monman_bot |
 | Monitor Bot | @monitoring_aldi23_bot |
 | Supabase project | `dqvdhkpqyynvwfbuqyzu` (finance-project, ap-southeast-1) |
 | Home server | ubuntu-server @ 192.168.31.221 |
-| Process manager | pm2 (finance-bot, finance-dashboard, monitor-bot — semua online) |
+| Process manager | pm2 (finance-bot, finance-api, monitor-bot) — `finance-dashboard` diganti `finance-api` (Fastify) |
+
+---
+
+## Detail Eksekusi — Sesi 31 (8 Juli 2026)
+
+### Migrasi Dashboard: Next.js → React Router v7 + Fastify API
+
+**Tujuan:**
+Simplifikasi arsitektur dashboard. Next.js App Router (SSR, server components, revalidatePath) diganti RR7 SPA + Fastify API terpisah.
+
+**Perubahan arsitektur:**
+- `dashboard/` → React Router v7 framework mode, `ssr: false` (SPA). Data via `clientLoader()` + `getBrowserClient()` (supabase browser client, RLS enforce). Mutasi: `fetch('/api/...')` + `useRevalidator().revalidate()`.
+- `api/` → Fastify TypeScript project baru. Semua 19 endpoint `/api/*` pindah ke sini. Production: Fastify serve static SPA build + API di port 3000 (satu pm2 process).
+
+**Implementasi (branch `migrate-react-router`):**
+- ✅ Task 1-2: Spec + plan ditulis, Supabase browser client adapter di `dashboard/src/lib/supabase.ts`
+- ✅ Task 3: RR7 scaffold — `react-router.config.ts`, `vite.config.ts` (proxy `/api→:3001`), `root.tsx`, `routes.ts`, `app-layout.tsx`, `auth-layout.tsx`
+- ✅ Task 4: 10 page routes ported ke `src/routes/*.tsx` dengan `clientLoader()`
+- ✅ Task 5: 22 komponen diswap secara mekanis (`next/link→Link`, `useRouter→useNavigate`, `router.refresh()→useRevalidator().revalidate()`)
+- ✅ Task 6: Fastify scaffold — `api/src/app.ts`, `api/src/server.ts`, `api/src/lib/supabase.ts`, `api/src/routes/accounts.ts` (exemplar)
+- ✅ Task 7: 19 Fastify route files dibuat; 5 integration test dipindah ke `api/tests/` (app.inject); 2 unit test lib dipindah ke `api/tests/unit/`; semua 60 api tests pass
+- ✅ Task 8: Verify client flows — no `router.refresh()` tersisa, proxy configured, auth guard clean
+- ✅ Task 9: PWA — `public/sw.js` baru (push handler + skipWaiting/claim, tanpa workbox); `public/manifest.webmanifest`; SW register di `root.tsx`; hapus workbox artifacts
+- ✅ Task 10: Cleanup — hapus `src/app/`, `src/middleware.ts`, old supabase lib, `next.config.js`, `next-env.d.ts`; remove openai/web-push/isbot dari dashboard deps; fix module-level OpenAI/webpush init di api routes
+- ✅ Task 11: Update `playwright.config.ts` (webServer → Fastify), update `PROGRESS.md` + `CLAUDE.md`
+
+**Test results:**
+- Dashboard: 43 unit tests pass, tsc clean
+- API: 60 tests pass (5 integration + 2 unit + dari task 7), tsc clean
+
+**Perbedaan dari spec/plan:**
+- `router.refresh()` → `useRevalidator().revalidate()` (bukan convert ke action/fetcher — lebih simpel)
+- `@react-router/node` tetap di dashboard dep karena RR7 dev tooling butuhnya untuk SPA shell rendering (walau ssr:false)
+- OpenAI client di api routes pakai `LLM_API_KEY`/`LLM_BASE_URL`/`LLM_MODEL` env vars (bukan `OPENAI_API_KEY`) — config produksi tetap sama karena pakai OpenClaw/DeepSeek
+- Zero-delta path di `accounts-id-adjust.ts` di-early-return (skip recalculate) — optimization yang memang benar secara bisnis
+
+**Deploy ke production:**
+1. `cd dashboard && pnpm build` → output ke `dashboard/build/client/`
+2. `cd api && pnpm build` → output ke `api/dist/`
+3. pm2: rename `finance-dashboard` → `finance-api`, jalankan `node api/dist/server.js` dengan env `SERVE_SPA=true` dan `PORT=3000`
+4. Update env `api/.env`: rename `NEXT_PUBLIC_SUPABASE_URL` → `SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` → `SUPABASE_ANON_KEY`
 
 ---
 
