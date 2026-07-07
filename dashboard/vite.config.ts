@@ -1,8 +1,7 @@
 import { reactRouter } from '@react-router/dev/vite';
 import { defineConfig } from 'vite';
-import tsconfigPaths from 'vite-tsconfig-paths';
 
-// Next dulu auto-load .env.local; RR/Vite tidak untuk process.env server-side.
+// Vite tidak auto-load .env.local ke process.env saat config-time; load manual.
 try {
   process.loadEnvFile('.env.local');
 } catch {
@@ -10,7 +9,8 @@ try {
 }
 
 export default defineConfig({
-  plugins: [reactRouter(), tsconfigPaths()],
+  plugins: [reactRouter()],
+  resolve: { tsconfigPaths: true },
   server: {
     port: 3000,
     proxy: {
