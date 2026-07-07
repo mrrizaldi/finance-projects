@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
-import TransactionRow from './TransactionRow';
+import TransactionRow, { TransactionRowMobile, TX_GRID } from './TransactionRow';
 import TransactionDetailDialog from './TransactionDetailDialog';
 import TransactionEditDialog from './TransactionEditDialog';
 import TransactionDeleteDialog from './TransactionDeleteDialog';
@@ -16,6 +16,8 @@ interface Props {
 }
 
 type DialogMode = 'detail' | 'edit' | 'delete' | null;
+
+const TABLE_HEADERS = ['TANGGAL', 'DESKRIPSI', 'KATEGORI', 'AKUN', 'JUMLAH', ''];
 
 export default function TransactionListClient({ transactions, categories, accounts, installments }: Props) {
   const router = useRouter();
@@ -49,17 +51,31 @@ export default function TransactionListClient({ transactions, categories, accoun
         </div>
       )}
 
+      {/* Desktop table header */}
+      <div
+        className={`hidden sm:grid items-center gap-3 px-4 py-2.5 border-b ${TX_GRID}`}
+        style={{ borderColor: 'var(--border-faint)', background: 'var(--surface-hi)' }}
+      >
+        {TABLE_HEADERS.map((h, i) => (
+          <span
+            key={i}
+            className={`label-up ${i === TABLE_HEADERS.length - 2 ? 'text-right' : ''}`}
+          >
+            {h}
+          </span>
+        ))}
+      </div>
+
       {transactions.length === 0 ? (
-        <div className="py-16 text-center text-muted-foreground">
+        <div className="py-16 text-center" style={{ color: 'var(--text-dim)' }}>
           <p className="text-sm">Tidak ada transaksi yang sesuai filter</p>
         </div>
       ) : (
         transactions.map((tx) => (
-          <TransactionRow
-            key={tx.id}
-            tx={tx}
-            onClick={() => open(tx, 'detail')}
-          />
+          <div key={tx.id} className="group">
+            <TransactionRow tx={tx} onClick={() => open(tx, 'detail')} />
+            <TransactionRowMobile tx={tx} onClick={() => open(tx, 'detail')} />
+          </div>
         ))
       )}
 

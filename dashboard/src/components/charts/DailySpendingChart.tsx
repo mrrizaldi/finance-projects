@@ -64,19 +64,19 @@ export default function DailySpendingChart({ data }: Props) {
   return (
     <ResponsiveContainer width="100%" height={220}>
       <ComposedChart data={data} margin={{ top: 4, right: 12, left: 0, bottom: 0 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-faint)" />
         <XAxis
           dataKey="day"
           tickFormatter={(v) => dayjs(v).format('D')}
           interval={tickInterval - 1}
-          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))', fontFamily: 'var(--font-geist-mono)' }}
           axisLine={false}
           tickLine={false}
         />
         <YAxis
           yAxisId="left"
           tickFormatter={formatAmount}
-          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))', fontFamily: 'var(--font-geist-mono)' }}
           axisLine={false}
           tickLine={false}
           width={40}
@@ -85,7 +85,7 @@ export default function DailySpendingChart({ data }: Props) {
           yAxisId="right"
           orientation="right"
           tickFormatter={formatAmount}
-          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))' }}
+          tick={{ fontSize: 11, fill: 'hsl(var(--muted-foreground))', fontFamily: 'var(--font-geist-mono)' }}
           axisLine={false}
           tickLine={false}
           width={40}
@@ -100,14 +100,14 @@ export default function DailySpendingChart({ data }: Props) {
         <Bar
           yAxisId="left"
           dataKey="daily_expense"
-          fill="hsl(var(--destructive))"
-          opacity={0.7}
+          fill="var(--negative)"
+          opacity={0.75}
           radius={[2, 2, 0, 0]}
         />
         <Line
           yAxisId="right"
           dataKey="cumulative_expense"
-          stroke="hsl(var(--primary))"
+          stroke="var(--accent-hi)"
           strokeWidth={2}
           dot={false}
           activeDot={{ r: 4 }}

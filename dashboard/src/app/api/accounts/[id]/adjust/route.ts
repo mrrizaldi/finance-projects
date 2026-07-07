@@ -1,6 +1,7 @@
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiClient, unauthorizedResponse } from '@/lib/supabase-api';
+import { recalculateForAccounts } from '@/lib/recalculate-snapshots';
 
 type Params = { params: { id: string } };
 
@@ -75,6 +76,9 @@ export async function POST(req: NextRequest, { params }: Params) {
 
       if (txError) throw new Error(`Gagal mencatat adjustment: ${txError.message}`);
     }
+
+    // Recalculate snapshots for this account
+    await recalculateForAccounts(supabase, [account.id]);
 
     revalidateFinancePaths();
     return NextResponse.json({

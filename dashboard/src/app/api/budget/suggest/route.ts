@@ -4,7 +4,10 @@ import { createApiClient, unauthorizedResponse } from '@/lib/supabase-api';
 
 export const dynamic = 'force-dynamic';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({
+  baseURL: process.env.LLM_BASE_URL || 'https://api.deepseek.com/v1',
+  apiKey: process.env.LLM_API_KEY,
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -57,18 +60,18 @@ Alokasikan total ${formatRp(allocatable)} ke semua ${categories.length} kategori
 Pastikan sum(suggested_amount) == ${allocatable} persis.`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o',
+      model: process.env.LLM_MODEL || 'deepseek-chat',
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user', content: userPrompt },
       ],
       temperature: 0.2,
       max_tokens: 2000,
-      response_format: { type: 'json_object' },
     });
 
     const raw = completion.choices[0]?.message?.content ?? '{}';
-    const parsed = JSON.parse(raw);
+    const cleaned = raw.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/, '');
+    const parsed = JSON.parse(cleaned);
 
     if (!parsed.suggestions || !Array.isArray(parsed.suggestions)) {
       return NextResponse.json({ error: 'Respons AI tidak valid' }, { status: 500 });

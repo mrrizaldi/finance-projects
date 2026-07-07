@@ -47,7 +47,7 @@
     --card-foreground: 0.14 0.01 145;
     --popover: 1 0 0;
     --popover-foreground: 0.14 0.01 145;
-    --primary: 0.28 0.09 145;
+    --primary: 0.50 0.14 145;
     --primary-foreground: 0.98 0 0;
     --secondary: 0.93 0.01 85;
     --secondary-foreground: 0.20 0.01 145;
@@ -58,8 +58,8 @@
     --destructive: 0.577 0.245 27.325;
     --border: 0.88 0.01 85;
     --input: 0.88 0.01 85;
-    --ring: 0.28 0.09 145;
-    --chart-1: 0.28 0.09 145;
+    --ring: 0.50 0.14 145;
+    --chart-1: 0.50 0.14 145;
     --chart-2: 0.52 0.14 160;
     --chart-3: 0.65 0.12 120;
     --chart-4: 0.48 0.10 200;
@@ -67,12 +67,12 @@
     --radius: 0.75rem;
     --sidebar: 0.99 0.005 85;
     --sidebar-foreground: 0.14 0.01 145;
-    --sidebar-primary: 0.28 0.09 145;
+    --sidebar-primary: 0.50 0.14 145;
     --sidebar-primary-foreground: 0.98 0 0;
     --sidebar-accent: 0.93 0.01 85;
     --sidebar-accent-foreground: 0.20 0.01 145;
     --sidebar-border: 0.88 0.01 85;
-    --sidebar-ring: 0.28 0.09 145;
+    --sidebar-ring: 0.50 0.14 145;
     /* === New design tokens (parallel to shadcn vars) === */
     --bg: oklch(0.96 0.012 85);
     --bg-2: oklch(0.93 0.010 85);
@@ -81,10 +81,13 @@
     --surface-hi: oklch(0.93 0.010 85);
     --border-strong: oklch(0.82 0.015 85);
     --border-faint: oklch(0.91 0.008 85);
+    --text-hi: oklch(0.15 0.015 145);
     --text-mid: oklch(0.35 0.015 145);
     --text-mute: oklch(0.52 0.010 85);
     --text-dim: oklch(0.68 0.008 85);
-    --accent-hi: oklch(0.28 0.09 145);
+    --nav-active-bg: oklch(0.18 0.020 145);
+    --nav-active-fg: oklch(0.97 0.006 85);
+    --accent-hi: oklch(0.50 0.14 145);
     --accent-soft: oklch(0.90 0.04 145);
     --accent-line: oklch(0.70 0.08 145);
     --positive: oklch(0.45 0.17 145);
@@ -95,7 +98,7 @@
     --warn-soft: oklch(0.95 0.04 75);
     --info: oklch(0.52 0.14 230);
     --info-soft: oklch(0.94 0.04 230);
-    --c1: oklch(0.28 0.09 145);
+    --c1: oklch(0.50 0.14 145);
     --c2: oklch(0.52 0.14 160);
     --c3: oklch(0.65 0.12 120);
     --c4: oklch(0.48 0.10 200);
@@ -112,7 +115,7 @@
     --card-foreground: 0.92 0.006 75;
     --popover: 0.18 0.012 75;
     --popover-foreground: 0.92 0.006 75;
-    --primary: 0.55 0.12 145;
+    --primary: 0.73 0.17 145;
     --primary-foreground: 0.10 0.005 145;
     --secondary: 0.20 0.010 75;
     --secondary-foreground: 0.90 0 0;
@@ -123,20 +126,20 @@
     --destructive: 0.65 0.19 22;
     --border: 0.26 0.010 75;
     --input: 0.26 0.010 75;
-    --ring: 0.55 0.12 145;
-    --chart-1: 0.55 0.12 145;
+    --ring: 0.73 0.17 145;
+    --chart-1: 0.73 0.17 145;
     --chart-2: 0.60 0.10 175;
     --chart-3: 0.62 0.12 120;
     --chart-4: 0.58 0.08 200;
     --chart-5: 0.45 0.10 145;
     --sidebar: 0.17 0.012 75;
     --sidebar-foreground: 0.92 0.006 75;
-    --sidebar-primary: 0.55 0.12 145;
+    --sidebar-primary: 0.73 0.17 145;
     --sidebar-primary-foreground: 0.10 0.005 145;
     --sidebar-accent: 0.22 0.010 75;
     --sidebar-accent-foreground: 0.90 0 0;
     --sidebar-border: 0.26 0.010 75;
-    --sidebar-ring: 0.55 0.12 145;
+    --sidebar-ring: 0.73 0.17 145;
     /* === New design tokens (dark) === */
     --bg: oklch(0.14 0.012 75);
     --bg-2: oklch(0.12 0.010 75);
@@ -145,10 +148,13 @@
     --surface-hi: oklch(0.24 0.010 75);
     --border-strong: oklch(0.34 0.012 75);
     --border-faint: oklch(0.22 0.010 75);
+    --text-hi: oklch(0.92 0.008 85);
     --text-mid: oklch(0.78 0.010 145);
     --text-mute: oklch(0.58 0.008 75);
     --text-dim: oklch(0.40 0.006 75);
-    --accent-hi: oklch(0.55 0.12 145);
+    --nav-active-bg: oklch(0.27 0.018 75);
+    --nav-active-fg: oklch(0.93 0.008 85);
+    --accent-hi: oklch(0.73 0.17 145);
     --accent-soft: oklch(0.22 0.040 145);
     --accent-line: oklch(0.38 0.07 145);
     --positive: oklch(0.58 0.15 145);
@@ -159,7 +165,7 @@
     --warn-soft: oklch(0.22 0.04 75);
     --info: oklch(0.65 0.12 230);
     --info-soft: oklch(0.21 0.04 230);
-    --c1: oklch(0.55 0.12 145);
+    --c1: oklch(0.73 0.17 145);
     --c2: oklch(0.60 0.10 175);
     --c3: oklch(0.62 0.12 120);
     --c4: oklch(0.58 0.08 200);
@@ -173,10 +179,33 @@
   }
   body {
     @apply bg-background text-foreground antialiased;
+    font-size: 13px;
+    line-height: 1.45;
+    letter-spacing: -0.005em;
+    font-feature-settings: "ss01", "cv11";
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   html {
     @apply font-sans;
   }
+}
+
+/* Fix: shadcn sidebar gap div — w-(--sidebar-width) Tailwind class not compiling */
+[data-slot="sidebar-gap"] {
+  width: var(--sidebar-width);
+}
+.group[data-collapsible="offcanvas"] [data-slot="sidebar-gap"] {
+  width: 0;
+}
+.group[data-collapsible="icon"] [data-slot="sidebar-gap"] {
+  width: var(--sidebar-width-icon);
+}
+
+/* Sidebar active state indicator */
+[data-sidebar="menu-button"][data-active] {
+  background-color: var(--nav-active-bg);
+  color: var(--nav-active-fg);
 }
 
 /* PWA: Safe area for notch devices */
@@ -210,10 +239,10 @@ html {
   }
 
   .label-up {
-    font-size: 0.625rem;
+    font-size: 0.6875rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.08em;
+    letter-spacing: 0.07em;
     color: var(--text-dim);
   }
 }

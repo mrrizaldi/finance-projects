@@ -30,7 +30,7 @@ export default function TopTransactionsList({ transactions }: Props) {
           />
           {/* Description */}
           <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-foreground truncate">
+            <p className="text-[15px] font-medium text-foreground truncate">
               {tx.description || tx.merchant || 'Tanpa keterangan'}
             </p>
             <p className="text-xs text-muted-foreground">
@@ -38,7 +38,7 @@ export default function TopTransactionsList({ transactions }: Props) {
             </p>
           </div>
           {/* Amount */}
-          <span className="text-sm font-bold text-red-500 shrink-0">
+          <span className="num text-sm font-bold shrink-0" style={{ color: 'var(--negative)' }}>
             {formatRupiah(tx.amount)}
           </span>
         </div>

@@ -2,7 +2,10 @@ import { NextResponse } from 'next/server';
 import { createApiClient, unauthorizedResponse } from '@/lib/supabase-api';
 import OpenAI from 'openai';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({
+  baseURL: process.env.LLM_BASE_URL || 'https://api.deepseek.com/v1',
+  apiKey: process.env.LLM_API_KEY,
+});
 
 export async function POST(request: Request) {
   const { supabase, unauthorized } = await createApiClient();
@@ -24,7 +27,7 @@ export async function POST(request: Request) {
   const categoryList = categories.map((c: { id: string; name: string }) => `${c.id}:${c.name}`).join(', ');
 
   const response = await openai.chat.completions.create({
-    model: 'gpt-4o-mini',
+    model: process.env.LLM_MODEL || 'deepseek-chat',
     messages: [
       {
         role: 'system',
@@ -32,7 +35,7 @@ export async function POST(request: Request) {
       },
       { role: 'user', content: description },
     ],
-    max_tokens: 50,
+    max_tokens: 300,
     temperature: 0,
   });
 

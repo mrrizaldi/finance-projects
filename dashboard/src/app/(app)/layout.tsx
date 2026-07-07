@@ -1,6 +1,9 @@
-import Sidebar from '@/components/layout/Sidebar';
+import AppSidebar from '@/components/layout/Sidebar';
 import { BottomNav } from '@/components/layout/BottomNav';
 import { PullToRefresh } from '@/components/layout/PullToRefresh';
+import { SidebarInset, SidebarProvider } from '@/components/ui/sidebar';
+import { AddTransactionProvider } from '@/lib/add-transaction-context';
+import { AddTransactionModal } from '@/components/home/AddTransactionModal';
 
 export default function AppLayout({
   children,
@@ -8,12 +11,17 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="flex min-h-screen bg-background lg:pl-64">
-      <Sidebar />
-      <PullToRefresh>
-        {children}
-      </PullToRefresh>
-      <BottomNav />
-    </div>
+    <AddTransactionProvider>
+      <SidebarProvider>
+        <AppSidebar />
+        <SidebarInset>
+          <PullToRefresh>
+            {children}
+          </PullToRefresh>
+          <BottomNav />
+        </SidebarInset>
+      </SidebarProvider>
+      <AddTransactionModal />
+    </AddTransactionProvider>
   );
 }

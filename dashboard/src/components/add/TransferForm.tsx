@@ -10,6 +10,7 @@ import type { Account } from '@/types';
 
 interface Props {
   accounts: Account[];
+  onSuccess?: () => void;
 }
 
 function parseAmount(raw: string): number {
@@ -24,7 +25,7 @@ function formatRupiahInput(amount: number): string {
   return new Intl.NumberFormat('id-ID').format(amount);
 }
 
-export function TransferForm({ accounts }: Props) {
+export function TransferForm({ accounts, onSuccess }: Props) {
   const router = useRouter();
   const [amountOutRaw, setAmountOutRaw] = useState('');
   const [amountOut, setAmountOut] = useState(0);
@@ -76,6 +77,13 @@ export function TransferForm({ accounts }: Props) {
       supabase.from('accounts').update({ balance: toAfter }).eq('id', toAccountId),
     ]);
 
+    // Recalculate snapshots for both accounts
+    fetch('/api/transactions/recalculate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ account_ids: [fromAccountId, toAccountId] }),
+    }).catch(() => {});
+
     setSuccess(true);
     setLoading(false);
     setTimeout(() => {
@@ -83,6 +91,7 @@ export function TransferForm({ accounts }: Props) {
       setAmountInRaw(''); setAmountIn(0);
       setNote(''); setSuccess(false);
       router.refresh();
+      onSuccess?.();
     }, 1500);
   }
 

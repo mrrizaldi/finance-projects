@@ -9,9 +9,10 @@ interface Props {
   accounts: Account[];
   categories: Category[];
   defaultAccountId: string | null;
+  onSuccess?: () => void;
 }
 
-export function AddPageClient({ accounts, categories, defaultAccountId }: Props) {
+export function AddPageClient({ accounts, categories, defaultAccountId, onSuccess }: Props) {
   const [mode, setMode] = useState<'transaction' | 'transfer'>('transaction');
 
   return (
@@ -43,9 +44,10 @@ export function AddPageClient({ accounts, categories, defaultAccountId }: Props)
           accounts={accounts}
           categories={categories}
           defaultAccountId={defaultAccountId}
+          onSuccess={onSuccess}
         />
       ) : (
-        <TransferForm accounts={accounts} />
+        <TransferForm accounts={accounts} onSuccess={onSuccess} />
       )}
     </div>
   );

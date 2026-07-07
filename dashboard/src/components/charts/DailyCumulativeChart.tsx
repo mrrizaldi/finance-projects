@@ -1,6 +1,16 @@
 'use client';
 
 import { useMemo } from 'react';
+import {
+  ComposedChart,
+  Bar,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+} from 'recharts';
 import { rp } from '@/lib/utils';
 
 export interface DailyDataPoint {
@@ -9,147 +19,143 @@ export interface DailyDataPoint {
   expense: number;
 }
 
-export function DailyCumulativeChart({ data }: { data: DailyDataPoint[] }) {
-  const W = 600;
-  const H = 160;
-  const PAD = { top: 14, right: 52, bottom: 20, left: 4 };
-  const innerW = W - PAD.left - PAD.right;
-  const innerH = H - PAD.top - PAD.bottom;
-  const midY = PAD.top + innerH / 2;
+function CustomTooltip({ active, payload }: any) {
+  if (!active || !payload?.length) return null;
+  const d = payload[0]?.payload;
+  return (
+    <div
+      className="rounded-lg border p-2.5 text-xs shadow-lg"
+      style={{ background: 'var(--surface)', borderColor: 'var(--border-faint)' }}
+    >
+      <p className="font-semibold mb-1.5" style={{ color: 'var(--text-mid)' }}>
+        Hari ke-{d?.day}
+      </p>
+      {d?.income > 0 && (
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-block w-2 h-2 rounded-sm"
+            style={{ background: 'var(--positive)' }}
+          />
+          <span style={{ color: 'var(--text-dim)' }}>Masuk:</span>
+          <span className="num font-medium" style={{ color: 'var(--positive)' }}>
+            {rp(d.income, true)}
+          </span>
+        </div>
+      )}
+      {d?.expenseRaw > 0 && (
+        <div className="flex items-center gap-2">
+          <span
+            className="inline-block w-2 h-2 rounded-sm"
+            style={{ background: 'var(--negative)' }}
+          />
+          <span style={{ color: 'var(--text-dim)' }}>Keluar:</span>
+          <span className="num font-medium" style={{ color: 'var(--negative)' }}>
+            {rp(d.expenseRaw, true)}
+          </span>
+        </div>
+      )}
+      <div
+        className="flex items-center gap-2 mt-1 pt-1"
+        style={{ borderTop: '1px solid var(--border-faint)' }}
+      >
+        <span
+          className="inline-block w-3 h-px"
+          style={{ background: 'var(--accent-hi)' }}
+        />
+        <span style={{ color: 'var(--text-dim)' }}>Kumulatif:</span>
+        <span className="num font-medium" style={{ color: 'var(--accent-hi)' }}>
+          {rp(d.cumulative, true)}
+        </span>
+      </div>
+    </div>
+  );
+}
 
-  const { barMax, cumData, minCum, maxCum } = useMemo(() => {
+export function DailyCumulativeChart({ data }: { data: DailyDataPoint[] }) {
+  const chartData = useMemo(() => {
     let cum = 0;
-    const cumData = data.map((d) => {
+    return data.map((d) => {
       cum += d.income - d.expense;
-      return { ...d, cum };
+      return {
+        day: new Date(d.date + 'T00:00:00').getDate(),
+        income: d.income,
+        expense: -d.expense, // negative so bars extend below zero line
+        expenseRaw: d.expense,
+        cumulative: cum,
+      };
     });
-    const barMax = Math.max(...data.map((d) => Math.max(d.income, d.expense)), 1);
-    const minCum = Math.min(...cumData.map((d) => d.cum), 0);
-    const maxCum = Math.max(...cumData.map((d) => d.cum), 1);
-    return { barMax, cumData, minCum, maxCum };
   }, [data]);
 
   if (data.length === 0) {
     return (
-      <div className="h-40 flex items-center justify-center text-sm" style={{ color: 'var(--text-dim)' }}>
+      <div
+        className="h-44 flex items-center justify-center text-sm"
+        style={{ color: 'var(--text-dim)' }}
+      >
         Belum ada transaksi bulan ini
       </div>
     );
   }
 
-  const n = data.length;
-  const slotW = innerW / n;
-  const barW = Math.max(2, slotW - 2);
-  const xOf = (i: number) => PAD.left + (i + 0.5) * slotW;
-
-  // Bar scale: half of innerH for each direction, 85% fill
-  const barScale = (v: number) => (v / barMax) * (innerH / 2) * 0.85;
-
-  // Cumulative line scale: full innerH
-  const cumRange = Math.max(maxCum - minCum, 1);
-  const cumY = (v: number) => PAD.top + innerH - ((v - minCum) / cumRange) * innerH;
-
-  // Build SVG line path
-  const linePath = cumData
-    .map((d, i) => `${i === 0 ? 'M' : 'L'} ${xOf(i).toFixed(1)} ${cumY(d.cum).toFixed(1)}`)
-    .join(' ');
-
-  // X-axis label indices (evenly spaced, always include last)
-  const labelIndices = Array.from(new Set([
-    0,
-    Math.round(n * 0.25),
-    Math.round(n * 0.5),
-    Math.round(n * 0.75),
-    n - 1,
-  ])).filter((i) => i < n);
-
-  const lastPoint = cumData[cumData.length - 1];
-
   return (
-    <svg
-      viewBox={`0 0 ${W} ${H}`}
-      className="w-full"
-      style={{ height: '160px', display: 'block' }}
-      aria-label="Arus kas harian"
-    >
-      {/* Zero midline */}
-      <line
-        x1={PAD.left}
-        y1={midY}
-        x2={W - PAD.right}
-        y2={midY}
-        stroke="var(--border-faint)"
-        strokeWidth={1}
-      />
-
-      {/* Bars */}
-      {data.map((d, i) => {
-        const x = xOf(i) - barW / 2;
-        const incH = barScale(d.income);
-        const expH = barScale(d.expense);
-        return (
-          <g key={d.date}>
-            {d.income > 0 && (
-              <rect
-                x={x}
-                y={midY - incH}
-                width={barW}
-                height={incH}
-                fill="var(--positive)"
-                opacity={0.75}
-                rx={1}
-              />
-            )}
-            {d.expense > 0 && (
-              <rect
-                x={x}
-                y={midY}
-                width={barW}
-                height={expH}
-                fill="var(--negative)"
-                opacity={0.75}
-                rx={1}
-              />
-            )}
-          </g>
-        );
-      })}
-
-      {/* Cumulative line */}
-      <path d={linePath} fill="none" stroke="var(--accent-hi)" strokeWidth={1.5} strokeLinejoin="round" />
-
-      {/* Last point dot */}
-      <circle
-        cx={xOf(n - 1)}
-        cy={cumY(lastPoint.cum)}
-        r={3}
-        fill="var(--accent-hi)"
-      />
-
-      {/* Right-axis label: last cumulative value */}
-      <text
-        x={W - PAD.right + 4}
-        y={cumY(lastPoint.cum) + 4}
-        fontSize={9}
-        fill="var(--accent-hi)"
-        fontFamily="var(--font-geist-mono)"
-      >
-        {rp(lastPoint.cum, true)}
-      </text>
-
-      {/* X-axis day labels */}
-      {labelIndices.map((i) => (
-        <text
-          key={i}
-          x={xOf(i)}
-          y={H - 2}
-          textAnchor="middle"
-          fontSize={9}
-          fill="var(--text-dim)"
-        >
-          {new Date(data[i].date + 'T00:00:00').getDate()}
-        </text>
-      ))}
-    </svg>
+    <ResponsiveContainer width="100%" height={176}>
+      <ComposedChart data={chartData} margin={{ top: 8, right: 40, bottom: 0, left: -24 }}>
+        <XAxis
+          dataKey="day"
+          tick={{ fontSize: 10, fill: 'var(--text-dim)' }}
+          tickLine={false}
+          axisLine={false}
+          interval="preserveStartEnd"
+        />
+        <YAxis
+          yAxisId="bar"
+          tick={{ fontSize: 9, fill: 'var(--text-dim)' }}
+          tickLine={false}
+          axisLine={false}
+          tickFormatter={(v) =>
+            v === 0 ? '0' : `${(Math.abs(v) / 1_000_000).toFixed(1)}jt`
+          }
+        />
+        <YAxis
+          yAxisId="line"
+          orientation="right"
+          tick={{ fontSize: 9, fill: 'var(--accent-hi)' }}
+          tickLine={false}
+          axisLine={false}
+          tickFormatter={(v) => `${(v / 1_000_000).toFixed(1)}jt`}
+          width={40}
+        />
+        <ReferenceLine y={0} yAxisId="bar" stroke="var(--border-faint)" strokeWidth={1} />
+        <Tooltip
+          content={<CustomTooltip />}
+          cursor={{ fill: 'var(--surface-hi)', opacity: 0.4 }}
+        />
+        <Bar
+          dataKey="income"
+          yAxisId="bar"
+          fill="var(--positive)"
+          opacity={0.8}
+          radius={[2, 2, 0, 0]}
+          maxBarSize={8}
+        />
+        <Bar
+          dataKey="expense"
+          yAxisId="bar"
+          fill="var(--negative)"
+          opacity={0.8}
+          radius={[0, 0, 2, 2]}
+          maxBarSize={8}
+        />
+        <Line
+          type="monotone"
+          dataKey="cumulative"
+          yAxisId="line"
+          stroke="var(--accent-hi)"
+          strokeWidth={1.5}
+          dot={false}
+          activeDot={{ r: 3, fill: 'var(--accent-hi)' }}
+        />
+      </ComposedChart>
+    </ResponsiveContainer>
   );
 }

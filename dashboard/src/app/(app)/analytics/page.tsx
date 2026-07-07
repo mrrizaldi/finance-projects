@@ -159,109 +159,115 @@ export default async function AnalyticsPage({ searchParams }: Props) {
   const totalIncome = incCategories.reduce((s, c) => s + Number(c.total_amount), 0);
 
   return (
-    <div className="p-4 sm:p-6 max-w-7xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Analitik</h1>
-        <p className="text-muted-foreground text-sm mt-1">Visualisasi pola keuangan kamu</p>
-      </div>
+    <div className="p-4 sm:p-6 min-h-screen" style={{ background: 'var(--bg)' }}>
+      {/* Header: title + inline period controls */}
+      <Suspense fallback={null}>
+        <AnalyticsPeriodSwitcher period={period} anchor={anchor} label={label} />
+      </Suspense>
 
-      {/* Period switcher */}
-      <div className="mb-6">
-        <Suspense fallback={null}>
-          <AnalyticsPeriodSwitcher period={period} anchor={anchor} label={label} />
-        </Suspense>
-      </div>
-
-      {/* Summary stats with period comparison */}
+      {/* Summary cards with sparklines */}
       {comparison && (
-        <AnalyticsSummaryPanel comparison={comparison} period={period} />
+        <AnalyticsSummaryPanel comparison={comparison} trend={trend} period={period} />
       )}
 
-      {/* Category donut charts */}
+      {/* Category breakdown: donut left + list right */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
+        <Card>
+          <div className="flex gap-4 p-5">
+            {/* Left: label + total + donut */}
+            <div className="flex flex-col w-[220px] flex-shrink-0">
+              <p className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--text-dim)' }}>
+                Pengeluaran per Kategori
+              </p>
+              <p className="num text-xl font-bold mt-1 leading-tight" style={{ color: 'var(--negative)' }}>
+                {formatRupiah(totalExpense)}
+              </p>
+              <div className="mt-1">
+                <CategoryChart data={expCategories} />
+              </div>
+            </div>
+            {/* Divider */}
+            <div className="w-px self-stretch" style={{ background: 'var(--border-faint)' }} />
+            {/* Right: list */}
+            <div className="flex-1 min-w-0">
+              <CategoryListClient categories={expCategories} start={start} end={end} />
+            </div>
+          </div>
+        </Card>
+
+        <Card>
+          <div className="flex gap-4 p-5">
+            <div className="flex flex-col w-[220px] flex-shrink-0">
+              <p className="text-[10px] uppercase tracking-wider font-semibold" style={{ color: 'var(--text-dim)' }}>
+                Pemasukan per Kategori
+              </p>
+              <p className="num text-xl font-bold mt-1 leading-tight" style={{ color: 'var(--positive)' }}>
+                {formatRupiah(totalIncome)}
+              </p>
+              <div className="mt-1">
+                <CategoryChart data={incCategories} />
+              </div>
+            </div>
+            <div className="w-px self-stretch" style={{ background: 'var(--border-faint)' }} />
+            <div className="flex-1 min-w-0">
+              <CategoryListClient categories={incCategories} start={start} end={end} />
+            </div>
+          </div>
+        </Card>
+      </div>
+
+      {/* Row 2: Daily spending + Monthly trend */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mb-6">
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-semibold text-muted-foreground">
-                Pengeluaran per Kategori
-              </CardTitle>
-              <span className="text-sm font-medium text-red-400">{formatRupiah(totalExpense)}</span>
-            </div>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">
+              Pengeluaran Harian &amp; Kumulatif
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">{label}</p>
           </CardHeader>
           <CardContent>
-            <CategoryChart data={expCategories} />
-            <CategoryListClient categories={expCategories} start={start} end={end} />
+            <DailySpendingChart data={dailySpending} />
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm font-semibold text-muted-foreground">
-                Pemasukan per Kategori
-              </CardTitle>
-              <span className="text-sm font-medium text-emerald-400">
-                {formatRupiah(totalIncome)}
-              </span>
-            </div>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">
+              Tren Bulanan ({trendMonths} Bulan)
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <CategoryChart data={incCategories} />
-            <CategoryListClient categories={incCategories} start={start} end={end} />
+            <MonthlyBarChart data={trend} />
           </CardContent>
         </Card>
       </div>
 
-      {/* Daily spending chart */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold text-muted-foreground">
-            Pengeluaran Harian &amp; Kumulatif
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">{label}</p>
-        </CardHeader>
-        <CardContent>
-          <DailySpendingChart data={dailySpending} />
-        </CardContent>
-      </Card>
+      {/* Row 3: Top 5 transactions + Heatmap */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">
+              5 Pengeluaran Terbesar
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">{label}</p>
+          </CardHeader>
+          <CardContent>
+            <TopTransactionsList transactions={topTransactions} />
+          </CardContent>
+        </Card>
 
-      {/* Monthly trend */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold text-muted-foreground">
-            Tren Bulanan ({trendMonths} Bulan)
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <MonthlyBarChart data={trend} />
-        </CardContent>
-      </Card>
-
-      {/* Top 5 transactions */}
-      <Card className="mb-6">
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold text-muted-foreground">
-            5 Pengeluaran Terbesar
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">{label}</p>
-        </CardHeader>
-        <CardContent>
-          <TopTransactionsList transactions={topTransactions} />
-        </CardContent>
-      </Card>
-
-      {/* Heatmap */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm font-semibold text-muted-foreground">
-            Heatmap Pengeluaran
-          </CardTitle>
-          <p className="text-xs text-muted-foreground">{label} — hari × jam</p>
-        </CardHeader>
-        <CardContent>
-          <HeatmapChart data={heatmap} />
-        </CardContent>
-      </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-semibold text-muted-foreground">
+              Heatmap Pengeluaran
+            </CardTitle>
+            <p className="text-xs text-muted-foreground">{label} — hari × jam</p>
+          </CardHeader>
+          <CardContent>
+            <HeatmapChart data={heatmap} />
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

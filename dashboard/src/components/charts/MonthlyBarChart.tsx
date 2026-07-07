@@ -1,8 +1,8 @@
 'use client';
 
 import {
-  LineChart,
-  Line,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -38,43 +38,41 @@ function CustomTooltip({ active, payload, label }: any) {
 export default function MonthlyBarChart({ data }: Props) {
   if (!data.length) {
     return (
-      <div className="h-64 flex items-center justify-center text-gray-400 text-sm">
+      <div className="h-64 flex items-center justify-center text-muted-foreground text-sm">
         Belum ada data bulanan
       </div>
     );
   }
 
-  // To fix Y-axis scaling we can use dynamic width or a wider fixed width
-  // But also format values nicely.
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={data} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="oklch(var(--border))" />
+    <ResponsiveContainer width="100%" height={260}>
+      <BarChart data={data} margin={{ top: 4, right: 8, left: 4, bottom: 4 }} barCategoryGap="30%">
+        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-faint)" vertical={false} />
         <XAxis
           dataKey="month"
-          tick={{ fontSize: 11, fill: '#6b7280' }}
+          tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontFamily: 'var(--font-geist-mono)' }}
           tickLine={false}
           axisLine={false}
         />
         <YAxis
-          tick={{ fontSize: 11, fill: '#6b7280' }}
+          tick={{ fontSize: 10, fill: 'hsl(var(--muted-foreground))', fontFamily: 'var(--font-geist-mono)' }}
           tickLine={false}
           axisLine={false}
           tickFormatter={(v) => {
-            if (v >= 1000000) return `${(v / 1000000).toFixed(0)}jt`;
-            if (v >= 1000) return `${(v / 1000).toFixed(0)}k`;
+            if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(0)}jt`;
+            if (v >= 1_000) return `${(v / 1_000).toFixed(0)}k`;
             return v;
           }}
-          width={45}
+          width={40}
         />
         <Tooltip content={<CustomTooltip />} />
         <Legend
-          wrapperStyle={{ fontSize: 12, paddingTop: 8 }}
+          wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
           formatter={(value) => (value === 'income' ? 'Pemasukan' : 'Pengeluaran')}
         />
-        <Line type="monotone" dataKey="income" stroke="#10b981" strokeWidth={2} dot={{ fill: '#10b981', r: 3 }} activeDot={{ r: 5 }} />
-        <Line type="monotone" dataKey="expense" stroke="#f87171" strokeWidth={2} dot={{ fill: '#f87171', r: 3 }} activeDot={{ r: 5 }} />
-      </LineChart>
+        <Bar dataKey="income" fill="var(--positive)" radius={[2, 2, 0, 0]} maxBarSize={18} />
+        <Bar dataKey="expense" fill="var(--negative)" radius={[2, 2, 0, 0]} maxBarSize={18} />
+      </BarChart>
     </ResponsiveContainer>
   );
 }

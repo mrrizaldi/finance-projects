@@ -34,11 +34,11 @@ export default function HeatmapChart({ data }: Props) {
 
   function getBg(intensity: number): string {
     if (intensity === 0) return 'bg-muted';
-    if (intensity < 0.2) return 'bg-red-100';
-    if (intensity < 0.4) return 'bg-red-200';
-    if (intensity < 0.6) return 'bg-red-300';
-    if (intensity < 0.8) return 'bg-red-400';
-    return 'bg-red-500';
+    if (intensity < 0.2) return 'bg-emerald-100 dark:bg-emerald-900/30';
+    if (intensity < 0.4) return 'bg-emerald-200 dark:bg-emerald-800/50';
+    if (intensity < 0.6) return 'bg-emerald-300 dark:bg-emerald-700/70';
+    if (intensity < 0.8) return 'bg-emerald-400 dark:bg-emerald-600';
+    return 'bg-emerald-500';
   }
 
   const hours = Array.from({ length: 24 }, (_, i) => i);
@@ -89,7 +89,14 @@ export default function HeatmapChart({ data }: Props) {
           {/* Legend */}
           <div className="flex items-center gap-2 mt-3 ml-10">
             <span className="text-xs text-muted-foreground">Rendah</span>
-            {['bg-muted', 'bg-red-100', 'bg-red-200', 'bg-red-300', 'bg-red-400', 'bg-red-500'].map((cls) => (
+            {[
+              'bg-muted',
+              'bg-emerald-100 dark:bg-emerald-900/30',
+              'bg-emerald-200 dark:bg-emerald-800/50',
+              'bg-emerald-300 dark:bg-emerald-700/70',
+              'bg-emerald-400 dark:bg-emerald-600',
+              'bg-emerald-500',
+            ].map((cls) => (
               <div key={cls} className={cn('w-4 h-3 rounded-sm', cls)} />
             ))}
             <span className="text-xs text-muted-foreground">Tinggi</span>

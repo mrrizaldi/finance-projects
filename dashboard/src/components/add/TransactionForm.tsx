@@ -13,6 +13,7 @@ interface Props {
   accounts: Account[];
   categories: Category[];
   defaultAccountId: string | null;
+  onSuccess?: () => void;
 }
 
 type TxType = 'expense' | 'income';
@@ -33,7 +34,7 @@ function formatRupiahInput(amount: number): string {
   return new Intl.NumberFormat('id-ID').format(amount);
 }
 
-export function TransactionForm({ accounts, categories, defaultAccountId }: Props) {
+export function TransactionForm({ accounts, categories, defaultAccountId, onSuccess }: Props) {
   const router = useRouter();
   const [type, setType] = useState<TxType>('expense');
   const [amountRaw, setAmountRaw] = useState('');
@@ -135,6 +136,13 @@ export function TransactionForm({ accounts, categories, defaultAccountId }: Prop
         .from('accounts')
         .update({ balance: balanceAfter })
         .eq('id', accountId);
+
+      // Recalculate snapshots for all transactions of this account
+      fetch('/api/transactions/recalculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_ids: [accountId] }),
+      }).catch(() => {});
     }
 
     localStorage.setItem(`lastAccount_${type}`, accountId);
@@ -150,6 +158,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId }: Prop
       setAiSuggested(false);
       setSuccess(false);
       router.refresh();
+      onSuccess?.();
     }, 1500);
   }
 

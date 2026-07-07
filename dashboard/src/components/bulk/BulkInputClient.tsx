@@ -76,6 +76,16 @@ export function BulkInputClient({ accounts, defaultAccountId }: Props) {
       }
     }
 
+    // Recalculate snapshots for all affected accounts
+    const affectedAccountIds = Array.from(new Set(validLines.map(l => resolveAccountId(l.accountName)).filter(Boolean)));
+    if (affectedAccountIds.length > 0) {
+      fetch('/api/transactions/recalculate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ account_ids: affectedAccountIds }),
+      }).catch(() => {});
+    }
+
     setSavedCount(saved);
     setSaving(false);
     setText('');

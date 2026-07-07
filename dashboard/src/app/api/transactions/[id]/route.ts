@@ -9,6 +9,7 @@ import {
   invertEffects,
   buildSnapshotForState,
 } from '@/lib/balance-math';
+import { recalculateForAccounts } from '@/lib/recalculate-snapshots';
 
 const VALID_TYPES = ['income', 'expense', 'transfer'] as const;
 type TransactionType = (typeof VALID_TYPES)[number];
@@ -229,6 +230,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       throw new Error(`Gagal update transaksi: ${updateError.message}`);
     }
 
+    // Recalculate snapshots for all affected accounts (old + new)
+    const affectedIds = [
+      existing.account_id, existing.to_account_id,
+      nextState.account_id, nextState.to_account_id,
+    ].filter((id): id is string => !!id);
+    await recalculateForAccounts(supabase, affectedIds);
+
     revalidateFinancePaths();
     return NextResponse.json({ success: true });
   } catch (error: any) {
@@ -259,6 +267,11 @@ export async function DELETE(_: NextRequest, { params }: { params: { id: string 
       await applyBalanceDiffs(supabase, invertEffects(removeEffects));
       throw new Error(`Gagal menghapus transaksi: ${deleteError.message}`);
     }
+
+    // Recalculate snapshots for affected accounts
+    const affectedIds = [existing.account_id, existing.to_account_id]
+      .filter((id): id is string => !!id);
+    await recalculateForAccounts(supabase, affectedIds);
 
     revalidateFinancePaths();
     return NextResponse.json({ success: true });

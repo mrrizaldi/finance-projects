@@ -5,7 +5,10 @@ import { startOfMonth, endOfMonth } from '@/lib/utils';
 
 export const dynamic = 'force-dynamic';
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const openai = new OpenAI({
+  baseURL: process.env.LLM_BASE_URL || 'https://api.deepseek.com/v1',
+  apiKey: process.env.LLM_API_KEY,
+});
 
 export async function POST(req: NextRequest) {
   try {
@@ -66,10 +69,10 @@ Jika ditanya sesuatu yang tidak ada datanya, katakan dengan jujur.
 ${contextLines.join('\n')}`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: process.env.LLM_MODEL || 'deepseek-chat',
       messages: [
         { role: 'system', content: systemPrompt },
-        ...messages.slice(-10), // Last 10 messages for context
+        ...messages.slice(-10),
       ],
       temperature: 0.7,
       max_tokens: 800,

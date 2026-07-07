@@ -2,17 +2,12 @@ import { createAuthServerClient } from '@/lib/supabase-server';
 import { rp } from '@/lib/utils';
 import { Summary, CategoryBreakdown, VTransaction } from '@/types';
 import { DailyCumulativeChart, DailyDataPoint } from '@/components/charts/DailyCumulativeChart';
-import { DateStepper } from '@/components/home/DateStepper';
+import { HomeHeader } from '@/components/home/HomeHeader';
+import { AiInsightWidget } from '@/components/home/AiInsightWidget';
+import { QuickAddCard } from '@/components/home/QuickAddCard';
 import TransactionRow from '@/components/transactions/TransactionRow';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import {
-  Plus,
-  TrendingUp,
-  TrendingDown,
-  Minus,
-  Sparkles,
-} from 'lucide-react';
 import dayjs from 'dayjs';
 import type { Dayjs } from 'dayjs';
 import 'dayjs/locale/id';
@@ -28,6 +23,8 @@ interface AccountRow {
   name: string;
   balance: number;
   is_active: boolean;
+  type: string;
+  color: string | null;
 }
 
 interface CategoryWithBudget {
@@ -52,7 +49,7 @@ async function getHomeData(start: string, end: string) {
   const [summaryRes, accountsRes, txMonthRes, categoryRes, budgetCatsRes, recentTxRes] =
     await Promise.all([
       supabase.rpc('get_summary', { p_start_date: start, p_end_date: end }),
-      supabase.from('accounts').select('id, name, balance, is_active').eq('is_active', true),
+      supabase.from('accounts').select('id, name, balance, is_active, type, color').eq('is_active', true).order('balance', { ascending: false }),
       supabase
         .from('v_transactions')
         .select('type, amount, transaction_date')
@@ -76,7 +73,7 @@ async function getHomeData(start: string, end: string) {
           'id, type, amount, description, merchant, category_id, account_id, to_account_id, installment_id, source, balance_after, is_adjustment, transaction_date, category_name, category_color, account_name, to_account_name, installment_name'
         )
         .order('transaction_date', { ascending: false })
-        .limit(5),
+        .limit(10),
     ]);
 
   return {
@@ -138,10 +135,59 @@ function buildBudgetSnapshot(
     .map((cat) => ({ ...cat, spent: spendMap.get(cat.id) ?? 0 }))
     .filter((cat) => cat.spent > 0 || cat.budget_monthly != null)
     .sort((a, b) => b.spent - a.spent)
-    .slice(0, 4);
+    .slice(0, 5);
 }
 
 // --- Sub-components ---
+
+
+function SummaryStatsSection({ summary }: { summary: Summary | null }) {
+  if (!summary) return null;
+  const net = summary.net_cashflow;
+  const issurplus = net >= 0;
+
+  const cards = [
+    {
+      label: 'Avg. harian',
+      value: rp(summary.avg_daily_expense, true),
+      sub: 'rata-rata pengeluaran',
+    },
+    {
+      label: 'Kategori terbesar',
+      value: summary.top_expense_category || '—',
+      sub: rp(summary.top_expense_amount, true),
+    },
+    {
+      label: 'Net cashflow',
+      value: rp(Math.abs(net), true),
+      sub: issurplus ? 'Surplus' : 'Defisit',
+      subColor: issurplus ? 'var(--positive)' : 'var(--negative)',
+    },
+    {
+      label: 'Total transaksi',
+      value: String(summary.transaction_count),
+      sub: 'transaksi bulan ini',
+    },
+  ];
+
+  return (
+    <div className="grid grid-cols-4 gap-2">
+      {cards.map(({ label, value, sub, subColor }) => (
+        <div
+          key={label}
+          className="rounded-xl border px-3 py-2.5"
+          style={{ background: 'var(--surface)', borderColor: 'var(--border-faint)' }}
+        >
+          <p className="text-xs mb-0.5" style={{ color: 'var(--text-dim)' }}>{label}</p>
+          <p className="text-sm font-bold num truncate" style={{ color: 'var(--text-mid)' }}>{value}</p>
+          {sub && (
+            <p className="text-xs mt-0.5 truncate" style={{ color: subColor ?? 'var(--text-dim)' }}>{sub}</p>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 function SectionCard({
   children,
@@ -160,60 +206,147 @@ function SectionCard({
   );
 }
 
-function NetWorthHero({
+const ACCOUNT_TYPE_LABEL: Record<string, string> = {
+  bank: 'Bank',
+  ewallet: 'E-Wallet',
+  cash: 'Tunai',
+  marketplace: 'Marketplace',
+  other: 'Lainnya',
+};
+
+function BalanceSummaryCard({
   netWorth,
+  accounts,
   income,
   expense,
   net,
-  month,
 }: {
   netWorth: number;
+  accounts: AccountRow[];
   income: number;
   expense: number;
   net: number;
-  month: string;
 }) {
-  const monthLabel = dayjs(`${month}-01`).format('MMMM YYYY');
+  const prevBalance = netWorth - net;
+  const changePct = prevBalance !== 0 ? (net / Math.abs(prevBalance)) * 100 : 0;
+  const savingsRate = income > 0 ? (net / income) * 100 : 0;
+  const total = income + expense;
+  const incomePct = total > 0 ? (income / total) * 100 : 50;
 
   return (
-    <SectionCard className="p-4">
-      <div className="flex items-start justify-between mb-3">
-        <span className="label-up">Kekayaan Bersih</span>
-        <span className="label-up capitalize">{monthLabel}</span>
-      </div>
-      <p className="num text-3xl font-bold mb-4" style={{ color: 'var(--text-mid)' }}>
-        {rp(netWorth)}
-      </p>
-      <div
-        className="flex items-center gap-3 pt-3 flex-wrap"
-        style={{ borderTop: '1px solid var(--border-faint)' }}
-      >
-        <div
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-          style={{ background: 'var(--positive-soft)', color: 'var(--positive)' }}
-        >
-          <TrendingUp className="h-3 w-3" />
-          <span className="num">{rp(income, true)}</span>
-          <span style={{ color: 'var(--text-dim)' }}>masuk</span>
+    <SectionCard>
+      <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr]">
+        {/* Left: Net worth */}
+        <div className="p-4 md:border-r flex flex-col" style={{ borderColor: 'var(--border-faint)' }}>
+          {/* Top */}
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="label-up">Total Saldo Bersih</span>
+              <span
+                className="text-xs font-medium px-2 py-0.5 rounded-full"
+                style={{ background: 'var(--surface-hi)', color: 'var(--text-dim)' }}
+              >
+                {accounts.length} akun
+              </span>
+            </div>
+            <p className="num text-3xl font-bold mb-2" style={{ color: 'var(--text-hi)' }}>
+              {rp(netWorth)}
+            </p>
+            {net !== 0 && (
+              <div className="flex items-center gap-1.5 text-xs font-medium mb-4">
+                <span
+                  className="px-1.5 py-0.5 rounded-full text-xs font-semibold"
+                  style={{
+                    background: net >= 0 ? 'var(--positive-soft)' : 'var(--negative-soft)',
+                    color: net >= 0 ? 'var(--positive)' : 'var(--negative)',
+                  }}
+                >
+                  {net >= 0 ? '+' : ''}{changePct.toFixed(1)}%
+                </span>
+                <span style={{ color: 'var(--text-dim)' }}>
+                  {net >= 0 ? '+' : ''}{rp(net, true)} sejak bulan lalu
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Middle: income vs expense split bar */}
+          {total > 0 && (
+            <div className="flex-1 flex flex-col justify-center py-2">
+              <div className="flex items-center justify-between text-xs mb-1.5">
+                <span style={{ color: 'var(--positive)' }}>↑ {rp(income, true)}</span>
+                <span className="text-xs" style={{ color: 'var(--text-dim)' }}>
+                  {savingsRate >= 0 ? 'Savings' : 'Overspend'} {Math.abs(savingsRate).toFixed(0)}%
+                </span>
+                <span style={{ color: 'var(--negative)' }}>↓ {rp(expense, true)}</span>
+              </div>
+              <div className="h-2 rounded-full overflow-hidden flex" style={{ background: 'var(--surface-hi)' }}>
+                <div
+                  className="h-full rounded-l-full transition-all"
+                  style={{ width: `${incomePct}%`, background: 'var(--positive)', opacity: 0.8 }}
+                />
+                <div
+                  className="h-full rounded-r-full transition-all"
+                  style={{ width: `${100 - incomePct}%`, background: 'var(--negative)', opacity: 0.8 }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Bottom: stats row */}
+          <div
+            className="grid grid-cols-4 gap-2 pt-3"
+            style={{ borderTop: '1px solid var(--border-faint)' }}
+          >
+            {[
+              { label: 'TOTAL PEMASUKAN', value: income, color: 'var(--positive)' },
+              { label: 'TOTAL PENGELUARAN', value: expense, color: 'var(--negative)' },
+              { label: 'NET CASHFLOW', value: net, color: net >= 0 ? 'var(--positive)' : 'var(--negative)' },
+              { label: 'SAVINGS RATE', custom: `${savingsRate.toFixed(1)}%`, color: savingsRate >= 0 ? 'var(--positive)' : 'var(--negative)' },
+            ].map(({ label, value, custom, color }) => (
+              <div key={label}>
+                <p className="label-up text-[9px] mb-0.5 leading-tight">{label}</p>
+                <p className="num text-sm font-bold" style={{ color }}>
+                  {custom ?? rp(value!, true)}
+                </p>
+              </div>
+            ))}
+          </div>
         </div>
-        <div
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-          style={{ background: 'var(--negative-soft)', color: 'var(--negative)' }}
-        >
-          <TrendingDown className="h-3 w-3" />
-          <span className="num">{rp(expense, true)}</span>
-          <span style={{ color: 'var(--text-dim)' }}>keluar</span>
-        </div>
-        <div
-          className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium"
-          style={{
-            background: net >= 0 ? 'var(--positive-soft)' : 'var(--negative-soft)',
-            color: net >= 0 ? 'var(--positive)' : 'var(--negative)',
-          }}
-        >
-          <Minus className="h-3 w-3" />
-          <span className="num">{rp(net, true)}</span>
-          <span style={{ color: 'var(--text-dim)' }}>net</span>
+
+        {/* Right: Per-account list */}
+        <div className="p-4">
+          <p className="label-up mb-3">Saldo Per Akun</p>
+          <div className="space-y-2.5">
+            {accounts.map((acc) => {
+              const isNegative = acc.balance < 0;
+              return (
+                <div key={acc.id} className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span
+                      className="flex-shrink-0 w-2.5 h-2.5 rounded-full"
+                      style={{ background: acc.color ?? 'var(--text-dim)' }}
+                    />
+                    <span
+                      className="text-xs font-medium truncate"
+                      style={{ color: 'var(--text-mid)' }}
+                    >
+                      {acc.name}
+                    </span>
+                    <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-dim)' }}>
+                      {ACCOUNT_TYPE_LABEL[acc.type] ?? acc.type}
+                    </span>
+                  </div>
+                  <span
+                    className="num text-xs font-medium flex-shrink-0"
+                    style={{ color: isNegative ? 'var(--negative)' : 'var(--text-mid)' }}
+                  >
+                    {isNegative ? '-' : ''}{rp(Math.abs(acc.balance), false)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </div>
     </SectionCard>
@@ -291,130 +424,80 @@ function RecentTransactionsCard({ transactions }: { transactions: VTransaction[]
   );
 }
 
-function QuickAddCard() {
+function BudgetSnapshotCard({ items, month }: { items: CategoryWithBudget[]; month: string }) {
+  const monthLabel = dayjs(`${month}-01`).format('MMMM YYYY');
   return (
     <SectionCard className="p-4">
-      <p className="label-up mb-3">Tambah Cepat</p>
-      <Link
-        href="/add"
-        className="w-full flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-semibold text-white mb-3 transition-opacity hover:opacity-90"
-        style={{ background: 'var(--accent-hi)' }}
-      >
-        <Plus className="h-4 w-4" />
-        Tambah Transaksi
-      </Link>
-      <div className="grid grid-cols-3 gap-2">
-        {[
-          { label: 'Pengeluaran', href: '/add?type=expense' },
-          { label: 'Pemasukan', href: '/add?type=income' },
-          { label: 'Transfer', href: '/add?type=transfer' },
-        ].map(({ label, href }) => (
-          <Link key={label} href={href}>
-            <div
-              className="w-full flex items-center justify-center py-2 rounded-lg text-xs font-medium cursor-pointer"
-              style={{ background: 'var(--surface-2)', color: 'var(--text-mute)' }}
-            >
-              {label}
-            </div>
-          </Link>
-        ))}
-      </div>
-    </SectionCard>
-  );
-}
-
-function BudgetSnapshotCard({ items }: { items: CategoryWithBudget[] }) {
-  return (
-    <SectionCard className="p-4">
-      <div className="flex items-center justify-between mb-3">
-        <p className="label-up">Budget Bulan Ini</p>
-        <Link href="/budget" className="text-xs font-medium" style={{ color: 'var(--accent-hi)' }}>
-          Atur →
+      <div className="flex items-center justify-between mb-0.5">
+        <p className="text-sm font-semibold" style={{ color: 'var(--text-mid)' }}>Budget Bulan Ini</p>
+        <Link href="/budget" className="text-xs font-medium flex items-center gap-0.5" style={{ color: 'var(--text-dim)' }}>
+          Detail →
         </Link>
       </div>
+      <p className="text-xs mb-3" style={{ color: 'var(--text-dim)' }}>
+        Konsumsi vs cap · {monthLabel}
+      </p>
       {items.length === 0 ? (
         <p className="text-xs" style={{ color: 'var(--text-dim)' }}>
           Belum ada pengeluaran bulan ini.
         </p>
       ) : (
         <div className="space-y-3">
-          {items.map((item) => {
+          {(() => {
+            const maxSpent = Math.max(...items.map((i) => i.spent), 1);
+            return items.map((item) => {
             const hasLimit = item.budget_monthly != null && item.budget_monthly > 0;
-            const pct = hasLimit ? Math.min((item.spent / item.budget_monthly!) * 100, 100) : null;
+            const rawPct = hasLimit
+              ? (item.spent / item.budget_monthly!) * 100
+              : (item.spent / maxSpent) * 100;
+            const barPct = Math.min(rawPct, 100);
             const isOver = hasLimit && item.spent > item.budget_monthly!;
+            const barColor = item.color ?? 'var(--accent-hi)';
 
             return (
               <div key={item.id}>
-                <div className="flex items-center justify-between mb-1">
-                  <span
-                    className="text-xs font-medium truncate max-w-[60%]"
-                    style={{ color: 'var(--text-mid)' }}
-                  >
-                    {item.name}
-                  </span>
-                  <span
-                    className="num text-xs"
-                    style={{ color: isOver ? 'var(--negative)' : 'var(--text-mute)' }}
-                  >
+                <div className="flex items-center justify-between mb-1.5">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span
+                      className="flex-shrink-0 w-2 h-2 rounded-full"
+                      style={{ background: item.color ?? 'var(--text-dim)' }}
+                    />
+                    <span
+                      className="text-xs font-medium truncate"
+                      style={{ color: 'var(--text-mid)' }}
+                    >
+                      {item.name}
+                    </span>
+                  </div>
+                  <span className="num text-xs flex-shrink-0 ml-2" style={{ color: isOver ? 'var(--negative)' : 'var(--text-mute)' }}>
                     {rp(item.spent, true)}
                     {hasLimit && (
-                      <span style={{ color: 'var(--text-dim)' }}>
-                        {' '}
-                        / {rp(item.budget_monthly!, true)}
-                      </span>
+                      <span style={{ color: 'var(--text-dim)' }}> / {rp(item.budget_monthly!, true)}</span>
                     )}
                   </span>
                 </div>
-                {hasLimit && (
+                <div
+                  className="h-1.5 rounded-full overflow-hidden"
+                  style={{ background: 'var(--surface-hi)' }}
+                >
                   <div
-                    className="h-1.5 rounded-full overflow-hidden"
-                    style={{ background: 'var(--surface-hi)' }}
-                  >
-                    <div
-                      className="h-full rounded-full transition-all"
-                      style={{
-                        width: `${pct}%`,
-                        background:
-                          isOver
-                            ? 'var(--negative)'
-                            : (pct ?? 0) > 80
-                              ? 'var(--warn)'
-                              : 'var(--positive)',
-                      }}
-                    />
-                  </div>
-                )}
+                    className="h-full rounded-full transition-all"
+                    style={{
+                      width: `${barPct}%`,
+                      background: isOver ? 'var(--negative)' : barColor,
+                    }}
+                  />
+                </div>
               </div>
             );
-          })}
+          });
+          })()}
         </div>
       )}
     </SectionCard>
   );
 }
 
-function AiInsightCard() {
-  return (
-    <SectionCard className="p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <Sparkles className="h-4 w-4" style={{ color: 'var(--accent-hi)' }} />
-        <p className="text-sm font-semibold" style={{ color: 'var(--text-mid)' }}>
-          AI Insight
-        </p>
-      </div>
-      <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--text-mute)' }}>
-        Aktifkan AI Insights untuk mendapatkan analisis otomatis pengeluaran kamu setiap bulan.
-      </p>
-      <Link
-        href="/insights"
-        className="w-full py-2 rounded-lg text-xs font-semibold transition-colors flex items-center justify-center"
-        style={{ background: 'var(--accent-soft)', color: 'var(--accent-hi)' }}
-      >
-        Lihat Insights
-      </Link>
-    </SectionCard>
-  );
-}
 
 // --- Page ---
 
@@ -444,32 +527,27 @@ export default async function OverviewPage({
   const dailyData = buildDailyData(monthlyTx, startDate, endDate);
   const budgetSnapshot = buildBudgetSnapshot(budgetCategories, categoryBreakdown);
 
+  const hasOverrun = budgetSnapshot.some(
+    (i) => i.budget_monthly != null && i.spent > i.budget_monthly
+  );
+
   return (
     <div className="p-4 sm:p-6 min-h-screen" style={{ background: 'var(--bg)' }}>
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <DateStepper month={month} />
-        <Link
-          href="/add"
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90"
-          style={{ background: 'var(--accent-hi)' }}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          Tambah
-        </Link>
-      </div>
+      <HomeHeader month={month} />
 
       {/* Main grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4">
         {/* Left column */}
         <div className="lg:col-span-8 space-y-4">
-          <NetWorthHero
+          <BalanceSummaryCard
             netWorth={netWorth}
+            accounts={accounts}
             income={income}
             expense={expense}
             net={net}
-            month={month}
           />
+          <SummaryStatsSection summary={summary} />
           <DailyChartCard dailyData={dailyData} />
           <RecentTransactionsCard transactions={recentTx} />
         </div>
@@ -477,8 +555,8 @@ export default async function OverviewPage({
         {/* Right column */}
         <div className="lg:col-span-4 space-y-4">
           <QuickAddCard />
-          <BudgetSnapshotCard items={budgetSnapshot} />
-          <AiInsightCard />
+          <BudgetSnapshotCard items={budgetSnapshot} month={month} />
+          <AiInsightWidget month={month} hasOverrun={hasOverrun} />
         </div>
       </div>
     </div>
