@@ -1,7 +1,5 @@
 import { useEffect } from 'react';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
-import '@fontsource-variable/geist';
-import '@fontsource-variable/geist-mono';
 import './globals.css';
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
 
