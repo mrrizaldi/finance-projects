@@ -26,6 +26,7 @@ import {
   Sparkles,
   Settings,
   LogOut,
+  TrendingUp,
 } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase';
 
@@ -35,6 +36,7 @@ const mainNav = [
   { href: '/bulk', label: 'Bulk Input', icon: FileText },
   { href: '/installments', label: 'Cicilan', icon: CreditCard },
   { href: '/balances', label: 'Saldo Akun', icon: Landmark },
+  { href: '/investasi', label: 'Investasi', icon: TrendingUp },
 ];
 
 const secondaryNav = [

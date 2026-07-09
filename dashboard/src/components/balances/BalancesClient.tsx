@@ -21,6 +21,7 @@ function groupByType(accounts: Account[]): AccountsByType {
     ewallet: 'E-Wallet',
     cash: 'Cash',
     marketplace: 'Marketplace',
+    investment: 'Investasi',
     other: 'Lainnya',
   };
 

@@ -17,6 +17,7 @@ export default [
     route('bulk', 'routes/bulk.tsx'),
     route('insights', 'routes/insights.tsx'),
     route('installments', 'routes/installments.tsx'),
+    route('investasi', 'routes/investasi.tsx'),
     route('more', 'routes/more.tsx'),
     route('settings', 'routes/settings.tsx'),
     route('transactions', 'routes/transactions.tsx'),

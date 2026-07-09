@@ -19,6 +19,7 @@ const ACCOUNT_TYPES = [
   { value: 'ewallet', label: 'E-Wallet' },
   { value: 'cash', label: 'Tunai' },
   { value: 'marketplace', label: 'Marketplace' },
+  { value: 'investment', label: 'Investasi' },
   { value: 'other', label: 'Lainnya' },
 ];
 

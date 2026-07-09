@@ -160,6 +160,7 @@ const ACCOUNT_TYPE_LABEL: Record<string, string> = {
   ewallet: 'E-Wallet',
   cash: 'Tunai',
   marketplace: 'Marketplace',
+  investment: 'Investasi',
   other: 'Lainnya',
 };
 

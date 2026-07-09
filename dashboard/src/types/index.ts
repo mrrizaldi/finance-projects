@@ -57,9 +57,36 @@ export interface Category {
 export interface Account {
   id: string;
   name: string;
-  type: 'bank' | 'ewallet' | 'cash' | 'marketplace' | 'other';
+  type: 'bank' | 'ewallet' | 'cash' | 'marketplace' | 'other' | 'investment';
   balance: number;
   is_active?: boolean;
+}
+
+export interface Fund {
+  id: string;
+  name: string;
+  bareksa_id: number;
+  bareksa_slug: string;
+  account_id: string;
+  is_active: boolean;
+}
+
+export interface PortfolioFundValue {
+  fund_id: string;
+  fund_name: string;
+  account_id: string;
+  account_name: string;
+  units: number;
+  nav: number | null;
+  nav_date: string | null;
+  value: number;
+}
+
+export interface PortfolioSummary {
+  total_value: number;
+  total_contributed: number;
+  absolute_gain: number;
+  gain_pct: number;
 }
 
 export interface InstallmentMonth {
