@@ -12,17 +12,19 @@ import { PurchaseFundDialog } from '@/components/investasi/PurchaseFundDialog';
 export async function clientLoader() {
   const supabase = getBrowserClient();
 
-  const [{ data: accounts }, portfolioRes, fundsRes] = await Promise.all([
-    supabase.from('accounts').select('*').eq('is_active', true).order('name'),
-    fetch('/api/investments/portfolio').then((r) => r.json()),
-    fetch('/api/investments/funds').then((r) => r.json()),
-  ]);
+  const [{ data: accounts }, { data: funds }, { data: portfolioFunds }, { data: summaryRows }] =
+    await Promise.all([
+      supabase.from('accounts').select('*').eq('is_active', true).order('name'),
+      supabase.from('funds').select('id, name, bareksa_id, bareksa_slug, account_id, is_active').eq('is_active', true).order('name'),
+      supabase.rpc('get_portfolio_value'),
+      supabase.rpc('get_portfolio_summary'),
+    ]);
 
   return {
     accounts: (accounts ?? []) as Account[],
-    funds: (fundsRes ?? []) as Fund[],
-    portfolioFunds: (portfolioRes?.funds ?? []) as PortfolioFundValue[],
-    summary: (portfolioRes?.summary ?? null) as PortfolioSummary | null,
+    funds: (funds ?? []) as Fund[],
+    portfolioFunds: (portfolioFunds ?? []) as PortfolioFundValue[],
+    summary: (summaryRows?.[0] ?? null) as PortfolioSummary | null,
   };
 }
 
