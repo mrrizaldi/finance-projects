@@ -2,24 +2,17 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Dokumen Penting — Baca Dulu Sebelum Bekerja
+## Dokumen & Histori
 
-Sebelum mengerjakan apapun, selalu baca dua file ini:
-
-- **`finance-automation-spec.md`** — spesifikasi teknis lengkap: arsitektur, schema database, kode referensi. Ini sumber kebenaran untuk semua keputusan teknis.
-- **`PROGRESS.md`** — status implementasi terkini: apa yang sudah selesai, apa yang belum, deviasi dari spec, dan to-do per phase. Selalu update file ini setelah selesai mengerjakan sesuatu.
-
-Aturan:
-1. Cek `PROGRESS.md` dulu untuk tahu state terakhir sebelum mulai.
-2. Semua implementasi harus mengacu pada `finance-automation-spec.md`.
-3. Jika ada deviasi dari spec (bug fix, improvement, workaround), catat di `PROGRESS.md` bagian "Perbedaan dari spec".
-4. Setelah selesai mengerjakan task, update status di `PROGRESS.md`.
+- **`README.md`** — entry point: peta komponen (repo vs server) + "butuh ngapain → mulai dari sini".
+- **`SERVER.md`** — inventori home server (pm2, n8n, openclaw, env, deploy).
+- Histori implementasi & keputusan lama: **git log** (PROGRESS.md dan finance-automation-spec.md sudah dihapus — lihat git history kalau butuh).
 
 ## Project Overview
 
 Personal finance automation system (Indonesian language). Sistem lengkapnya: email parsing (n8n), Telegram bot untuk input manual, web dashboard untuk analytics, dan AI categorization (OpenClaw).
 
-**Scope repo ini: hanya `dashboard/` + `api/` + `supabase/`.** Service lain (telegram-bot, monitor-bot, n8n, openclaw) hidup dan jalan di home server — kodenya TIDAK ada di repo ini. Lihat **`docs/SERVER.md`** untuk inventori lengkap.
+**Scope repo ini: hanya `dashboard/` + `api/` + `supabase/`.** Service lain (telegram-bot, monitor-bot, n8n, openclaw) hidup dan jalan di home server — kodenya TIDAK ada di repo ini. Lihat **`SERVER.md`** untuk inventori lengkap.
 
 ## Service di Server — Cara Cek/Edit
 
@@ -27,7 +20,7 @@ Personal finance automation system (Indonesian language). Sistem lengkapnya: ema
 
 - **n8n workflows** (email parsing BCA/BSI/Shopee/dll, sheets sync) → **n8n MCP** (`n8n_list_workflows`, `n8n_get_workflow`, `n8n_update_partial_workflow`, dst.)
 - **telegram-bot, monitor-bot, openclaw, pm2, log** → **ssh MCP** (`mcp__ssh-mcp__exec`) ke 192.168.31.221
-- Detail path, pm2 apps, cara restart/deploy: `docs/SERVER.md`
+- Detail path, pm2 apps, cara restart/deploy: `SERVER.md`
 - Butuh baca setup server secara lokal: `bash scripts/pull-server.sh` → `.server-pull/` (gitignored) — pull kode telegram-bot & monitor-bot, openclaw finance skills, dan export JSON semua n8n finance workflows
 
 ## Tech Stack (repo ini)
@@ -61,7 +54,7 @@ api/                   # Fastify API — src/routes/ (19 endpoints), src/lib/ (s
 supabase/migrations/   # SQL migrations: schema → seeds → functions/views → RLS
 tests/                 # Integration tests (Supabase RPC) + unit — tests/run-all.sh
 scripts/               # Helper scripts (pull-server.sh)
-docs/                  # SERVER.md (inventori server), superpowers plans/specs
+SERVER.md              # Inventori home server (pm2, n8n, openclaw, env, deploy)
 ```
 
 ## Dashboard (React Router v8 SPA)

@@ -4,7 +4,7 @@ Sistem otomasi keuangan pribadi (Bahasa Indonesia): parsing email transaksi bank
 
 ## Scope Repo Ini
 
-**Repo ini HANYA berisi dashboard + API + database.** Service lain hidup dan jalan di home server — kodenya tidak ada di sini (keputusan 9 Juli 2026, lihat `PROGRESS.md` Sesi 32).
+**Repo ini HANYA berisi dashboard + API + database.** Service lain hidup dan jalan di home server — kodenya tidak ada di sini (keputusan 9 Juli 2026).
 
 | Komponen | Lokasi | Cara akses/kelola |
 |----------|--------|-------------------|
@@ -20,10 +20,10 @@ Sistem otomasi keuangan pribadi (Bahasa Indonesia): parsing email transaksi bank
 
 - **Kerja di dashboard/API** → `CLAUDE.md` (konvensi, commands, arsitektur)
 - **Cek/edit n8n workflow** → n8n MCP (`n8n_list_workflows`, `n8n_get_workflow`, `n8n_update_partial_workflow`). API key di `.mcp.json`.
-- **Cek/edit bot atau openclaw di server** → ssh MCP ke `192.168.31.221`; inventori lengkap (pm2 apps, path, env, cara restart/deploy) di **`docs/SERVER.md`**
+- **Cek/edit bot atau openclaw di server** → ssh MCP ke `192.168.31.221`; inventori lengkap (pm2 apps, path, env, cara restart/deploy) di **`SERVER.md`**
 - **Baca setup server secara lokal** → `bash scripts/pull-server.sh` → `.server-pull/` (gitignored): kode kedua bot, openclaw finance skills, export JSON n8n finance workflows
 - **Operasi database** → Supabase MCP (project `dqvdhkpqyynvwfbuqyzu`) — jangan psql/CLI manual
-- **Status implementasi & histori** → `PROGRESS.md`; spec teknis → `finance-automation-spec.md`
+- **Histori implementasi & keputusan** → git log
 
 ## Arsitektur
 
@@ -52,4 +52,4 @@ Production: `pnpm build` di keduanya → pm2 `finance-api` di server serve SPA +
 
 - Dashboard: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (`dashboard/.env.local`)
 - API: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `LLM_API_KEY`/`LLM_BASE_URL`/`LLM_MODEL` (`api/.env`)
-- Server (bot, n8n, sheets, openclaw): semua di `~/dev/finance-project/.env` di server — lihat `docs/SERVER.md`
+- Server (bot, n8n, sheets, openclaw): semua di `~/dev/finance-project/.env` di server — lihat `SERVER.md`

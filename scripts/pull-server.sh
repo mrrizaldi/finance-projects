@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ponytail: jembatan sementara — pull semua setup finance dari server buat dibaca lokal.
-# Hapus kalau docs/SERVER.md sudah cukup.
+# Hapus kalau SERVER.md sudah cukup.
 set -euo pipefail
 SERVER=mrrizaldi@192.168.31.221
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
