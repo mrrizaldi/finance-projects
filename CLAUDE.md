@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Sebelum mengerjakan apapun, selalu baca dua file ini:
 
-- **`finance-automation-spec.md`** — spesifikasi teknis lengkap: arsitektur, schema database, kode referensi, dan email parsing templates. Ini sumber kebenaran untuk semua keputusan teknis.
+- **`finance-automation-spec.md`** — spesifikasi teknis lengkap: arsitektur, schema database, kode referensi. Ini sumber kebenaran untuk semua keputusan teknis.
 - **`PROGRESS.md`** — status implementasi terkini: apa yang sudah selesai, apa yang belum, deviasi dari spec, dan to-do per phase. Selalu update file ini setelah selesai mengerjakan sesuatu.
 
 Aturan:
@@ -17,83 +17,79 @@ Aturan:
 
 ## Project Overview
 
-Personal finance automation system (Indonesian language). Parses transaction emails from Indonesian banks/e-wallets, provides a Telegram bot for manual entry, and a web dashboard for analytics.
+Personal finance automation system (Indonesian language). Sistem lengkapnya: email parsing (n8n), Telegram bot untuk input manual, web dashboard untuk analytics, dan AI categorization (OpenClaw).
 
-**Spec document**: `finance-automation-spec.md` contains the complete technical specification — refer to it for detailed implementation guidance, code samples, and email parsing templates.
+**Scope repo ini: hanya `dashboard/` + `api/` + `supabase/`.** Service lain (telegram-bot, monitor-bot, n8n, openclaw) hidup dan jalan di home server — kodenya TIDAK ada di repo ini. Lihat **`docs/SERVER.md`** untuk inventori lengkap.
 
-## Tech Stack
+## Service di Server — Cara Cek/Edit
 
-- **Telegram Bot**: Node.js + TypeScript, grammY framework, conversations plugin for multi-step flows
-- **Database**: Supabase (PostgreSQL) as primary, Google Sheets as readable backup
-- **Email Parsing**: n8n (self-hosted, Docker) with IMAP polling for Gmail
-- **AI**: OpenAI GPT API (via OpenClaw) for transaction categorization and financial insights
-- **Dashboard**: React Router v7 (SPA, ssr:false) + Vite + Tailwind CSS + Supabase browser client
+**WAJIB pakai MCP, jangan minta/duplikasi kode ke repo:**
+
+- **n8n workflows** (email parsing BCA/BSI/Shopee/dll, sheets sync) → **n8n MCP** (`n8n_list_workflows`, `n8n_get_workflow`, `n8n_update_partial_workflow`, dst.)
+- **telegram-bot, monitor-bot, openclaw, pm2, log** → **ssh MCP** (`mcp__ssh-mcp__exec`) ke 192.168.31.221
+- Detail path, pm2 apps, cara restart/deploy: `docs/SERVER.md`
+- Butuh baca kode bot secara lokal (sementara): `bash scripts/pull-server.sh` → `.server-pull/` (gitignored)
+
+## Tech Stack (repo ini)
+
+- **Dashboard**: React 19 + React Router v8 (SPA, ssr:false) + Vite + Tailwind CSS v4 (`@tailwindcss/vite`) + Supabase browser client
 - **API**: Fastify (TypeScript, ESM) — serves 19 REST endpoints + static SPA in production
+- **Database**: Supabase (PostgreSQL) as primary, Google Sheets as readable backup
 - **Package Manager**: pnpm
+- Node.js requirement: >= 22.22.0
 
 ## Architecture & Data Flow
 
 ```
-Gmail (IMAP) → n8n Workflows → OpenAI (categorization) → Supabase (primary DB)
-                                                            ├→ Google Sheets (backup sync)
-                                                            ├→ React Router v7 SPA (dashboard/) + Fastify API (api/)
-                                                            └→ Telegram Bot (reports)
-Telegram Bot → manual input → Supabase
+Gmail (IMAP) → n8n Workflows → AI (categorization) → Supabase (primary DB)
+   [di server]                                          ├→ Google Sheets (backup sync)
+                                                        ├→ React Router v8 SPA (dashboard/) + Fastify API (api/)  ← repo ini
+                                                        └→ Telegram Bot (manual input + reports)  [di server]
 ```
 
-Key services are independent: the Telegram bot, n8n workflows, and dashboard all connect directly to Supabase.
+Key services are independent: semua connect langsung ke Supabase.
 
 **Dashboard/API architecture:**
 - Dev: `vite dev :3000` (proxy `/api → :3001`) + `fastify dev :3001`
-- Production: Fastify (`api/`) serves SPA static files (`dashboard/build/client`) + all `/api/*` routes on port 3000 (one pm2 process)
+- Production: Fastify (`api/`) serves SPA static files (`dashboard/build/client`) + all `/api/*` routes on port 3000 (satu pm2 process `finance-api` di server)
 
 ## Project Structure
 
 ```
-telegram-bot/          # grammY bot (TypeScript) — commands/, conversations/, keyboards/, services/
-n8n-workflows/         # Exported n8n workflow JSONs (one per email source + sheets sync)
-openclaw-skills/       # Custom OpenClaw skill definitions (SKILL.md files)
-dashboard/             # React Router v7 SPA — src/routes/, src/components/, src/lib/
+dashboard/             # React Router v8 SPA — src/routes/, src/components/, src/lib/
 api/                   # Fastify API — src/routes/ (19 endpoints), src/lib/ (supabase, utils, etc.)
 supabase/migrations/   # SQL migrations: schema → seeds → functions/views → RLS
-scripts/               # Setup and migration helper scripts
+tests/                 # Integration tests (Supabase RPC) + unit — tests/run-all.sh
+scripts/               # Helper scripts (pull-server.sh)
+docs/                  # SERVER.md (inventori server), superpowers plans/specs
 ```
 
-## Dashboard (React Router v7 SPA)
+## Dashboard (React Router v8 SPA)
 
 - Data fetching: `clientLoader()` per route → `useLoaderData()`, supabase browser client via `getBrowserClient()` di `src/lib/supabase.ts`
 - Mutation/revalidation: `fetch('/api/...')` lalu `useRevalidator().revalidate()` (auto re-run semua loader aktif)
 - UI components: **shadcn/ui** (`pnpm dlx shadcn@latest add <component>`), chart: recharts
 - Auth guard di `app-layout.tsx` clientLoader — redirect ke `/login` kalau session null
+- Env vars: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (prefix `VITE_` — auto-expose oleh Vite, diakses via `import.meta.env`)
+- Tailwind: via `@tailwindcss/vite` plugin (bukan postcss) — sudah include di `vite.config.ts`
 
 ## API (Fastify)
 
 - Routes di `api/src/routes/*.ts`, terdaftar di `api/src/app.ts`
 - Auth: `requireUser(request)` dari `api/src/lib/supabase.ts` — baca cookie session Supabase
 - LLM calls pakai env var `LLM_API_KEY`/`LLM_BASE_URL`/`LLM_MODEL` (bukan `OPENAI_API_KEY`)
-- Env vars: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` (tanpa prefix `NEXT_PUBLIC_`)
+- Env vars: `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`
 
 ## Database Access — Gunakan Supabase MCP
 
 **WAJIB**: Untuk semua operasi database (query, insert, apply migration, cek data), gunakan **Supabase MCP** — bukan psql CLI, bukan supabase CLI, bukan Bash.
-
-Contoh penggunaan:
-- Apply migration SQL → gunakan Supabase MCP execute SQL
-- Cek data tabel → gunakan Supabase MCP query
-- Debugging data → gunakan Supabase MCP, bukan koneksi manual
 
 Supabase project: `dqvdhkpqyynvwfbuqyzu` (region: ap-southeast-1)
 
 ## Common Commands
 
 ```bash
-# Telegram Bot
-cd telegram-bot && pnpm install
-pnpm dev              # Development with hot reload (tsx watch)
-pnpm build            # TypeScript compile
-pnpm start            # Production (node dist/index.js)
-
-# Dashboard (React Router v7 SPA)
+# Dashboard (React Router v8 SPA, React 19)
 cd dashboard && pnpm install
 pnpm dev              # Vite dev server :3000 (proxy /api → :3001)
 pnpm build            # Production build (output: build/client/)
@@ -108,11 +104,8 @@ pnpm start            # node dist/server.js (serves SPA + /api/* on :3001 dev, :
 pnpm typecheck        # tsc --noEmit
 pnpm test             # vitest (integration + unit)
 
-# n8n (Docker)
-docker run -d --name n8n --restart always -p 5678:5678 -v ~/n8n-data:/home/node/.n8n n8nio/n8n
-
-# Supabase migrations — run SQL files in order via Supabase dashboard or CLI
-# 001_initial_schema.sql → 002_seed_categories.sql → 003_functions_and_views.sql → 004_rls_policies.sql
+# Root integration tests (Supabase RPC, butuh service role key)
+SUPABASE_SERVICE_ROLE_KEY=xxx bash tests/run-all.sh
 ```
 
 ## Database Design
@@ -123,37 +116,10 @@ Key RPC functions: `get_summary()`, `get_category_breakdown()`, `get_monthly_tre
 
 All timestamps use `Asia/Jakarta` timezone for display. Currency is Indonesian Rupiah (format: `Rp 1.500.000` with dot as thousands separator).
 
-## Implementation Phases
-
-1. **Foundation**: Supabase schema + Telegram bot (manual entry, reports, balance)
-2. **Email Parsing**: n8n workflows for BCA, BSI, Shopee, Tokopedia, GoPay, OVO/Dana/ShopeePay
-3. **OpenClaw AI**: Auto-categorization, financial insights, natural language queries
-4. **Dashboard**: Next.js web UI with charts, analytics, budget tracking
-5. **Polish**: Monitoring, error handling, maintenance automation
-
-## Deploy Workflow (Telegram Bot)
-
-Bot berjalan di home server (192.168.31.221) via pm2. Setiap perubahan kode:
-
-```bash
-# 1. Edit lokal di telegram-bot/src/
-# 2. Type check
-cd telegram-bot && npx tsc --noEmit
-
-# 3. Sync ke server
-rsync -avz --exclude='node_modules' --exclude='dist' telegram-bot/src/ mrrizaldi@192.168.31.221:~/dev/finance-project/telegram-bot/src/
-
-# 4. Restart bot di server (via SSH MCP atau manual)
-# pm2 restart finance-bot
-```
-
-Node.js path di server: `/home/mrrizaldi/.nvm/versions/node/v22.20.0/bin`
-
 ## Key Conventions
 
 - Language: all user-facing text in Bahasa Indonesia (casual, friendly tone)
 - AI prompts use Indonesian context and Rupiah formatting
-- Telegram bot is single-user (owner-only, validated by `TELEGRAM_OWNER_ID`)
 - Transaction sources are tracked via `source` field enum for auditability
 - Email-parsed transactions start as `verified: false`, manual ones as `verified: true`
 - Account balances are updated atomically on each transaction insert/delete

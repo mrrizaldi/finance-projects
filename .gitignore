@@ -9,3 +9,5 @@ dist/
 !next.config.json
 dashboard/.env.local
 .worktrees/
+.playwright-mcp/
+.server-pull/

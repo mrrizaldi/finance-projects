@@ -10,12 +10,39 @@
 | Key | Value |
 |-----|-------|
 | Spec versi | 1.0 (4 April 2026) |
-| Progress terakhir | 8 Juli 2026 (Sesi 31) |
+| Progress terakhir | 9 Juli 2026 (Sesi 32) |
 | Bot Telegram | @aldi_monman_bot |
 | Monitor Bot | @monitoring_aldi23_bot |
 | Supabase project | `dqvdhkpqyynvwfbuqyzu` (finance-project, ap-southeast-1) |
 | Home server | ubuntu-server @ 192.168.31.221 |
 | Process manager | pm2 (finance-bot, finance-api, monitor-bot) — `finance-dashboard` diganti `finance-api` (Fastify) |
+
+---
+
+## Detail Eksekusi — Sesi 32 (9 Juli 2026)
+
+### Refactor Scope Repo: Dashboard-Only, Server Stuff di Server
+
+**Keputusan:** Repo hanya berisi `dashboard/` + `api/` + `supabase/`. Service lain source of truth-nya di home server, diinspeksi via ssh MCP / n8n MCP — tidak ada duplikasi kode di repo.
+
+**Dihapus dari repo** (git history tetap menyimpan; server copy diverifikasi identik via rsync dry-run sebelum hapus):
+- `telegram-bot/` → hidup di `~/dev/finance-project/telegram-bot` di server
+- `monitor-bot/` → hidup di `~/dev/finance-project/monitor-bot` di server
+- `openclaw-skills/` → hidup di `~/.openclaw/skills` di server (4 skill + WHATSAPP_SETUP.md, lengkap)
+- `n8n-workflows/` → workflow hidup di instance n8n (docker, port 5678); kelola via n8n MCP
+- `docker-compose.yml` (isinya cuma n8n, sudah jalan di server)
+- `tests/n8n/` + bagian n8n di `tests/run-all.sh`
+- 71 file `.playwright-mcp/` (artifact browser session) + ditambahkan ke `.gitignore`
+
+**Ditambah:**
+- `docs/SERVER.md` — inventori server: pm2 apps, path, n8n, openclaw, cara inspeksi via MCP, cara deploy bot
+- `scripts/pull-server.sh` — rsync pull kode bot dari server ke `.server-pull/` (gitignored), jembatan sementara
+- `CLAUDE.md` ditulis ulang sesuai scope baru
+
+**Temuan saat refactor:**
+- ⚠️ pm2 di server KOSONG saat dicek (9 Juli) — finance-bot, finance-api, monitor-bot tidak jalan, kemungkinan sejak reboot (~13 jam). Perlu start ulang + `pm2 save`.
+- Server sudah migrasi nvm → proto; pm2 ada di `~/.proto/tools/node/globals/bin` (PATH perlu di-export di shell non-interaktif).
+- GCP service-account JSON masih nganggur di root repo lokal (untracked) — pertimbangkan hapus manual.
 
 ---
 
