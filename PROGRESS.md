@@ -40,9 +40,12 @@
 - `CLAUDE.md` ditulis ulang sesuai scope baru
 
 **Temuan saat refactor:**
-- ⚠️ pm2 di server KOSONG saat dicek (9 Juli) — finance-bot, finance-api, monitor-bot tidak jalan, kemungkinan sejak reboot (~13 jam). Perlu start ulang + `pm2 save`.
+- ⚠️ pm2 di server KOSONG saat dicek (9 Juli) — semua app mati sejak reboot. **Sudah di-resurrect + `pm2 save`** — finance-bot, finance-api (HTTP 200), monitor-bot online lagi.
 - Server sudah migrasi nvm → proto; pm2 ada di `~/.proto/tools/node/globals/bin` (PATH perlu di-export di shell non-interaktif).
-- GCP service-account JSON masih nganggur di root repo lokal (untracked) — pertimbangkan hapus manual.
+- finance-bot & monitor-bot jalan via `npx tsx src/index.ts` (bukan dist build); env semua di `~/dev/finance-project/.env` root server (dotenv `../../.env`), TIDAK di pm2 dump.
+- API key n8n di `.mcp.json` corrupt (header JWT kepotong) → direkonstruksi & verified 200. MCP tool n8n baru kebaca setelah session restart.
+- GCP service-account JSON di root repo **dihapus** — tidak direferensikan di manapun (sheets creds inline via `GOOGLE_PRIVATE_KEY` di .env server).
+- `README.md` baru dibuat sebagai entry point: peta komponen (repo vs server) + "butuh ngapain → mulai dari sini".
 
 ---
 

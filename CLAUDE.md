@@ -28,7 +28,7 @@ Personal finance automation system (Indonesian language). Sistem lengkapnya: ema
 - **n8n workflows** (email parsing BCA/BSI/Shopee/dll, sheets sync) → **n8n MCP** (`n8n_list_workflows`, `n8n_get_workflow`, `n8n_update_partial_workflow`, dst.)
 - **telegram-bot, monitor-bot, openclaw, pm2, log** → **ssh MCP** (`mcp__ssh-mcp__exec`) ke 192.168.31.221
 - Detail path, pm2 apps, cara restart/deploy: `docs/SERVER.md`
-- Butuh baca kode bot secara lokal (sementara): `bash scripts/pull-server.sh` → `.server-pull/` (gitignored)
+- Butuh baca setup server secara lokal: `bash scripts/pull-server.sh` → `.server-pull/` (gitignored) — pull kode telegram-bot & monitor-bot, openclaw finance skills, dan export JSON semua n8n finance workflows
 
 ## Tech Stack (repo ini)
 
