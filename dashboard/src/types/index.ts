@@ -121,11 +121,14 @@ export interface MonthlyTrend {
   net: number;
 }
 
-export interface HeatmapEntry {
-  day_of_week: number;
-  hour_of_day: number;
-  total_amount: number;
-  count: number;
+export interface SavingsRateTrend {
+  month: string;
+  month_date: string;
+  income: number;
+  expense: number;
+  cashflow_rate: number;
+  investment_contributed: number;
+  investment_rate: number;
 }
 
 export interface ChatMessage {

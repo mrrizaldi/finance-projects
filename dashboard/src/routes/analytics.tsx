@@ -4,7 +4,7 @@ import { getBrowserClient } from '@/lib/supabase';
 import {
   CategoryBreakdown,
   MonthlyTrend,
-  HeatmapEntry,
+  SavingsRateTrend,
   PeriodComparison,
   DailySpending,
   TopTransaction,
@@ -12,7 +12,7 @@ import {
 import { formatRupiah } from '@/lib/utils';
 import CategoryChart from '@/components/charts/CategoryChart';
 import MonthlyBarChart from '@/components/charts/MonthlyBarChart';
-import HeatmapChart from '@/components/charts/HeatmapChart';
+import SavingsRateChart from '@/components/charts/SavingsRateChart';
 import DailySpendingChart from '@/components/charts/DailySpendingChart';
 import AnalyticsSummaryPanel from '@/components/analytics/AnalyticsSummaryPanel';
 import TopTransactionsList from '@/components/analytics/TopTransactionsList';
@@ -105,7 +105,7 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
 
   const supabase = getBrowserClient();
 
-  const [expCatRes, incCatRes, trendRes, heatmapRes, compRes, dailyRes, topTxRes] =
+  const [expCatRes, incCatRes, trendRes, savingsRateRes, compRes, dailyRes, topTxRes] =
     await Promise.all([
       supabase.rpc('get_category_breakdown', {
         p_start_date: start,
@@ -118,7 +118,7 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
         p_type: 'income',
       }),
       supabase.rpc('get_monthly_trend', { p_months: trendMonths }),
-      supabase.rpc('get_expense_heatmap', { p_start_date: start, p_end_date: end }),
+      supabase.rpc('get_savings_rate_trend', { p_months: trendMonths }),
       supabase.rpc('get_period_comparison', {
         p_start: start,
         p_end: end,
@@ -137,7 +137,7 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
     expCategories: (expCatRes.data ?? []) as CategoryBreakdown[],
     incCategories: (incCatRes.data ?? []) as CategoryBreakdown[],
     trend: (trendRes.data ?? []) as MonthlyTrend[],
-    heatmap: (heatmapRes.data ?? []) as HeatmapEntry[],
+    savingsRate: (savingsRateRes.data ?? []) as SavingsRateTrend[],
     comparison: (compRes.data?.[0] ?? null) as PeriodComparison | null,
     dailySpending: (dailyRes.data ?? []) as DailySpending[],
     topTransactions: (topTxRes.data ?? []) as TopTransaction[],
@@ -147,7 +147,7 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
 export default function AnalyticsPage() {
   const {
     period, anchor, label, trendMonths,
-    expCategories, incCategories, trend, heatmap,
+    expCategories, incCategories, trend, savingsRate,
     comparison, dailySpending, topTransactions,
   } = useLoaderData<typeof clientLoader>();
 
@@ -248,12 +248,14 @@ export default function AnalyticsPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-muted-foreground">
-              Heatmap Pengeluaran
+              Savings Rate ({trendMonths} Bulan)
             </CardTitle>
-            <p className="text-xs text-muted-foreground">{label} — hari × jam</p>
+            <p className="text-xs text-muted-foreground">
+              % income gak abis vs % income yang masuk investasi
+            </p>
           </CardHeader>
           <CardContent>
-            <HeatmapChart data={heatmap} />
+            <SavingsRateChart data={savingsRate} />
           </CardContent>
         </Card>
       </div>

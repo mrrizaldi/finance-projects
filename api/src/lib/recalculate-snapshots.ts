@@ -33,7 +33,9 @@ export async function recalculateForAccount(
 
     let effect = 0;
     if (isSource) {
-      effect = tx.type === 'income' ? Number(tx.amount) : -Number(tx.amount);
+      effect = tx.type === 'income' || tx.type === 'investment_gain'
+        ? Number(tx.amount)
+        : -Number(tx.amount);
     } else if (isDest) {
       effect = Number(tx.amount);
     }
