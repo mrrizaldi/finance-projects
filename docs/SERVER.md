@@ -23,7 +23,7 @@ export PATH="$PROTO_HOME/shims:$PROTO_HOME/bin:$PROTO_HOME/tools/node/globals/bi
 | App | Path (cwd) | Start | Catatan |
 |-----|------------|-------|---------|
 | `finance-bot` | `~/dev/finance-project/telegram-bot` | `npx tsx src/index.ts` | @aldi_monman_bot, grammY |
-| `finance-api` | `~/dev/finance-project/api` | `node dist/server.js` + env `SERVE_SPA=true PORT=3000` | Fastify, serve SPA build + `/api/*` |
+| `finance-api` | `~/dev/finance-project/api` | `node dist/server.js` + env `PORT=3701` | Fastify, serve SPA build + `/api/*` |
 | `monitor-bot` | `~/dev/finance-project/monitor-bot` | `npx tsx src/index.ts` | @monitoring_aldi23_bot, cek pm2/http/system |
 
 - Env vars TIDAK di pm2 dump — semua di **`~/dev/finance-project/.env`** (root project server, dibaca via dotenv `../../.env` dari `src/config.ts`). Termasuk Google Sheets creds inline (`GOOGLE_SERVICE_ACCOUNT_EMAIL`/`GOOGLE_PRIVATE_KEY`), Telegram token, Supabase, LLM, n8n, openclaw gateway.

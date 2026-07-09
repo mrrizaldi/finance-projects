@@ -46,7 +46,7 @@ cd api && pnpm install && pnpm dev        # :3001
 cd dashboard && pnpm install && pnpm dev  # :3000, proxy /api → :3001
 ```
 
-Production: `pnpm build` di keduanya → pm2 `finance-api` di server serve SPA + API di port 3000. Node.js >= 22.
+Production: `pnpm build` di keduanya → pm2 `finance-api` di server serve SPA + API di port 3701 (port 3000 dipakai app lain). Node.js >= 22.
 
 ## Environment
 

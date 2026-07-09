@@ -51,7 +51,7 @@ Key services are independent: semua connect langsung ke Supabase.
 
 **Dashboard/API architecture:**
 - Dev: `vite dev :3000` (proxy `/api → :3001`) + `fastify dev :3001`
-- Production: Fastify (`api/`) serves SPA static files (`dashboard/build/client`) + all `/api/*` routes on port 3000 (satu pm2 process `finance-api` di server)
+- Production: Fastify (`api/`) serves SPA static files (`dashboard/build/client`) + all `/api/*` routes on port 3701 (satu pm2 process `finance-api` di server)
 
 ## Project Structure
 
@@ -100,7 +100,7 @@ pnpm test             # vitest unit tests
 cd api && pnpm install
 pnpm dev              # tsx watch :3001
 pnpm build            # tsc → dist/
-pnpm start            # node dist/server.js (serves SPA + /api/* on :3001 dev, :3000 prod)
+pnpm start            # node dist/server.js (serves SPA + /api/* on :3001 dev, :3701 prod)
 pnpm typecheck        # tsc --noEmit
 pnpm test             # vitest (integration + unit)
 
