@@ -14,7 +14,11 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
   if (code) {
     const supabase = getBrowserClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) return redirect(safePath);
+    if (!error) {
+      const type = searchParams.get('type');
+      if (type === 'recovery') return redirect('/reset-password');
+      return redirect(safePath);
+    }
   }
   return redirect('/login?error=auth_failed');
 }

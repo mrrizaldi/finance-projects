@@ -7,6 +7,7 @@ export default [
     route('forgot-password', 'routes/forgot-password.tsx'),
   ]),
   route('auth/callback', 'routes/auth-callback.tsx'),
+  route('reset-password', 'routes/reset-password.tsx'),
   layout('routes/app-layout.tsx', [
     index('routes/home.tsx'),
     route('add', 'routes/add.tsx'),
