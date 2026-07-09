@@ -1,48 +1,126 @@
-@import "@fontsource-variable/geist";
-@import "@fontsource-variable/geist-mono";
-@import "tw-animate-css";
-@import "shadcn/tailwind.css";
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import '@fontsource-variable/geist' layer(base);
+@import '@fontsource-variable/geist-mono' layer(base);
+@import 'tw-animate-css';
+@import 'shadcn/tailwind.css';
+@import 'tailwindcss';
 
+@custom-variant dark (&:is(.dark *));
 
-/* Scrollbar styling */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: oklch(0.75 0.04 85);
-  border-radius: 3px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.65 0.05 85);
+@theme {
+  --color-sidebar: oklch(var(--sidebar));
+  --color-sidebar-foreground: oklch(var(--sidebar-foreground));
+
+  --color-sidebar-primary: oklch(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: oklch(var(--sidebar-primary-foreground));
+
+  --color-sidebar-accent: oklch(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: oklch(var(--sidebar-accent-foreground));
+
+  --color-sidebar-border: oklch(var(--sidebar-border));
+  --color-sidebar-ring: oklch(var(--sidebar-ring));
+
+  --color-background: oklch(var(--background));
+  --color-foreground: oklch(var(--foreground));
+
+  --color-card: oklch(var(--card));
+  --color-card-foreground: oklch(var(--card-foreground));
+
+  --color-popover: oklch(var(--popover));
+  --color-popover-foreground: oklch(var(--popover-foreground));
+
+  --color-primary: oklch(var(--primary));
+  --color-primary-foreground: oklch(var(--primary-foreground));
+
+  --color-secondary: oklch(var(--secondary));
+  --color-secondary-foreground: oklch(var(--secondary-foreground));
+
+  --color-muted: oklch(var(--muted));
+  --color-muted-foreground: oklch(var(--muted-foreground));
+
+  --color-accent: oklch(var(--accent));
+  --color-accent-foreground: oklch(var(--accent-foreground));
+
+  --color-destructive: oklch(var(--destructive));
+
+  --color-border: oklch(var(--border));
+  --color-input: oklch(var(--input));
+  --color-ring: oklch(var(--ring));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
 }
 
-.dark ::-webkit-scrollbar-thumb {
-  background: oklch(0.30 0.02 75);
-}
-.dark ::-webkit-scrollbar-thumb:hover {
-  background: oklch(0.38 0.03 75);
+/*
+  The default border color has changed to `currentcolor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentcolor);
+  }
 }
 
-body {
-  font-family: var(--font-geist-sans);
+@utility num {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
 }
 
-/* Sidebar scrollbar */
-.sidebar-scroll::-webkit-scrollbar-track {
-  background: transparent;
+@utility label-up {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--text-dim);
 }
-.sidebar-scroll::-webkit-scrollbar-thumb {
-  background: oklch(0.75 0.04 85);
-}
-.dark .sidebar-scroll::-webkit-scrollbar-thumb {
-  background: oklch(0.30 0.02 75);
+
+@layer utilities {
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: oklch(0.75 0.04 85);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.65 0.05 85);
+  }
+
+  .dark ::-webkit-scrollbar-thumb {
+    background: oklch(0.3 0.02 75);
+  }
+  .dark ::-webkit-scrollbar-thumb:hover {
+    background: oklch(0.38 0.03 75);
+  }
+
+  body {
+    font-family: var(--font-geist-sans);
+  }
+
+  /* Sidebar scrollbar */
+  .sidebar-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .sidebar-scroll::-webkit-scrollbar-thumb {
+    background: oklch(0.75 0.04 85);
+  }
+  .dark .sidebar-scroll::-webkit-scrollbar-thumb {
+    background: oklch(0.3 0.02 75);
+  }
 }
 
 @layer base {
@@ -199,58 +277,46 @@ body {
   }
 }
 
-/* Fix: shadcn sidebar gap div — w-(--sidebar-width) Tailwind class not compiling */
-[data-slot="sidebar-gap"] {
-  width: var(--sidebar-width);
-}
-.group[data-collapsible="offcanvas"] [data-slot="sidebar-gap"] {
-  width: 0;
-}
-.group[data-collapsible="icon"] [data-slot="sidebar-gap"] {
-  width: var(--sidebar-width-icon);
-}
-
-/* Sidebar active state indicator */
-[data-sidebar="menu-button"][data-active] {
-  background-color: var(--nav-active-bg);
-  color: var(--nav-active-fg);
-}
-
-/* PWA: Safe area for notch devices */
-.pb-safe {
-  padding-bottom: env(safe-area-inset-bottom);
-}
-
-/* Prevent overscroll bounce on iOS */
-html {
-  overscroll-behavior: none;
-}
-
-/* Standalone mode adjustments */
-@media (display-mode: standalone) {
-  body {
-    -webkit-user-select: none;
-    user-select: none;
-  }
-
-  input, textarea, [contenteditable] {
-    -webkit-user-select: text;
-    user-select: text;
-  }
-}
-
 @layer utilities {
-  .num {
-    font-family: var(--font-geist-mono), ui-monospace, monospace;
-    font-variant-numeric: tabular-nums;
-    letter-spacing: -0.02em;
+  /* Fix: shadcn sidebar gap div — w-(--sidebar-width) Tailwind class not compiling */
+  [data-slot='sidebar-gap'] {
+    width: var(--sidebar-width);
+  }
+  .group[data-collapsible='offcanvas'] [data-slot='sidebar-gap'] {
+    width: 0;
+  }
+  .group[data-collapsible='icon'] [data-slot='sidebar-gap'] {
+    width: var(--sidebar-width-icon);
   }
 
-  .label-up {
-    font-size: 0.6875rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.07em;
-    color: var(--text-dim);
+  /* Sidebar active state indicator */
+  [data-sidebar='menu-button'][data-active] {
+    background-color: var(--nav-active-bg);
+    color: var(--nav-active-fg);
+  }
+
+  /* PWA: Safe area for notch devices */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Prevent overscroll bounce on iOS */
+  html {
+    overscroll-behavior: none;
+  }
+
+  /* Standalone mode adjustments */
+  @media (display-mode: standalone) {
+    body {
+      -webkit-user-select: none;
+      user-select: none;
+    }
+
+    input,
+    textarea,
+    [contenteditable] {
+      -webkit-user-select: text;
+      user-select: text;
+    }
   }
 }
