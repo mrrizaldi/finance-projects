@@ -1,5 +1,6 @@
 import type { FastifyInstance } from 'fastify';
 import { requireUser } from '../lib/supabase.js';
+import { searchFunds } from '../lib/nav-source/bareksa-catalog.js';
 
 export default async function plugin(app: FastifyInstance) {
   app.get('/api/investments/portfolio', async (request, reply) => {
@@ -71,5 +72,18 @@ export default async function plugin(app: FastifyInstance) {
 
     if (error) return reply.code(500).send({ error: error.message });
     return { success: true, data };
+  });
+
+  app.get('/api/investments/bareksa-search', async (request, reply) => {
+    const { unauthorized } = await requireUser(request);
+    if (unauthorized) return reply.code(401).send({ error: 'Unauthorized' });
+
+    const query = request.query as { q?: string };
+    try {
+      const results = await searchFunds(query.q ?? '');
+      return results;
+    } catch (error: any) {
+      return reply.code(502).send({ error: error?.message || 'Gagal ambil katalog Bareksa' });
+    }
   });
 }

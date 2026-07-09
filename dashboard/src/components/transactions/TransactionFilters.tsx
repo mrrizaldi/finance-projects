@@ -2,6 +2,8 @@
 
 import { useCallback } from 'react';
 import { useNavigate, useLocation, useSearchParams } from 'react-router';
+import { format, parseISO } from 'date-fns';
+import { id as idLocale } from 'date-fns/locale';
 import { Category, Account } from '@/types';
 import {
   Select,
@@ -9,6 +11,10 @@ import {
   SelectItem,
   SelectTrigger,
 } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Button } from '@/components/ui/button';
+import { CalendarIcon } from 'lucide-react';
 
 interface Props {
   categories: Category[];
@@ -230,26 +236,36 @@ export default function TransactionFilters({ categories, accounts, defaultStart,
         {/* Tanggal */}
         <div className="flex flex-wrap items-center gap-2">
           <span className="text-sm" style={{ color: 'var(--text-dim)' }}>Tanggal:</span>
-          <div
-            className="flex items-center gap-2 h-9 px-3 rounded-lg text-sm"
-            style={{ border: '1px solid var(--border-faint)', background: 'var(--bg)' }}
-          >
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => push({ start: e.target.value || null })}
-              className="bg-transparent text-sm focus:outline-none"
-              style={{ color: 'var(--text-hi)' }}
-            />
-            <span style={{ color: 'var(--text-dim)' }}>–</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => push({ end: e.target.value || null })}
-              className="bg-transparent text-sm focus:outline-none"
-              style={{ color: 'var(--text-hi)' }}
-            />
-          </div>
+          <Popover>
+            <PopoverTrigger
+              render={
+                <Button
+                  variant="outline"
+                  className="h-9 px-3 text-sm font-normal gap-2 rounded-lg"
+                  style={{ border: '1px solid var(--border-faint)', background: 'var(--bg)', color: 'var(--text-hi)' }}
+                />
+              }
+            >
+              <CalendarIcon className="h-3.5 w-3.5" style={{ color: 'var(--text-dim)' }} />
+              {format(parseISO(startDate), 'd MMM yyyy', { locale: idLocale })}
+              <span style={{ color: 'var(--text-dim)' }}>–</span>
+              {format(parseISO(endDate), 'd MMM yyyy', { locale: idLocale })}
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="range"
+                locale={idLocale}
+                numberOfMonths={2}
+                selected={{ from: parseISO(startDate), to: parseISO(endDate) }}
+                onSelect={(range) =>
+                  push({
+                    start: range?.from ? format(range.from, 'yyyy-MM-dd') : null,
+                    end: range?.to ? format(range.to, 'yyyy-MM-dd') : null,
+                  })
+                }
+              />
+            </PopoverContent>
+          </Popover>
           {hasFilters && (
             <button
               onClick={() => navigate(pathname)}

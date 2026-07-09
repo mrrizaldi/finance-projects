@@ -71,6 +71,14 @@ export interface Fund {
   is_active: boolean;
 }
 
+export interface BareksaSearchResult {
+  name: string;
+  bareksaId: number;
+  bareksaSlug: string;
+  code: string;
+  managerName: string;
+}
+
 export interface PortfolioFundValue {
   fund_id: string;
   fund_name: string;
