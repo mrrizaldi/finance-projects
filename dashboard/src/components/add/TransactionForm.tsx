@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useRevalidator } from 'react-router';
 import { getBrowserClient } from '@/lib/supabase';
+import { combineDateTimeWIB } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -46,6 +47,10 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onSucc
     // Use WIB date, not UTC date
     const wib = new Date(Date.now() + 7 * 60 * 60 * 1000);
     return wib.toISOString().split('T')[0];
+  });
+  const [time, setTime] = useState(() => {
+    const wib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+    return wib.toISOString().split('T')[1].slice(0, 5);
   });
   const [aiSuggested, setAiSuggested] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -120,7 +125,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onSucc
       description: description || null,
       category_id: categoryId || null,
       account_id: accountId || null,
-      transaction_date: date + 'T00:00:00+07:00',
+      transaction_date: combineDateTimeWIB(date, time),
       source: 'manual_web',
       balance_before: balanceBefore,
       balance_after: balanceAfter,
@@ -235,14 +240,24 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onSucc
         </select>
       </div>
 
-      {/* Date */}
-      <div className="space-y-2">
-        <Label>Tanggal</Label>
-        <Input
-          type="date"
-          value={date}
-          onChange={(e) => setDate(e.target.value)}
-        />
+      {/* Date & time */}
+      <div className="grid grid-cols-2 gap-2">
+        <div className="space-y-2">
+          <Label>Tanggal</Label>
+          <Input
+            type="date"
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Jam</Label>
+          <Input
+            type="time"
+            value={time}
+            onChange={(e) => setTime(e.target.value)}
+          />
+        </div>
       </div>
 
       {/* Account */}

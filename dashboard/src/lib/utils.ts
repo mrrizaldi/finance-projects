@@ -68,6 +68,10 @@ export const SOURCE_LABEL: Record<string, string> = {
 
 export const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
 
+export function combineDateTimeWIB(date: string, time: string): string {
+  return `${date}T${time || '00:00'}:00+07:00`;
+}
+
 export function parseAmountInput(raw: string): number {
   const cleaned = raw.toLowerCase().replace(/[^0-9.,rbjt]/g, '');
   if (cleaned.endsWith('jt')) return parseFloat(cleaned.replace('jt', '').replace(',', '.')) * 1_000_000;
