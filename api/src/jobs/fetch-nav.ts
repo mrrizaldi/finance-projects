@@ -19,9 +19,10 @@ export async function fetchNavForActiveFunds(
   source: NavSource = bareksaSource
 ): Promise<FetchNavResult[]> {
   const { data: funds, error } = await (supabase as any)
-    .from('funds')
+    .from('instruments')
     .select('id, name, bareksa_id, bareksa_slug')
-    .eq('is_active', true);
+    .eq('is_active', true)
+    .eq('type', 'reksadana');
 
   if (error) throw new Error(`Gagal ambil daftar fund: ${error.message}`);
   if (!funds?.length) return [];
@@ -33,21 +34,21 @@ export async function fetchNavForActiveFunds(
       const { nav, asOf } = await source.fetchNav(fund.bareksa_id, fund.bareksa_slug);
 
       const { data: last } = await (supabase as any)
-        .from('nav_history')
-        .select('nav')
-        .eq('fund_id', fund.id)
+        .from('price_history')
+        .select('value')
+        .eq('instrument_id', fund.id)
         .order('date', { ascending: false })
         .limit(1)
         .maybeSingle();
 
       if (last) {
-        const deviation = Math.abs(Number(nav) - Number(last.nav)) / Number(last.nav);
+        const deviation = Math.abs(Number(nav) - Number(last.value)) / Number(last.value);
         if (deviation > DEVIATION_THRESHOLD) {
           results.push({
             fund_id: fund.id,
             name: fund.name,
             status: 'skipped_deviation',
-            message: `NAV baru ${nav} deviasi ${(deviation * 100).toFixed(1)}% dari terakhir ${last.nav} — kemungkinan parse salah, gak disimpan`,
+            message: `NAV baru ${nav} deviasi ${(deviation * 100).toFixed(1)}% dari terakhir ${last.value} — kemungkinan parse salah, gak disimpan`,
           });
           await sleep(FUND_DELAY_MS);
           continue;
@@ -55,8 +56,8 @@ export async function fetchNavForActiveFunds(
       }
 
       const { error: insertError } = await (supabase as any)
-        .from('nav_history')
-        .insert({ fund_id: fund.id, date: asOf, nav, source: 'bareksa' });
+        .from('price_history')
+        .insert({ instrument_id: fund.id, date: asOf, value: nav, source: 'bareksa' });
 
       if (insertError) {
         // unique (fund_id, date) -> udah pernah fetch hari ini, idempotent no-op

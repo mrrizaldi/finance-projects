@@ -36,9 +36,10 @@ export default async function plugin(app: FastifyInstance) {
     if (unauthorized || !supabase) return reply.code(401).send({ error: 'Unauthorized' });
 
     const { data, error } = await (supabase as any)
-      .from('funds')
+      .from('instruments')
       .select('id, name, bareksa_id, bareksa_slug, account_id, is_active')
       .eq('is_active', true)
+      .eq('type', 'reksadana')
       .order('name');
 
     if (error) return reply.code(500).send({ error: error.message });
@@ -63,9 +64,10 @@ export default async function plugin(app: FastifyInstance) {
     if (!bareksaSlug) return reply.code(400).send({ error: 'bareksa_slug wajib diisi — ambil dari URL Bareksa' });
 
     const { data, error } = await (supabase as any)
-      .from('funds')
+      .from('instruments')
       .insert({
         name, account_id: accountId, bareksa_id: bareksaId, bareksa_slug: bareksaSlug, user_id: user.id,
+        type: 'reksadana', quote_convention: 'nav_per_unit',
       })
       .select('id, name, bareksa_id, bareksa_slug, account_id, is_active')
       .single();

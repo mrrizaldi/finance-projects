@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { valueOf, type QuoteConvention } from '../lib/instrument-valuation.js';
 
 const REVALUE_THRESHOLD = 1000; // Rp 1.000 — di bawah ini noise, gak perlu row baru
 
@@ -18,7 +19,7 @@ export async function revalueInvestmentAccounts(supabase: SupabaseClient): Promi
 
   const { data: accounts, error: accError } = await (supabase as any)
     .from('accounts')
-    .select('id, name, balance')
+    .select('id, name, balance, last_portfolio_value')
     .eq('type', 'investment')
     .eq('is_active', true);
 
@@ -38,9 +39,13 @@ export async function revalueInvestmentAccounts(supabase: SupabaseClient): Promi
   const results: RevalueResult[] = [];
 
   for (const account of accounts) {
+    // Fase 4: generalisasi ke semua instrument type lewat valueOf() (SPEC v2 §5.1/§5.4).
+    // distributions yang confirmed SENGAJA tidak pernah dibaca di sini -- duitnya udah
+    // pindah ke akun bank lewat confirm_distribution RPC, gak boleh ikut kehitung dobel
+    // di revaluasi akun investasi ini.
     const { data: funds, error: fundsError } = await (supabase as any)
-      .from('funds')
-      .select('id, holdings(units)')
+      .from('instruments')
+      .select('id, quote_convention, holdings(quantity)')
       .eq('account_id', account.id)
       .eq('is_active', true);
 
@@ -53,23 +58,44 @@ export async function revalueInvestmentAccounts(supabase: SupabaseClient): Promi
 
     let portfolioValue = 0;
     for (const fund of funds) {
-      const units = Number(fund.holdings?.units ?? 0);
-      if (units <= 0) continue;
+      // holdings unique constraint sekarang (instrument_id, order_ref) bukan (instrument_id) lagi
+      // (Fase 1 SPEC v2) -> PostgREST embed jadi one-to-many, holdings selalu array, bukan objek.
+      const holdingRows: Array<{ quantity: number | string }> = Array.isArray(fund.holdings)
+        ? fund.holdings
+        : fund.holdings
+          ? [fund.holdings]
+          : [];
+      const quantity = holdingRows.reduce((sum, h) => sum + Number(h.quantity ?? 0), 0);
+      if (quantity <= 0) continue;
 
-      const { data: navRow } = await (supabase as any)
-        .from('nav_history')
-        .select('nav')
-        .eq('fund_id', fund.id)
-        .order('date', { ascending: false })
-        .limit(1)
-        .maybeSingle();
+      const quoteConvention = fund.quote_convention as QuoteConvention;
 
-      if (!navRow) continue;
-      portfolioValue += units * Number(navRow.nav);
+      // par_only (SBR/ST) TIDAK PERNAH lookup harga -- valueOf() bakal abaikan argumen ini,
+      // tapi skip query-nya juga sekalian biar gak nembak price_history buat instrumen yang
+      // emang gak akan pernah punya baris di situ.
+      let latestPrice: number | null = null;
+      if (quoteConvention !== 'par_only') {
+        const { data: priceRow } = await (supabase as any)
+          .from('price_history')
+          .select('value')
+          .eq('instrument_id', fund.id)
+          .order('date', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        latestPrice = priceRow ? Number(priceRow.value) : null;
+      }
+
+      portfolioValue += valueOf(quoteConvention, quantity, latestPrice);
     }
 
     const previousBalance = Number(account.balance);
-    const delta = portfolioValue - previousBalance;
+    // Delta dihitung dari last_portfolio_value (nilai portofolio hasil revaluasi
+    // terakhir), BUKAN dari balance -- balance bisa lebih besar dari portfolio value
+    // kalau ada cash (kupon/dividen confirmed) yang numpuk di akun investasi ini sendiri.
+    // Fallback ke balance kalau belum pernah direvaluasi sama sekali (null).
+    const previousPortfolioValue = account.last_portfolio_value != null ? Number(account.last_portfolio_value) : previousBalance;
+    const delta = portfolioValue - previousPortfolioValue;
 
     if (Math.abs(delta) < REVALUE_THRESHOLD) {
       results.push({
@@ -101,9 +127,12 @@ export async function revalueInvestmentAccounts(supabase: SupabaseClient): Promi
 
     // Gerakin balance eksplisit dulu — trg_reconcile_transaction_snapshots cuma nulis ulang
     // jejak balance_before/after historis, dia gak pernah ngubah accounts.balance itu sendiri.
+    // balance += delta (BUKAN balance = portfolioValue) -- biar cash lain (kupon/dividen
+    // confirmed) yang numpuk di akun ini gak ketimpa ulang. last_portfolio_value dicatat
+    // terpisah sebagai basis delta revaluasi berikutnya.
     const { error: balanceError } = await (supabase as any)
       .from('accounts')
-      .update({ balance: portfolioValue })
+      .update({ balance: previousBalance + delta, last_portfolio_value: portfolioValue })
       .eq('id', account.id);
 
     if (balanceError) throw new Error(`Gagal update balance ${account.name}: ${balanceError.message}`);
@@ -113,7 +142,7 @@ export async function revalueInvestmentAccounts(supabase: SupabaseClient): Promi
       .insert({
         type,
         amount: Math.abs(delta),
-        description: `Revaluasi NAV — ${account.name}`,
+        description: `Revaluasi Portofolio — ${account.name}`,
         account_id: account.id,
         category_id: category?.id ?? null,
         source: 'api',

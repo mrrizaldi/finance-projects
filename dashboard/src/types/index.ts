@@ -198,6 +198,60 @@ export interface DailySpending {
   cumulative_expense: number;
 }
 
+export type InstrumentType = 'saham' | 'obligasi_tradable' | 'obligasi_nontradable';
+
+export interface Instrument {
+  id: string;
+  name: string;
+  type: InstrumentType;
+  quote_convention: 'price_per_share' | 'percent_of_par' | 'par_only';
+  ticker: string | null;
+  sbn_series: string | null;
+  maturity_date: string | null;
+  coupon_pay_day: number | null;
+  coupon_fixed_pct: number | null;
+  account_id: string;
+  is_active: boolean;
+}
+
+export interface InstrumentValue {
+  instrument_id: string;
+  name: string;
+  type: InstrumentType | 'reksadana'; // RPC balikin semua type, difilter reksadana di loader
+  quote_convention: string;
+  account_id: string;
+  account_name: string;
+  quantity: number;
+  latest_price: number | null;
+  price_date: string | null;
+  value: number;
+}
+
+export interface Distribution {
+  id: string;
+  instrument_id: string;
+  kind: 'coupon' | 'dividend';
+  period: string;
+  gross_amount: number;
+  tax_withheld: number;
+  net_amount: number;
+  paid_at: string | null;
+  status: 'projected' | 'confirmed';
+  needs_review: boolean;
+  instruments?: { name: string; account_id: string };
+}
+
+export interface CorporateAction {
+  id: string;
+  instrument_id: string;
+  kind: 'split' | 'reverse_split';
+  ratio_num: number;
+  ratio_denom: number;
+  effective_date: string;
+  applied_at: string | null;
+  instruments?: { name: string; ticker: string | null };
+}
+
 export interface TopTransaction {
   id: string;
   amount: number;
