@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { format, parseISO } from 'date-fns';
 import {
   Dialog,
   DialogContent,
@@ -10,6 +11,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { DatePicker } from '@/components/ui/date-picker';
 import {
   Select,
   SelectContent,
@@ -315,14 +317,23 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
           )}
 
           {/* Date */}
-          <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Tanggal & Waktu</label>
-            <Input
-              type="datetime-local"
-              value={transactionDate}
-              onChange={(e) => setTransactionDate(e.target.value)}
-              required
-            />
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Tanggal</label>
+              <DatePicker
+                value={transactionDate ? parseISO(transactionDate.slice(0, 10)) : undefined}
+                onChange={(d) => d && setTransactionDate(`${format(d, 'yyyy-MM-dd')}T${transactionDate.slice(11, 16) || '00:00'}`)}
+              />
+            </div>
+            <div>
+              <label className="text-xs text-muted-foreground mb-1 block">Jam</label>
+              <Input
+                type="time"
+                value={transactionDate.slice(11, 16)}
+                onChange={(e) => setTransactionDate(`${transactionDate.slice(0, 10)}T${e.target.value}`)}
+                required
+              />
+            </div>
           </div>
 
           {error && (

@@ -2,11 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRevalidator } from 'react-router';
+import { format, parseISO } from 'date-fns';
 import { getBrowserClient } from '@/lib/supabase';
 import { combineDateTimeWIB } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import { Sparkles } from 'lucide-react';
 import type { Account, Category } from '@/types';
 
@@ -244,10 +246,9 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onSucc
       <div className="grid grid-cols-2 gap-2">
         <div className="space-y-2">
           <Label>Tanggal</Label>
-          <Input
-            type="date"
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
+          <DatePicker
+            value={parseISO(date)}
+            onChange={(d) => d && setDate(format(d, 'yyyy-MM-dd'))}
           />
         </div>
         <div className="space-y-2">

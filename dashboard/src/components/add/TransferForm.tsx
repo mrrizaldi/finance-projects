@@ -2,10 +2,12 @@
 
 import { useState } from 'react';
 import { useRevalidator } from 'react-router';
+import { format, parseISO } from 'date-fns';
 import { getBrowserClient } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DatePicker } from '@/components/ui/date-picker';
 import type { Account } from '@/types';
 
 interface Props {
@@ -188,7 +190,7 @@ export function TransferForm({ accounts, onSuccess }: Props) {
 
       <div className="space-y-2">
         <Label>Tanggal</Label>
-        <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+        <DatePicker value={parseISO(date)} onChange={(d) => d && setDate(format(d, 'yyyy-MM-dd'))} />
       </div>
 
       <Button
