@@ -213,21 +213,21 @@ export default function TransactionsPage() {
     <div className="p-4 sm:p-6 min-h-screen" style={{ background: 'var(--bg)' }}>
       <TransactionPageHeader txCount={transactions.length} estimatedTotal={estimatedTotal} />
 
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+        <SummaryCard label="Total Pemasukan" value={formatRupiah(incomeTotal)} valueColor="var(--positive)" />
+        <SummaryCard label="Total Pengeluaran" value={formatRupiah(expenseTotal)} valueColor="var(--negative)" />
+        <SummaryCard
+          label="Net"
+          value={net >= 0 ? formatRupiah(net) : `−${formatRupiah(Math.abs(net))}`}
+          valueColor={net >= 0 ? 'var(--positive)' : 'var(--negative)'}
+        />
+        <SummaryCard label="Rata-rata / Hari" value={formatRupiah(avgDaily)} valueColor="var(--text-hi)" />
+      </div>
+
+      <TransactionFilters categories={categories} accounts={accounts} defaultStart={filterStart} defaultEnd={filterEnd} />
+
       <div className="grid grid-cols-1 xl:grid-cols-[1fr_268px] gap-6">
         <div className="min-w-0">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
-            <SummaryCard label="Total Pemasukan" value={formatRupiah(incomeTotal)} valueColor="var(--positive)" />
-            <SummaryCard label="Total Pengeluaran" value={formatRupiah(expenseTotal)} valueColor="var(--negative)" />
-            <SummaryCard
-              label="Net"
-              value={net >= 0 ? formatRupiah(net) : `−${formatRupiah(Math.abs(net))}`}
-              valueColor={net >= 0 ? 'var(--positive)' : 'var(--negative)'}
-            />
-            <SummaryCard label="Rata-rata / Hari" value={formatRupiah(avgDaily)} valueColor="var(--text-hi)" />
-          </div>
-
-          <TransactionFilters categories={categories} accounts={accounts} defaultStart={filterStart} defaultEnd={filterEnd} />
-
           <Card className="overflow-hidden">
             <TransactionListClient
               transactions={transactions}

@@ -4,10 +4,11 @@ import { useState } from 'react';
 import { useRevalidator } from 'react-router';
 import { format, parseISO } from 'date-fns';
 import { getBrowserClient } from '@/lib/supabase';
+import { combineDateTimeWIB } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import type { Account } from '@/types';
 
 interface Props {
@@ -37,7 +38,14 @@ export function TransferForm({ accounts, onSuccess }: Props) {
   const [fromAccountId, setFromAccountId] = useState(accounts[0]?.id ?? '');
   const [toAccountId, setToAccountId] = useState(accounts[1]?.id ?? '');
   const [note, setNote] = useState('');
-  const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [date, setDate] = useState(() => {
+    const wib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+    return wib.toISOString().split('T')[0];
+  });
+  const [time, setTime] = useState(() => {
+    const wib = new Date(Date.now() + 7 * 60 * 60 * 1000);
+    return wib.toISOString().split('T')[1].slice(0, 5);
+  });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
 
@@ -64,7 +72,7 @@ export function TransferForm({ accounts, onSuccess }: Props) {
       description: note || `Transfer ${fromAccount?.name} → ${toAccount?.name}`,
       account_id: fromAccountId,
       to_account_id: toAccountId,
-      transaction_date: date,
+      transaction_date: combineDateTimeWIB(date, time),
       source: 'manual_web',
       balance_before: fromBefore,
       balance_after: fromAfter,
@@ -188,10 +196,12 @@ export function TransferForm({ accounts, onSuccess }: Props) {
         />
       </div>
 
-      <div className="space-y-2">
-        <Label>Tanggal</Label>
-        <DatePicker value={parseISO(date)} onChange={(d) => d && setDate(format(d, 'yyyy-MM-dd'))} />
-      </div>
+      <DateTimePicker
+        date={parseISO(date)}
+        time={time}
+        onDateChange={(d) => d && setDate(format(d, 'yyyy-MM-dd'))}
+        onTimeChange={setTime}
+      />
 
       <Button
         type="submit"

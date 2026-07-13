@@ -8,7 +8,7 @@ import { combineDateTimeWIB } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DatePicker } from '@/components/ui/date-picker';
+import { DateTimePicker } from '@/components/ui/date-time-picker';
 import { Sparkles } from 'lucide-react';
 import type { Account, Category } from '@/types';
 
@@ -243,23 +243,12 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onSucc
       </div>
 
       {/* Date & time */}
-      <div className="grid grid-cols-2 gap-2">
-        <div className="space-y-2">
-          <Label>Tanggal</Label>
-          <DatePicker
-            value={parseISO(date)}
-            onChange={(d) => d && setDate(format(d, 'yyyy-MM-dd'))}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label>Jam</Label>
-          <Input
-            type="time"
-            value={time}
-            onChange={(e) => setTime(e.target.value)}
-          />
-        </div>
-      </div>
+      <DateTimePicker
+        date={parseISO(date)}
+        time={time}
+        onDateChange={(d) => d && setDate(format(d, 'yyyy-MM-dd'))}
+        onTimeChange={setTime}
+      />
 
       {/* Account */}
       <div className="space-y-2">
