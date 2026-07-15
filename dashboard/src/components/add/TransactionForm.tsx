@@ -115,41 +115,20 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onSucc
 
     const supabase = getBrowserClient();
 
-    const account = accounts.find(a => a.id === accountId);
-    const balanceBefore = account?.balance ?? 0;
-    const balanceAfter = type === 'expense'
-      ? balanceBefore - amount
-      : balanceBefore + amount;
-
-    const { error } = await supabase.from('transactions').insert({
-      type,
-      amount,
-      description: description || null,
-      category_id: categoryId || null,
-      account_id: accountId || null,
-      transaction_date: combineDateTimeWIB(date, time),
-      source: 'manual_web',
-      balance_before: balanceBefore,
-      balance_after: balanceAfter,
+    // Saldo di-update ATOMIK di server (RPC): balance = balance +/- amount. JANGAN hitung di
+    // browser dari account.balance yang bisa basi -> lost update (bug JAGO). Snapshot diurus reconcile.
+    const { error } = await supabase.rpc('record_manual_entry', {
+      p_account: accountId || null,
+      p_type: type,
+      p_amount: amount,
+      p_category: categoryId || null,
+      p_description: description || null,
+      p_date: combineDateTimeWIB(date, time),
     });
 
     if (error) {
       setLoading(false);
       return;
-    }
-
-    if (accountId) {
-      await supabase
-        .from('accounts')
-        .update({ balance: balanceAfter })
-        .eq('id', accountId);
-
-      // Recalculate snapshots for all transactions of this account
-      fetch('/api/transactions/recalculate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ account_ids: [accountId] }),
-      }).catch(() => {});
     }
 
     localStorage.setItem(`lastAccount_${type}`, accountId);

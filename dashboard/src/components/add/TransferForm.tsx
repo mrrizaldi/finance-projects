@@ -60,39 +60,19 @@ export function TransferForm({ accounts, onSuccess }: Props) {
     const fromAccount = accounts.find(a => a.id === fromAccountId);
     const toAccount = accounts.find(a => a.id === toAccountId);
 
-    const fromBefore = fromAccount?.balance ?? 0;
-    const fromAfter = fromBefore - amountOut;
-    const toBefore = toAccount?.balance ?? 0;
-    const toAfter = toBefore + finalAmountIn;
-
-    const { error } = await supabase.from('transactions').insert({
-      type: 'transfer',
-      amount: amountOut,
-      to_amount: sameAmount ? null : finalAmountIn,
-      description: note || `Transfer ${fromAccount?.name} → ${toAccount?.name}`,
-      account_id: fromAccountId,
-      to_account_id: toAccountId,
-      transaction_date: combineDateTimeWIB(date, time),
-      source: 'manual_web',
-      balance_before: fromBefore,
-      balance_after: fromAfter,
-      to_balance_before: toBefore,
-      to_balance_after: toAfter,
+    // Saldo di-update ATOMIK di server (RPC): balance = balance +/- amount. JANGAN hitung di
+    // browser dari account.balance yang bisa basi -> lost update (bug JAGO: transfer masuk ke-timpa
+    // transfer keluar berikutnya jadi minus). Snapshot per-row diurus trigger reconcile.
+    const { error } = await supabase.rpc('record_manual_transfer', {
+      p_from_account: fromAccountId,
+      p_to_account: toAccountId,
+      p_amount: amountOut,
+      p_to_amount: sameAmount ? null : finalAmountIn,
+      p_description: note || `Transfer ${fromAccount?.name} → ${toAccount?.name}`,
+      p_date: combineDateTimeWIB(date, time),
     });
 
     if (error) { setLoading(false); return; }
-
-    await Promise.all([
-      supabase.from('accounts').update({ balance: fromAfter }).eq('id', fromAccountId),
-      supabase.from('accounts').update({ balance: toAfter }).eq('id', toAccountId),
-    ]);
-
-    // Recalculate snapshots for both accounts
-    fetch('/api/transactions/recalculate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ account_ids: [fromAccountId, toAccountId] }),
-    }).catch(() => {});
 
     setSuccess(true);
     setLoading(false);
