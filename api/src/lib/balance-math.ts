@@ -3,6 +3,8 @@ export type TransactionType = 'income' | 'expense' | 'transfer';
 export type TxBalanceState = {
   type: TransactionType;
   amount: number;
+  // Jumlah yang MASUK ke akun tujuan (transfer beda nominal / admin fee). null = sama dgn amount.
+  to_amount?: number | null;
   account_id: string | null;
   to_account_id: string | null;
 };
@@ -27,9 +29,10 @@ export function getEffects(tx: TxBalanceState): Record<string, number> {
     return effects;
   }
 
-  // transfer
+  // transfer: keluar = amount, masuk = to_amount (fallback amount kalau nominal sama)
+  const inAmount = tx.to_amount ?? tx.amount;
   if (tx.account_id) effects[tx.account_id] = (effects[tx.account_id] ?? 0) - tx.amount;
-  if (tx.to_account_id) effects[tx.to_account_id] = (effects[tx.to_account_id] ?? 0) + tx.amount;
+  if (tx.to_account_id) effects[tx.to_account_id] = (effects[tx.to_account_id] ?? 0) + inAmount;
   return effects;
 }
 

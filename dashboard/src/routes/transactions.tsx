@@ -15,7 +15,7 @@ dayjs.locale('id');
 
 const PAGE_SIZE = 25;
 const TX_LIST_COLUMNS = [
-  'id', 'type', 'amount', 'description', 'merchant',
+  'id', 'type', 'amount', 'to_amount', 'description', 'merchant',
   'category_id', 'account_id', 'to_account_id', 'installment_id',
   'source', 'balance_before', 'balance_after',
   'to_balance_before', 'to_balance_after',

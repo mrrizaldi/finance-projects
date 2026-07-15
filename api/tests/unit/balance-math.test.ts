@@ -26,6 +26,25 @@ describe('getEffects', () => {
       .toEqual({ bca: -200000, bsi: 200000 });
   });
 
+  it('transfer beda nominal: keluar=amount, masuk=to_amount (admin fee)', () => {
+    // Bug lama: tujuan dikredit amount (200335) padahal cuma 200000 yg masuk -> over-credit fee.
+    expect(getEffects({ type: 'transfer', amount: 200335, to_amount: 200000, account_id: 'bsi', to_account_id: 'bca' }))
+      .toEqual({ bsi: -200335, bca: 200000 });
+  });
+
+  it('transfer to_amount null = nominal sama (fallback ke amount)', () => {
+    expect(getEffects({ type: 'transfer', amount: 100000, to_amount: null, account_id: 'bca', to_account_id: 'bsi' }))
+      .toEqual({ bca: -100000, bsi: 100000 });
+  });
+
+  it('edit transfer beda nominal: diff kredit tujuan pakai to_amount', () => {
+    // expense 20000 di BCA -> jadi transfer BCA->GoPay dgn fee (masuk 19000)
+    const before = getEffects({ type: 'expense', amount: 20000, account_id: 'bca', to_account_id: null });
+    const after = getEffects({ type: 'transfer', amount: 20000, to_amount: 19000, account_id: 'bca', to_account_id: 'gopay' });
+    // BCA: dari -20000 ke -20000 (no change), GoPay: 0 -> +19000
+    expect(diffEffects(before, after)).toEqual({ gopay: 19000 });
+  });
+
   it('expense with null account_id returns empty effects', () => {
     expect(getEffects({ type: 'expense', amount: 50000, account_id: null, to_account_id: null }))
       .toEqual({});

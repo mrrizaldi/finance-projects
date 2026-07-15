@@ -16,7 +16,7 @@ export async function recalculateForAccount(
 
   const { data: txs, error: txError } = await (supabase as any)
     .from('transactions')
-    .select('id, type, amount, account_id, to_account_id, balance_before, balance_after, to_balance_before, to_balance_after')
+    .select('id, type, amount, to_amount, account_id, to_account_id, balance_before, balance_after, to_balance_before, to_balance_after')
     .eq('is_deleted', false)
     .or(`account_id.eq.${accountId},to_account_id.eq.${accountId}`)
     .order('transaction_date', { ascending: false })
@@ -37,7 +37,8 @@ export async function recalculateForAccount(
         ? Number(tx.amount)
         : -Number(tx.amount);
     } else if (isDest) {
-      effect = Number(tx.amount);
+      // transfer: yang masuk ke akun tujuan = to_amount (fallback amount kalau nominal sama)
+      effect = tx.to_amount != null ? Number(tx.to_amount) : Number(tx.amount);
     }
 
     const balanceAfter = running;

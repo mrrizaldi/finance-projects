@@ -17,6 +17,7 @@ export interface Transaction {
   id: string;
   type: TransactionType;
   amount: number;
+  to_amount?: number | null;
   description?: string;
   merchant?: string;
   category_id?: string;

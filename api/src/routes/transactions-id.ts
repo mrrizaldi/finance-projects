@@ -63,7 +63,7 @@ function normalizeNullableString(value: unknown, field: string) {
 async function getActiveTransaction(supabase: SupabaseClient, id: string) {
   const { data, error } = await (supabase as any)
     .from('transactions')
-    .select('id, type, amount, account_id, to_account_id, balance_before, balance_after, to_balance_before, to_balance_after, is_deleted')
+    .select('id, type, amount, to_amount, account_id, to_account_id, balance_before, balance_after, to_balance_before, to_balance_after, is_deleted')
     .eq('id', id)
     .maybeSingle();
 
@@ -74,6 +74,7 @@ async function getActiveTransaction(supabase: SupabaseClient, id: string) {
     id: data.id as string,
     type: data.type as TransactionType,
     amount: Number(data.amount),
+    to_amount: data.to_amount == null ? null : Number(data.to_amount),
     account_id: (data.account_id as string | null) ?? null,
     to_account_id: (data.to_account_id as string | null) ?? null,
     balance_before: data.balance_before == null ? null : Number(data.balance_before),
@@ -111,6 +112,16 @@ export default async function plugin(app: FastifyInstance) {
         updatePayload.amount = amount;
       }
 
+      if ('to_amount' in body) {
+        if (body.to_amount === null || body.to_amount === '') {
+          updatePayload.to_amount = null;
+        } else {
+          const toAmount = Number(body.to_amount);
+          if (!Number.isFinite(toAmount) || toAmount <= 0) return reply.code(400).send({ error: 'Jumlah masuk harus lebih dari 0' });
+          updatePayload.to_amount = toAmount;
+        }
+      }
+
       if ('description' in body) updatePayload.description = normalizeNullableString(body.description, 'description');
       if ('merchant' in body) updatePayload.merchant = normalizeNullableString(body.merchant, 'merchant');
       if ('category_id' in body) updatePayload.category_id = normalizeNullableString(body.category_id, 'category_id');
@@ -131,13 +142,20 @@ export default async function plugin(app: FastifyInstance) {
       const nextState: TxBalanceState = {
         type: (updatePayload.type as TransactionType | undefined) ?? existing.type,
         amount: (updatePayload.amount as number | undefined) ?? existing.amount,
+        to_amount: ('to_amount' in updatePayload ? (updatePayload.to_amount as number | null) : existing.to_amount),
         account_id: (updatePayload.account_id as string | null | undefined) ?? existing.account_id,
         to_account_id: (updatePayload.to_account_id as string | null | undefined) ?? existing.to_account_id,
       };
 
       if (nextState.type !== 'transfer') {
         nextState.to_account_id = null;
+        nextState.to_amount = null;
         updatePayload.to_account_id = null;
+        updatePayload.to_amount = null;
+      } else if ((nextState.to_amount ?? nextState.amount) === nextState.amount) {
+        // nominal masuk == keluar -> simpan null biar konsisten sama create-transfer
+        nextState.to_amount = null;
+        updatePayload.to_amount = null;
       }
 
       if (nextState.type === 'transfer' && (!nextState.account_id || !nextState.to_account_id)) {

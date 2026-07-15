@@ -44,6 +44,9 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
 
   const [type, setType] = useState<'income' | 'expense' | 'transfer'>(tx?.type || 'expense');
   const [amount, setAmount] = useState(tx ? String(tx.amount) : '');
+  // Transfer beda nominal (admin fee): to_amount = jumlah yang benar-benar masuk ke akun tujuan
+  const [sameAmount, setSameAmount] = useState(tx?.to_amount == null);
+  const [amountIn, setAmountIn] = useState(tx?.to_amount != null ? String(tx.to_amount) : '');
   const [description, setDescription] = useState(tx?.description || '');
   const [merchant, setMerchant] = useState(tx?.merchant || '');
   const [categoryId, setCategoryId] = useState(tx?.category_id || '');
@@ -60,6 +63,8 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
     if (tx) {
       setType(tx.type);
       setAmount(String(tx.amount));
+      setSameAmount(tx.to_amount == null);
+      setAmountIn(tx.to_amount != null ? String(tx.to_amount) : '');
       setDescription(tx.description || '');
       setMerchant(tx.merchant || '');
       setCategoryId(tx.category_id || '');
@@ -88,6 +93,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
     const payload: Record<string, unknown> = {
       type,
       amount: Number(amount),
+      to_amount: (type === 'transfer' && !sameAmount && Number(amountIn) > 0) ? Number(amountIn) : null,
       description: description || null,
       merchant: merchant || null,
       category_id: categoryId || null,
@@ -159,7 +165,9 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
 
           {/* Amount */}
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Jumlah (Rp)</label>
+            <label className="text-xs text-muted-foreground mb-1 block">
+              {type === 'transfer' ? 'Jumlah Keluar (Rp)' : 'Jumlah (Rp)'}
+            </label>
             <Input
               type="number"
               value={amount}
@@ -169,6 +177,38 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
               required
             />
           </div>
+
+          {/* Jumlah Masuk (transfer beda nominal / admin fee) */}
+          {type === 'transfer' && (
+            <div>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-muted-foreground">Jumlah Masuk (Rp)</label>
+                <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={sameAmount}
+                    onChange={(e) => setSameAmount(e.target.checked)}
+                    className="rounded"
+                  />
+                  Sama
+                </label>
+              </div>
+              {!sameAmount && (
+                <Input
+                  type="number"
+                  value={amountIn}
+                  onChange={(e) => setAmountIn(e.target.value)}
+                  placeholder="0"
+                  min="1"
+                />
+              )}
+              {!sameAmount && Number(amount) > 0 && Number(amountIn) > 0 && Number(amount) > Number(amountIn) && (
+                <p className="text-xs text-muted-foreground mt-1">
+                  Admin fee: Rp {new Intl.NumberFormat('id-ID').format(Number(amount) - Number(amountIn))}
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Description + Merchant */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
