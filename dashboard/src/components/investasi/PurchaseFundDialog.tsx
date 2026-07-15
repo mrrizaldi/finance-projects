@@ -28,7 +28,8 @@ export function PurchaseFundDialog({
 
   useEffect(() => {
     if (open) {
-      setFromAccountId(sourceAccounts[0]?.id ?? '');
+      // Default sumber = akun investasi fund-nya (beli dari cash yang udah diparkir di situ).
+      setFromAccountId(funds[0]?.account_id ?? sourceAccounts[0]?.id ?? '');
       setFundId(funds[0]?.id ?? '');
       setAmountIdr('');
       setUnits('');
@@ -96,6 +97,9 @@ export function PurchaseFundDialog({
                 ))}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              Pilih akun investasi (mis. Bibit) kalau beli pakai cash yang udah diparkir; pilih bank kalau beli langsung.
+            </p>
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Fund (Reksadana)</label>

@@ -59,7 +59,9 @@ export default function InvestasiPage() {
   const [applyingActionId, setApplyingActionId] = useState<string | null>(null);
 
   const investmentAccounts = accounts.filter((a) => a.type === 'investment');
-  const sourceAccounts = accounts.filter((a) => a.type !== 'investment');
+  // Semua akun boleh jadi sumber beli: akun investasi (beli dari cash yang udah diparkir)
+  // atau bank (beli langsung). RPC handle dua-duanya tanpa double-count.
+  const sourceAccounts = accounts;
   const accountsById = Object.fromEntries(accounts.map((a) => [a.id, a]));
 
   const onSuccess = () => revalidator.revalidate();

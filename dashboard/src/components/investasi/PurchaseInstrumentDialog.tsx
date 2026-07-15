@@ -28,7 +28,8 @@ export function PurchaseInstrumentDialog({
 
   useEffect(() => {
     if (open) {
-      setFromAccountId(sourceAccounts[0]?.id ?? '');
+      // Default sumber = akun investasi instrumennya (beli dari cash yang udah diparkir di situ).
+      setFromAccountId(instruments[0]?.account_id ?? sourceAccounts[0]?.id ?? '');
       setInstrumentId(instruments[0]?.id ?? '');
       setAmountIdr('');
       setQuantity('');
@@ -91,6 +92,9 @@ export function PurchaseInstrumentDialog({
                 {sourceAccounts.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">
+              Pilih akun investasi kalau beli pakai cash yang udah diparkir; pilih bank kalau beli langsung.
+            </p>
           </div>
           <div className="space-y-1.5">
             <label className="text-sm font-medium">Instrumen</label>
