@@ -95,6 +95,7 @@ export interface PortfolioSummary {
   total_contributed: number;
   absolute_gain: number;
   gain_pct: number;
+  idle_cash: number;
 }
 
 export interface InstallmentMonth {

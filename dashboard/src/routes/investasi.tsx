@@ -101,7 +101,12 @@ export default function InvestasiPage() {
         <Card>
           <CardContent className="p-4">
             <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Total Nilai</p>
-            <p className="num text-xl font-bold mt-1">{formatRupiah(summary?.total_value ?? 0)}</p>
+            <p className="num text-xl font-bold mt-1">{formatRupiah((summary?.total_value ?? 0) + (summary?.idle_cash ?? 0))}</p>
+            {(summary?.idle_cash ?? 0) > 0 && (
+              <p className="text-[10px] text-muted-foreground mt-1">
+                termasuk {formatRupiah(summary?.idle_cash ?? 0)} cash belum dialokasiin
+              </p>
+            )}
           </CardContent>
         </Card>
         <Card>
