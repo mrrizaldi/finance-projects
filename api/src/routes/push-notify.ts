@@ -41,11 +41,8 @@ export default async function plugin(app: FastifyInstance) {
 
     if (txError || !tx) return reply.code(404).send({ error: 'Transaction not found' });
 
-    // ponytail: single-user app — notify every subscription. Email-parsed (BCA/BSI)
-    // transactions have user_id = NULL, so filtering by record.user_id would drop them.
-    // Add .eq('user_id', ...) back if this ever goes multi-user.
     const { data: subs, error: subsError } = await (adminSupabase as any)
-      .from('push_subscriptions').select('endpoint, p256dh, auth');
+      .from('push_subscriptions').select('endpoint, p256dh, auth').eq('user_id', record.user_id);
 
     if (subsError || !subs?.length) return { ok: true, sent: 0 };
 
