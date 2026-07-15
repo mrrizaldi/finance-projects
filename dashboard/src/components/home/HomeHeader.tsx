@@ -1,10 +1,11 @@
 'use client';
 
 import { useNavigate } from 'react-router';
-import { ChevronLeft, ChevronRight, Calendar, Plus, Search, Bell } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Plus, Search } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
 import { useAddTransaction } from '@/lib/add-transaction-context';
+import { NotificationBell } from '@/components/NotificationBell';
 
 dayjs.locale('id');
 
@@ -21,7 +22,7 @@ export function HomeHeader({ month }: { month: string }) {
   };
 
   return (
-    <div className="flex items-center justify-between mb-6 gap-4">
+    <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6 md:gap-4">
       {/* Greeting */}
       <div className="min-w-0">
         <h1 className="text-xl font-bold leading-tight" style={{ color: 'var(--text-hi)' }}>
@@ -75,7 +76,7 @@ export function HomeHeader({ month }: { month: string }) {
         <button
           type="button"
           onClick={() => openModal()}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 whitespace-nowrap"
+          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold text-white transition-opacity hover:opacity-90 whitespace-nowrap"
           style={{ background: 'var(--accent-hi)' }}
         >
           <Plus className="h-3.5 w-3.5" />
@@ -90,13 +91,10 @@ export function HomeHeader({ month }: { month: string }) {
         >
           <Search className="h-4 w-4" />
         </button>
-        <button
+        <NotificationBell
           className="p-1.5 rounded-lg transition-colors hover:bg-[var(--surface-hi)]"
           style={{ color: 'var(--text-mute)' }}
-          aria-label="Notifikasi"
-        >
-          <Bell className="h-4 w-4" />
-        </button>
+        />
       </div>
     </div>
   );

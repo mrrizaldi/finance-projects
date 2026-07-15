@@ -1,8 +1,9 @@
 'use client';
 
 import { useNavigate, useLocation, useSearchParams } from 'react-router';
-import { ChevronLeft, ChevronRight, Calendar, Download, Plus, Search, Bell } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Calendar, Download, Plus, Search } from 'lucide-react';
 import { useAddTransaction } from '@/lib/add-transaction-context';
+import { NotificationBell } from '@/components/NotificationBell';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
 
@@ -34,7 +35,7 @@ export default function TransactionPageHeader({ txCount, estimatedTotal }: Props
 
   return (
     <div
-      className="flex items-center justify-between gap-4 pb-5 mb-6"
+      className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4 pb-5 mb-6"
       style={{ borderBottom: '1px solid var(--border-faint)' }}
     >
       {/* Left: title + subtitle */}
@@ -95,7 +96,7 @@ export default function TransactionPageHeader({ txCount, estimatedTotal }: Props
         {/* + Tambah */}
         <button
           onClick={() => openModal()}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors"
+          className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors"
           style={{ background: 'var(--accent-hi)', color: '#fff' }}
         >
           <Plus className="h-4 w-4" />
@@ -109,12 +110,10 @@ export default function TransactionPageHeader({ txCount, estimatedTotal }: Props
         >
           <Search className="h-4 w-4" />
         </button>
-        <button
+        <NotificationBell
           className="p-1.5 rounded-lg transition-colors hover:bg-[var(--surface-hi)]"
           style={{ color: 'var(--text-mute)' }}
-        >
-          <Bell className="h-4 w-4" />
-        </button>
+        />
       </div>
     </div>
   );
