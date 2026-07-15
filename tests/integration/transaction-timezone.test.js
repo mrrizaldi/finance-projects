@@ -6,6 +6,8 @@ import { test, expect, runSuite } from './run.js';
 
 const SB_URL = 'https://dqvdhkpqyynvwfbuqyzu.supabase.co';
 const SB_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
+// transactions.user_id is NOT NULL (multi-user); service-role inserts must set it explicitly.
+const OWNER_ID = 'dc20c468-c97f-4086-90f5-493007704eff';
 
 async function sbInsert(table, body) {
   const res = await fetch(`${SB_URL}/rest/v1/${table}`, {
@@ -51,6 +53,7 @@ await runSuite('Transaction Timezone Storage', async () => {
       transaction_date: '2026-05-18T00:00:00+07:00',
       source: 'manual_web',
       is_deleted: false,
+      user_id: OWNER_ID,
     });
     expect(tx.transaction_date).toContain('2026-05-17T17:00:00');
     await sbDelete('transactions', tx.id);
@@ -67,6 +70,7 @@ await runSuite('Transaction Timezone Storage', async () => {
       transaction_date: '2026-05-18',
       source: 'manual_web',
       is_deleted: false,
+      user_id: OWNER_ID,
     });
     // Stored as midnight UTC — not WIB-aware
     expect(tx.transaction_date).toContain('2026-05-18T00:00:00');
@@ -83,6 +87,7 @@ await runSuite('Transaction Timezone Storage', async () => {
       transaction_date: '2026-05-18T12:30:00+07:00',
       source: 'manual_web',
       is_deleted: false,
+      user_id: OWNER_ID,
     });
     expect(tx.transaction_date).toContain('2026-05-18T05:30:00');
     await sbDelete('transactions', tx.id);
