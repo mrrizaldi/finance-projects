@@ -79,3 +79,43 @@ await runSuite('RLS isolation — analytics RPCs', async () => {
     }
   });
 });
+
+await runSuite('RLS isolation — phase2 tables', async () => {
+  await test('user B sees no telegram_links / invite_codes of others', async () => {
+    const { signUserJwt } = await import('./helpers/jwt.js');
+    const { createTestUser } = await import('./helpers/users.js');
+    const SB = 'https://dqvdhkpqyynvwfbuqyzu.supabase.co';
+    const ANON = process.env.SUPABASE_ANON_KEY;
+    const SR = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    const JWT_SECRET = process.env.SUPABASE_JWT_SECRET;
+    const OWNER_ID = 'dc20c468-c97f-4086-90f5-493007704eff';
+
+    // owner-created invite via service role
+    const code = `test-${Date.now()}`;
+    await fetch(`${SB}/rest/v1/invite_codes`, {
+      method: 'POST',
+      headers: { apikey: SR, Authorization: `Bearer ${SR}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code, created_by: OWNER_ID, expires_at: '2100-01-01' }),
+    });
+    try {
+      const b = await createTestUser(`phase2-iso-${Date.now()}@example.com`);
+      try {
+        const jwt = signUserJwt(b.userId, JWT_SECRET);
+        const inv = await (await fetch(`${SB}/rest/v1/invite_codes?select=code`, {
+          headers: { apikey: ANON, Authorization: `Bearer ${jwt}` },
+        })).json();
+        expect(Array.isArray(inv)).toBe(true);
+        expect(inv.some((r) => r.code === code)).toBe(false);
+        const links = await (await fetch(`${SB}/rest/v1/telegram_links?select=chat_id`, {
+          headers: { apikey: ANON, Authorization: `Bearer ${jwt}` },
+        })).json();
+        expect(Array.isArray(links)).toBe(true);
+        expect(links.length).toBe(0);
+      } finally { await b.cleanup(); }
+    } finally {
+      await fetch(`${SB}/rest/v1/invite_codes?code=eq.${code}`, {
+        method: 'DELETE', headers: { apikey: SR, Authorization: `Bearer ${SR}` },
+      });
+    }
+  });
+});
