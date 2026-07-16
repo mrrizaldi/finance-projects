@@ -15,6 +15,7 @@ export default [
     route('balances', 'routes/balances.tsx'),
     route('budget', 'routes/budget.tsx'),
     route('bulk', 'routes/bulk.tsx'),
+    route('connect', 'routes/connect.tsx'),
     route('insights', 'routes/insights.tsx'),
     route('installments', 'routes/installments.tsx'),
     route('investasi', 'routes/investasi.tsx'),

@@ -30,20 +30,29 @@ interface InviteCode {
   created_at: string;
 }
 
+interface TelegramRequest {
+  chat_id: string;
+  user_id: string;
+  email: string | null;
+  requested_at: string;
+}
+
 export async function clientLoader() {
-  const [usersRes, invitesRes] = await Promise.all([
+  const [usersRes, invitesRes, telegramRes] = await Promise.all([
     fetch('/api/admin/users'),
     fetch('/api/admin/invites'),
+    fetch('/api/admin/telegram-requests'),
   ]);
 
-  if (usersRes.status === 401 || invitesRes.status === 401) throw redirect('/login');
-  if (usersRes.status === 403 || invitesRes.status === 403) throw redirect('/');
-  if (!usersRes.ok || !invitesRes.ok) throw new Error('Gagal memuat data admin');
+  if (usersRes.status === 401 || invitesRes.status === 401 || telegramRes.status === 401) throw redirect('/login');
+  if (usersRes.status === 403 || invitesRes.status === 403 || telegramRes.status === 403) throw redirect('/');
+  if (!usersRes.ok || !invitesRes.ok || !telegramRes.ok) throw new Error('Gagal memuat data admin');
 
   const users: AdminUser[] = await usersRes.json();
   const invites: InviteCode[] = await invitesRes.json();
+  const telegramRequests: TelegramRequest[] = await telegramRes.json();
 
-  return { users, invites };
+  return { users, invites, telegramRequests };
 }
 
 function inviteStatus(invite: InviteCode): { label: string; variant: 'secondary' | 'outline' | 'destructive' } {
@@ -53,12 +62,13 @@ function inviteStatus(invite: InviteCode): { label: string; variant: 'secondary'
 }
 
 export default function AdminPage() {
-  const { users, invites } = useLoaderData<typeof clientLoader>();
+  const { users, invites, telegramRequests } = useLoaderData<typeof clientLoader>();
   const revalidator = useRevalidator();
   const [error, setError] = useState<string | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
   const [generating, setGenerating] = useState(false);
   const [newCode, setNewCode] = useState<string | null>(null);
+  const [busyChatId, setBusyChatId] = useState<string | null>(null);
   // GET /api/admin/users tidak mengembalikan status banned, jadi status suspend
   // di-track lokal per sesi. ponytail: kalau nanti API expose banned_until, ganti ke situ.
   const [suspendedIds, setSuspendedIds] = useState<Set<string>>(new Set());
@@ -103,6 +113,22 @@ export default function AdminPage() {
       revalidator.revalidate();
     } finally {
       setGenerating(false);
+    }
+  }
+
+  async function handleTelegramRequest(chatId: string, action: 'approve' | 'reject') {
+    setError(null);
+    setBusyChatId(chatId);
+    try {
+      const res = await fetch(`/api/admin/telegram-requests/${chatId}/${action}`, { method: 'POST' });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data?.error ?? 'Gagal update request');
+        return;
+      }
+      revalidator.revalidate();
+    } finally {
+      setBusyChatId(null);
     }
   }
 
@@ -169,6 +195,54 @@ export default function AdminPage() {
             </TableBody>
           </Table>
         </div>
+      </section>
+
+      <section>
+        <h2 className="text-lg font-semibold mb-3" style={{ color: 'var(--text-hi)' }}>
+          Pending Telegram Requests
+        </h2>
+        {telegramRequests.length === 0 ? (
+          <p className="text-sm" style={{ color: 'var(--text-mute)' }}>Belum ada request.</p>
+        ) : (
+          <div className="rounded-lg" style={{ border: '1px solid var(--border-faint)' }}>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Requested At</TableHead>
+                  <TableHead>Aksi</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {telegramRequests.map((r) => (
+                  <TableRow key={r.chat_id}>
+                    <TableCell style={{ color: 'var(--text-mid)' }}>{r.email ?? '-'}</TableCell>
+                    <TableCell style={{ color: 'var(--text-mute)' }}>
+                      {new Date(r.requested_at).toLocaleString('id-ID')}
+                    </TableCell>
+                    <TableCell className="space-x-2">
+                      <Button
+                        size="sm"
+                        disabled={busyChatId === r.chat_id}
+                        onClick={() => handleTelegramRequest(r.chat_id, 'approve')}
+                      >
+                        {busyChatId === r.chat_id ? '...' : 'Approve'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={busyChatId === r.chat_id}
+                        onClick={() => handleTelegramRequest(r.chat_id, 'reject')}
+                      >
+                        {busyChatId === r.chat_id ? '...' : 'Reject'}
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
       </section>
 
       <section>
