@@ -1,7 +1,7 @@
 'use client';
 
 import { Link } from 'react-router';
-import { CreditCard, Wallet, FileText, Landmark, Sparkles, Settings, LogOut } from 'lucide-react';
+import { CreditCard, Wallet, FileText, Landmark, Sparkles, Settings, ShieldCheck, LogOut } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase';
 
 const menuItems = [
@@ -11,6 +11,7 @@ const menuItems = [
   { href: '/balances', label: 'Saldo Akun', description: 'Lihat & adjust saldo', icon: Landmark },
   { href: '/insights', label: 'AI Insights', description: 'Tanya AI soal keuangan', icon: Sparkles },
   { href: '/settings', label: 'Settings', description: 'Akun, kategori, profil', icon: Settings },
+  { href: '/admin', label: 'Admin', description: 'Kelola user & invite', icon: ShieldCheck },
 ];
 
 export function MoreMenu() {

@@ -25,6 +25,7 @@ import {
   Wallet,
   Sparkles,
   Settings,
+  ShieldCheck,
   LogOut,
   TrendingUp,
 } from 'lucide-react';
@@ -137,6 +138,15 @@ export function AppSidebar() {
                 >
                   <Settings className="h-4 w-4" />
                   <span>Settings</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  render={<Link to="/admin" />}
+                  isActive={isActive('/admin')}
+                >
+                  <ShieldCheck className="h-4 w-4" />
+                  <span>Admin</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>

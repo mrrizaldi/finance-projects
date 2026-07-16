@@ -10,6 +10,7 @@ export default [
   route('reset-password', 'routes/reset-password.tsx'),
   layout('routes/app-layout.tsx', [
     index('routes/home.tsx'),
+    route('admin', 'routes/admin.tsx'),
     route('analytics', 'routes/analytics.tsx'),
     route('balances', 'routes/balances.tsx'),
     route('budget', 'routes/budget.tsx'),
