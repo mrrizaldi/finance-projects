@@ -3,6 +3,7 @@
 import { Link } from 'react-router';
 import { CreditCard, Wallet, FileText, Landmark, Sparkles, Settings, ShieldCheck, LogOut } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase';
+import { useIsAdmin } from '@/lib/use-is-admin';
 
 const menuItems = [
   { href: '/installments', label: 'Cicilan', description: 'Lihat & kelola cicilan', icon: CreditCard },
@@ -15,6 +16,9 @@ const menuItems = [
 ];
 
 export function MoreMenu() {
+  const isAdmin = useIsAdmin();
+  const items = menuItems.filter((item) => item.href !== '/admin' || isAdmin);
+
   async function handleLogout() {
     const supabase = getBrowserClient();
     await supabase.auth.signOut();
@@ -24,7 +28,7 @@ export function MoreMenu() {
   return (
     <div className="space-y-4">
       <div className="overflow-hidden rounded-lg border border-border">
-        {menuItems.map((item, idx) => {
+        {items.map((item, idx) => {
           const Icon = item.icon;
           return (
             <Link

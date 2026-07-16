@@ -30,6 +30,7 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase';
+import { useIsAdmin } from '@/lib/use-is-admin';
 
 const mainNav = [
   { href: '/', label: 'Home', icon: Home },
@@ -55,6 +56,7 @@ async function handleLogout() {
 export function AppSidebar() {
   const { pathname } = useLocation();
   const { openModal } = useAddTransaction();
+  const isAdmin = useIsAdmin();
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);
@@ -140,15 +142,17 @@ export function AppSidebar() {
                   <span>Settings</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton
-                  render={<Link to="/admin" />}
-                  isActive={isActive('/admin')}
-                >
-                  <ShieldCheck className="h-4 w-4" />
-                  <span>Admin</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    render={<Link to="/admin" />}
+                    isActive={isActive('/admin')}
+                  >
+                    <ShieldCheck className="h-4 w-4" />
+                    <span>Admin</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
