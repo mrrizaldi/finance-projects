@@ -27,10 +27,13 @@ async function balanceOf(id) {
   return Number(rows[0]?.balance);
 }
 
+// accounts.user_id is NOT NULL (multi-user); service-role inserts must set it.
+const OWNER_ID = 'dc20c468-c97f-4086-90f5-493007704eff';
+
 async function createAccount(name, balance) {
   const rows = await fetch(`${SB_URL}/rest/v1/accounts`, {
     method: 'POST', headers: { ...H, Prefer: 'return=representation' },
-    body: JSON.stringify({ name, type: 'cash', balance, is_active: false }),
+    body: JSON.stringify({ name, type: 'cash', balance, is_active: false, user_id: OWNER_ID }),
   }).then(r => r.json());
   return rows[0].id;
 }
