@@ -112,4 +112,61 @@ export default async function plugin(app: FastifyInstance) {
       return reply.code(500).send({ error: error?.message || 'Internal server error' });
     }
   });
+
+  app.get('/api/admin/telegram-requests', async (request, reply) => {
+    try {
+      const ctx = await requireAdmin(request, reply);
+      if (!ctx) return;
+      const { admin } = ctx;
+
+      const { data: links, error } = await admin
+        .from('telegram_links').select('chat_id, user_id, requested_at').eq('status', 'pending');
+      if (error) return reply.code(500).send({ error: error.message });
+
+      const rows = await Promise.all((links || []).map(async (l: any) => {
+        const { data: u } = await (admin as any).auth.admin.getUserById(l.user_id);
+        return { chat_id: l.chat_id, user_id: l.user_id, email: u?.user?.email ?? null, requested_at: l.requested_at };
+      }));
+
+      return rows;
+    } catch (error: any) {
+      return reply.code(500).send({ error: error?.message || 'Internal server error' });
+    }
+  });
+
+  app.post('/api/admin/telegram-requests/:chatId/approve', async (request, reply) => {
+    try {
+      const ctx = await requireAdmin(request, reply);
+      if (!ctx) return;
+      const { admin } = ctx;
+
+      const { chatId } = request.params as { chatId: string };
+      const { error } = await admin
+        .from('telegram_links')
+        .update({ status: 'approved', approved_at: new Date().toISOString() })
+        .eq('chat_id', chatId).eq('status', 'pending');
+      if (error) return reply.code(500).send({ error: error.message });
+
+      return { ok: true };
+    } catch (error: any) {
+      return reply.code(500).send({ error: error?.message || 'Internal server error' });
+    }
+  });
+
+  app.post('/api/admin/telegram-requests/:chatId/reject', async (request, reply) => {
+    try {
+      const ctx = await requireAdmin(request, reply);
+      if (!ctx) return;
+      const { admin } = ctx;
+
+      const { chatId } = request.params as { chatId: string };
+      const { error } = await admin
+        .from('telegram_links').delete().eq('chat_id', chatId).eq('status', 'pending');
+      if (error) return reply.code(500).send({ error: error.message });
+
+      return { ok: true };
+    } catch (error: any) {
+      return reply.code(500).send({ error: error?.message || 'Internal server error' });
+    }
+  });
 }
