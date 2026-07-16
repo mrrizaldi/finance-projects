@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import accountsRoutes from './routes/accounts.js';
 import accountsIdRoutes from './routes/accounts-id.js';
 import accountsIdAdjustRoutes from './routes/accounts-id-adjust.js';
+import adminRoutes from './routes/admin.js';
 import budgetSuggestRoutes from './routes/budget-suggest.js';
 import categoriesRoutes from './routes/categories.js';
 import categoriesIdRoutes from './routes/categories-id.js';
@@ -42,6 +43,7 @@ export async function buildApp() {
   await app.register(accountsRoutes);
   await app.register(accountsIdRoutes);
   await app.register(accountsIdAdjustRoutes);
+  await app.register(adminRoutes);
   await app.register(budgetSuggestRoutes);
   await app.register(categoriesRoutes);
   await app.register(categoriesIdRoutes);
