@@ -1,4 +1,5 @@
 import { useLoaderData } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { getBrowserClient } from '@/lib/supabase';
 import { Account, Category, Profile } from '@/types';
 import { SettingsClient } from '@/components/settings/SettingsClient';
@@ -29,12 +30,13 @@ export async function clientLoader() {
 }
 
 export default function SettingsPage() {
+  const { t } = useTranslation();
   const { accounts, categories, profile, email } = useLoaderData<typeof clientLoader>();
   return (
     <div className="p-4 sm:p-6 max-w-4xl mx-auto">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-foreground">Pengaturan</h1>
-        <p className="text-muted-foreground text-sm mt-1">Kelola akun dan kategori transaksi</p>
+        <h1 className="text-2xl font-bold text-foreground">{t('settings.title')}</h1>
+        <p className="text-muted-foreground text-sm mt-1">{t('settings.subtitle')}</p>
       </div>
 
       <SettingsClient

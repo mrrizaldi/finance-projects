@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,17 +15,18 @@ interface AccountEditDialogProps {
   onSuccess: () => void;
 }
 
-const ACCOUNT_TYPES = [
-  { value: 'bank', label: 'Bank' },
-  { value: 'ewallet', label: 'E-Wallet' },
-  { value: 'cash', label: 'Tunai' },
-  { value: 'marketplace', label: 'Marketplace' },
-  { value: 'investment', label: 'Investasi' },
-  { value: 'other', label: 'Lainnya' },
-];
-
 export function AccountEditDialog({ account, open, onOpenChange, onSuccess }: AccountEditDialogProps) {
+  const { t } = useTranslation();
   const isEdit = account !== null;
+
+  const ACCOUNT_TYPES = [
+    { value: 'bank', label: t('settings.accType.bank') },
+    { value: 'ewallet', label: t('settings.accType.ewallet') },
+    { value: 'cash', label: t('settings.accType.cash') },
+    { value: 'marketplace', label: t('settings.accType.marketplace') },
+    { value: 'investment', label: t('settings.accType.investment') },
+    { value: 'other', label: t('settings.accType.other') },
+  ];
 
   const [name, setName] = useState('');
   const [type, setType] = useState<Account['type']>('bank');
@@ -61,14 +63,14 @@ export function AccountEditDialog({ account, open, onOpenChange, onSuccess }: Ac
 
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error || 'Gagal menyimpan');
+        setError(json.error || t('settings.saveFailed'));
         return;
       }
 
       onSuccess();
       onOpenChange(false);
     } catch {
-      setError('Terjadi kesalahan, coba lagi');
+      setError(t('common.errorRetry'));
     } finally {
       setLoading(false);
     }
@@ -80,20 +82,20 @@ export function AccountEditDialog({ account, open, onOpenChange, onSuccess }: Ac
         {loading && (
           <div className="absolute inset-0 z-20 bg-black/70 backdrop-blur-sm rounded-lg flex items-center justify-center">
             <div className="rounded-md border border-border bg-card px-3 py-2 text-sm">
-              Menyimpan akun...
+              {t('settings.savingAccount')}
             </div>
           </div>
         )}
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Edit Akun' : 'Tambah Akun'}</DialogTitle>
+          <DialogTitle>{isEdit ? t('settings.editAccount') : t('settings.addAccount')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Nama Akun</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Misal: BCA Tabungan" />
+            <label className="text-sm font-medium">{t('settings.accountName')}</label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('settings.accountNamePlaceholder')} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Tipe</label>
+            <label className="text-sm font-medium">{t('filters.type')}</label>
             <Select value={type} onValueChange={(v) => setType(v as Account['type'])}>
               <SelectTrigger>
                 <SelectValue />
@@ -107,7 +109,7 @@ export function AccountEditDialog({ account, open, onOpenChange, onSuccess }: Ac
           </div>
           {!isEdit && (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Saldo Awal</label>
+              <label className="text-sm font-medium">{t('settings.initialBalance')}</label>
               <Input
                 type="number"
                 value={balance}
@@ -118,9 +120,9 @@ export function AccountEditDialog({ account, open, onOpenChange, onSuccess }: Ac
           )}
           {error && <p className="text-sm text-red-500">{error}</p>}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Menyimpan...' : 'Simpan'}
+              {loading ? t('common.saving') : t('common.save')}
             </Button>
           </DialogFooter>
         </form>

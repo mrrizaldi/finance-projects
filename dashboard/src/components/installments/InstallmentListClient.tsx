@@ -2,6 +2,7 @@
 
 import { useState, useTransition, useCallback } from 'react';
 import { useRevalidator } from 'react-router';
+import i18n from '@/i18n';
 import { Installment, Category, Account } from '@/types';
 import InstallmentCard from './InstallmentCard';
 import InstallmentDetailDialog from './InstallmentDetailDialog';
@@ -28,7 +29,7 @@ export default function InstallmentListClient({ installments, categories, accoun
   const loadDetail = useCallback(async (id: string) => {
     const res = await fetch(`/api/installments/${id}`);
     const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || 'Gagal memuat detail cicilan');
+    if (!res.ok) throw new Error(data?.error || i18n.t('inst.loadDetailFailed'));
     return data?.data as Installment;
   }, []);
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,14 +15,15 @@ interface CategoryEditDialogProps {
   onSuccess: () => void;
 }
 
-const CATEGORY_TYPES = [
-  { value: 'expense', label: 'Pengeluaran' },
-  { value: 'income', label: 'Pemasukan' },
-  { value: 'both', label: 'Keduanya' },
-];
-
 export function CategoryEditDialog({ category, open, onOpenChange, onSuccess }: CategoryEditDialogProps) {
+  const { t } = useTranslation();
   const isEdit = category !== null;
+
+  const CATEGORY_TYPES = [
+    { value: 'expense', label: t('tx.type.expense') },
+    { value: 'income', label: t('tx.type.income') },
+    { value: 'both', label: t('settings.categoryBoth') },
+  ];
 
   const [name, setName] = useState('');
   const [type, setType] = useState<Category['type']>('expense');
@@ -65,14 +67,14 @@ export function CategoryEditDialog({ category, open, onOpenChange, onSuccess }: 
 
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error || 'Gagal menyimpan');
+        setError(json.error || t('settings.saveFailed'));
         return;
       }
 
       onSuccess();
       onOpenChange(false);
     } catch {
-      setError('Terjadi kesalahan, coba lagi');
+      setError(t('common.errorRetry'));
     } finally {
       setLoading(false);
     }
@@ -84,20 +86,20 @@ export function CategoryEditDialog({ category, open, onOpenChange, onSuccess }: 
         {loading && (
           <div className="absolute inset-0 z-20 bg-black/70 backdrop-blur-sm rounded-lg flex items-center justify-center">
             <div className="rounded-md border border-border bg-card px-3 py-2 text-sm">
-              Menyimpan kategori...
+              {t('settings.savingCategory')}
             </div>
           </div>
         )}
         <DialogHeader>
-          <DialogTitle>{isEdit ? 'Edit Kategori' : 'Tambah Kategori'}</DialogTitle>
+          <DialogTitle>{isEdit ? t('settings.editCategory') : t('settings.addCategory')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2 max-h-[70vh] overflow-y-auto pr-1">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Nama Kategori</label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Misal: Makan & Minum" />
+            <label className="text-sm font-medium">{t('settings.categoryName')}</label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder={t('settings.categoryNamePlaceholder')} />
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Tipe</label>
+            <label className="text-sm font-medium">{t('filters.type')}</label>
             <Select value={type} onValueChange={(v) => setType(v as Category['type'])}>
               <SelectTrigger>
                 <SelectValue />
@@ -110,7 +112,7 @@ export function CategoryEditDialog({ category, open, onOpenChange, onSuccess }: 
             </Select>
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Warna (hex)</label>
+            <label className="text-sm font-medium">{t('settings.colorHex')}</label>
             <div className="flex gap-2 items-center">
               <input
                 type="color"
@@ -123,7 +125,7 @@ export function CategoryEditDialog({ category, open, onOpenChange, onSuccess }: 
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Budget Bulanan <span className="text-muted-foreground">(opsional)</span></label>
+              <label className="text-sm font-medium">{t('settings.monthlyBudget')} <span className="text-muted-foreground">{t('settings.optionalParen')}</span></label>
               <Input
                 type="number"
                 value={budgetMonthly}
@@ -132,7 +134,7 @@ export function CategoryEditDialog({ category, open, onOpenChange, onSuccess }: 
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Urutan <span className="text-muted-foreground">(opsional)</span></label>
+              <label className="text-sm font-medium">{t('settings.order')} <span className="text-muted-foreground">{t('settings.optionalParen')}</span></label>
               <Input
                 type="number"
                 value={sortOrder}
@@ -143,9 +145,9 @@ export function CategoryEditDialog({ category, open, onOpenChange, onSuccess }: 
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Menyimpan...' : 'Simpan'}
+              {loading ? t('common.saving') : t('common.save')}
             </Button>
           </DialogFooter>
         </form>

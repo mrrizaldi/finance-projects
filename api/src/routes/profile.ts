@@ -11,6 +11,12 @@ export default async function plugin(app: FastifyInstance) {
 
     if (body.display_name !== undefined) updates.display_name = body.display_name;
     if (body.default_account_id !== undefined) updates.default_account_id = body.default_account_id;
+    if (body.locale !== undefined) {
+      if (body.locale !== 'id' && body.locale !== 'en') {
+        return reply.code(400).send({ error: 'Locale tidak valid (id|en)' });
+      }
+      updates.locale = body.locale;
+    }
 
     const { error } = await (supabase as any).from('profiles').update(updates).eq('id', user.id);
     if (error) return reply.code(500).send({ error: error.message });

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRevalidator } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function InstallmentCreateButton({ accounts, categories }: Props) {
+  const { t } = useTranslation();
   const revalidator = useRevalidator();
   const [open, setOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -70,26 +72,26 @@ export function InstallmentCreateButton({ accounts, categories }: Props) {
     <>
       <Button onClick={() => setOpen(true)} size="sm">
         <Plus className="h-4 w-4 mr-1" />
-        Tambah Cicilan
+        {t('inst.add')}
       </Button>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Tambah Cicilan Baru</DialogTitle>
+            <DialogTitle>{t('inst.addNew')}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="space-y-2">
-              <Label>Nama Cicilan</Label>
+              <Label>{t('inst.name')}</Label>
               <Input
-                placeholder="KPR, Laptop, dll"
+                placeholder={t('inst.namePlaceholder')}
                 value={form.name}
                 onChange={(e) => update('name', e.target.value)}
               />
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Nominal / Bulan</Label>
+                <Label>{t('inst.amountPerMonth')}</Label>
                 <Input
                   type="text"
                   inputMode="decimal"
@@ -99,7 +101,7 @@ export function InstallmentCreateButton({ accounts, categories }: Props) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Total Bulan</Label>
+                <Label>{t('inst.totalMonths')}</Label>
                 <Input
                   type="number"
                   min={1}
@@ -111,7 +113,7 @@ export function InstallmentCreateButton({ accounts, categories }: Props) {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-2">
-                <Label>Tanggal Mulai</Label>
+                <Label>{t('inst.startDate')}</Label>
                 <Input
                   type="date"
                   value={form.start_date}
@@ -119,38 +121,38 @@ export function InstallmentCreateButton({ accounts, categories }: Props) {
                 />
               </div>
               <div className="space-y-2">
-                <Label>Jatuh Tempo (tgl)</Label>
+                <Label>{t('inst.dueDayLabel')}</Label>
                 <Input
                   type="number"
                   min={1}
                   max={31}
-                  placeholder="Opsional"
+                  placeholder={t('tx.optional')}
                   value={form.due_day}
                   onChange={(e) => update('due_day', e.target.value)}
                 />
               </div>
             </div>
             <div className="space-y-2">
-              <Label>Akun</Label>
+              <Label>{t('tx.account')}</Label>
               <select
                 value={form.account_id}
                 onChange={(e) => update('account_id', e.target.value)}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
-                <option value="">Pilih akun...</option>
+                <option value="">{t('tx.selectAccount')}</option>
                 {accounts.map(a => (
                   <option key={a.id} value={a.id}>{a.name}</option>
                 ))}
               </select>
             </div>
             <div className="space-y-2">
-              <Label>Kategori</Label>
+              <Label>{t('tx.category')}</Label>
               <select
                 value={form.category_id}
                 onChange={(e) => update('category_id', e.target.value)}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
               >
-                <option value="">Pilih kategori...</option>
+                <option value="">{t('tx.selectCategory')}</option>
                 {categories.map(c => (
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
@@ -161,7 +163,7 @@ export function InstallmentCreateButton({ accounts, categories }: Props) {
               className="w-full"
               disabled={saving || !form.name || !form.monthly_amount || !form.total_months}
             >
-              {saving ? 'Menyimpan...' : 'Buat Cicilan'}
+              {saving ? t('common.saving') : t('inst.create')}
             </Button>
           </div>
         </DialogContent>

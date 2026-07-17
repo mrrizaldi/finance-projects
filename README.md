@@ -18,6 +18,9 @@ Sistem otomasi keuangan pribadi (Bahasa Indonesia): parsing email transaksi bank
 
 ## Butuh Ngapain? → Mulai dari Sini
 
+- **Ngerti fitur & alur data** → `docs/FEATURES.md` (peta lengkap semua fitur + diagram + pointer ke kode)
+- **Sistem saldo/snapshot (reconcile)** → `docs/RECONCILE.md` (deep-dive fitur paling rawan)
+- **Multi-bahasa (i18n ID/EN)** → `docs/I18N.md` (seed bahasa, katalog, konversi layar)
 - **Kerja di dashboard/API** → `CLAUDE.md` (konvensi, commands, arsitektur)
 - **Cek/edit n8n workflow** → n8n MCP (`n8n_list_workflows`, `n8n_get_workflow`, `n8n_update_partial_workflow`). API key di `.mcp.json`.
 - **Cek/edit bot atau openclaw di server** → ssh MCP ke `192.168.31.221`; inventori lengkap (pm2 apps, path, env, cara restart/deploy) di **`SERVER.md`**

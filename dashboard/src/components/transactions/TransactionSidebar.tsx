@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { formatRupiah } from '@/lib/utils';
 import CategoryTransactionsModal from '@/components/analytics/CategoryTransactionsModal';
 
@@ -108,6 +109,7 @@ export default function TransactionSidebar({
   end,
   periodLabel,
 }: Props) {
+  const { t } = useTranslation();
   const [selectedCat, setSelectedCat] = useState<CategoryStat | null>(null);
   const maxCatPct = categoryStats[0]?.percentage ?? 100;
   const maxAccPct = accountStats[0]?.percentage ?? 100;
@@ -116,10 +118,10 @@ export default function TransactionSidebar({
     <>
       <div className="flex flex-col gap-4">
         {/* Per Kategori */}
-        <SidebarSection title="Per Kategori" subtitle={periodLabel}>
+        <SidebarSection title={t('sidebar.perCategory')} subtitle={periodLabel}>
           {categoryStats.length === 0 ? (
             <p className="text-xs text-center py-4" style={{ color: 'var(--text-dim)' }}>
-              Tidak ada data
+              {t('common.noData')}
             </p>
           ) : (
             <div className="space-y-0.5">
@@ -139,10 +141,10 @@ export default function TransactionSidebar({
         </SidebarSection>
 
         {/* Per Akun */}
-        <SidebarSection title="Per Akun" subtitle={periodLabel}>
+        <SidebarSection title={t('sidebar.perAccount')} subtitle={periodLabel}>
           {accountStats.length === 0 ? (
             <p className="text-xs text-center py-4" style={{ color: 'var(--text-dim)' }}>
-              Tidak ada data
+              {t('common.noData')}
             </p>
           ) : (
             <div className="space-y-0.5">

@@ -1,36 +1,38 @@
 'use client';
 
 import { useAddTransaction } from '@/lib/add-transaction-context';
+import { useTranslation } from 'react-i18next';
 import { ArrowUp, ArrowDown, ArrowLeftRight, Layers, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router';
 
 export function QuickAddCard() {
+  const { t } = useTranslation();
   const { openModal } = useAddTransaction();
 
   const buttons = [
     {
-      label: 'Pemasukan',
+      label: t('tx.type.income'),
       icon: <ArrowUp className="h-4 w-4" />,
       onClick: () => openModal({ mode: 'transaction', type: 'income' }),
       color: 'var(--positive)',
       bg: 'var(--positive-soft)',
     },
     {
-      label: 'Pengeluaran',
+      label: t('tx.type.expense'),
       icon: <ArrowDown className="h-4 w-4" />,
       onClick: () => openModal({ mode: 'transaction', type: 'expense' }),
       color: 'var(--negative)',
       bg: 'var(--negative-soft)',
     },
     {
-      label: 'Transfer',
+      label: t('tx.type.transfer'),
       icon: <ArrowLeftRight className="h-4 w-4" />,
       onClick: () => openModal({ mode: 'transfer' }),
       color: 'var(--text-mute)',
       bg: 'var(--surface-hi)',
     },
     {
-      label: 'Bulk Input',
+      label: t('nav.bulk'),
       icon: <Layers className="h-4 w-4" />,
       href: '/bulk',
       color: 'var(--text-mute)',
@@ -44,10 +46,10 @@ export function QuickAddCard() {
       style={{ background: 'var(--surface)', borderColor: 'var(--border-faint)' }}
     >
       <p className="text-sm font-semibold mb-0.5" style={{ color: 'var(--text-mid)' }}>
-        Tambah Cepat
+        {t('home.quickAdd')}
       </p>
       <p className="text-xs mb-3" style={{ color: 'var(--text-dim)' }}>
-        Catat dalam 5 detik
+        {t('home.quickAddSub')}
       </p>
 
       <div className="grid grid-cols-2 gap-2 mb-2">
@@ -105,9 +107,9 @@ export function QuickAddCard() {
           </span>
           <div>
             <p className="font-medium" style={{ color: 'var(--text-mid)' }}>
-              Forward email atau notif
+              {t('home.forwardEmail')}
             </p>
-            <p style={{ color: 'var(--text-dim)' }}>AI akan parse otomatis</p>
+            <p style={{ color: 'var(--text-dim)' }}>{t('home.forwardEmailSub')}</p>
           </div>
         </div>
         <ArrowRight className="h-3.5 w-3.5 flex-shrink-0" />

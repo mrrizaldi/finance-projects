@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { getBrowserClient } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function LoginForm() {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -23,7 +25,7 @@ export function LoginForm() {
 
     if (error) {
       setError(error.message === 'Invalid login credentials'
-        ? 'Email atau password salah'
+        ? t('auth.login.invalidCredentials')
         : error.message);
       setLoading(false);
       return;
@@ -45,17 +47,17 @@ export function LoginForm() {
   return (
     <Card>
       <CardHeader className="text-center">
-        <CardTitle className="text-2xl">Finance Tracker</CardTitle>
-        <CardDescription>Masuk ke akun kamu</CardDescription>
+        <CardTitle className="text-2xl">{t('auth.login.title')}</CardTitle>
+        <CardDescription>{t('auth.login.subtitle')}</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t('auth.login.email')}</Label>
             <Input
               id="email"
               type="email"
-              placeholder="nama@email.com"
+              placeholder={t('auth.login.emailPlaceholder')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -63,9 +65,9 @@ export function LoginForm() {
           </div>
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('auth.login.password')}</Label>
               <Link to="/forgot-password" className="text-xs text-muted-foreground hover:text-primary">
-                Lupa password?
+                {t('auth.login.forgotPassword')}
               </Link>
             </div>
             <Input
@@ -82,7 +84,7 @@ export function LoginForm() {
           )}
 
           <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? 'Memproses...' : 'Masuk'}
+            {loading ? t('common.processing') : t('auth.login.submit')}
           </Button>
         </form>
 
@@ -91,19 +93,19 @@ export function LoginForm() {
             <div className="w-full border-t border-border" />
           </div>
           <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-card px-2 text-muted-foreground">atau</span>
+            <span className="bg-card px-2 text-muted-foreground">{t('common.or')}</span>
           </div>
         </div>
 
         <Button variant="outline" className="w-full" onClick={handleGoogleLogin}>
-          Masuk dengan Google
+          {t('auth.login.google')}
         </Button>
       </CardContent>
       <CardFooter className="justify-center">
         <p className="text-sm text-muted-foreground">
-          Belum punya akun?{' '}
+          {t('auth.login.noAccount')}{' '}
           <Link to="/register" className="text-primary hover:underline">
-            Daftar
+            {t('auth.login.registerLink')}
           </Link>
         </p>
       </CardFooter>

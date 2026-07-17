@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
 import {
   Dialog,
@@ -20,7 +21,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { VTransaction, Category, Account, Installment } from '@/types';
-import { TRANSACTION_TYPE_LABEL } from '@/lib/utils';
 
 // Convert a UTC timestamptz string to WIB datetime-local format (for input display)
 function toWIBDatetimeLocal(utcString: string): string {
@@ -39,6 +39,7 @@ interface Props {
 }
 
 export default function TransactionEditDialog({ tx, open, onOpenChange, categories, accounts, installments, onSuccess }: Props) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -111,13 +112,13 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Gagal menyimpan transaksi');
+        setError(data.error || t('tx.saveFailed'));
         return;
       }
       onOpenChange(false);
       onSuccess();
     } catch {
-      setError('Terjadi kesalahan jaringan');
+      setError(t('common.networkError'));
     } finally {
       setLoading(false);
     }
@@ -129,35 +130,35 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
         {loading && (
           <div className="absolute inset-0 z-20 bg-black/70 backdrop-blur-sm rounded-lg flex items-center justify-center">
             <div className="rounded-md border border-border bg-card px-3 py-2 text-sm">
-              Menyimpan transaksi...
+              {t('tx.savingTransaction')}
             </div>
           </div>
         )}
         <DialogHeader>
-          <DialogTitle>Edit Transaksi</DialogTitle>
+          <DialogTitle>{t('tx.editTitle')}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-3">
           {/* Type */}
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Tipe</label>
+            <label className="text-xs text-muted-foreground mb-1 block">{t('filters.type')}</label>
             <div className="flex gap-1.5">
-              {(['income', 'expense', 'transfer'] as const).map((t) => (
+              {(['income', 'expense', 'transfer'] as const).map((tt) => (
                 <button
-                  key={t}
+                  key={tt}
                   type="button"
-                  onClick={() => setType(t)}
+                  onClick={() => setType(tt)}
                   className={`flex-1 h-8 rounded-lg text-xs font-medium transition-colors border ${
-                    type === t
-                      ? t === 'income'
+                    type === tt
+                      ? tt === 'income'
                         ? 'bg-emerald-600/20 text-emerald-400 border-emerald-600/30'
-                        : t === 'expense'
+                        : tt === 'expense'
                         ? 'bg-red-600/20 text-red-400 border-red-600/30'
                         : 'bg-blue-600/20 text-blue-400 border-blue-600/30'
                       : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
                   }`}
                 >
-                  {TRANSACTION_TYPE_LABEL[t]}
+                  {t(`tx.type.${tt}`)}
                 </button>
               ))}
             </div>
@@ -166,7 +167,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
           {/* Amount */}
           <div>
             <label className="text-xs text-muted-foreground mb-1 block">
-              {type === 'transfer' ? 'Jumlah Keluar (Rp)' : 'Jumlah (Rp)'}
+              {type === 'transfer' ? t('tx.amountOutRp') : t('tx.amountRp')}
             </label>
             <Input
               type="number"
@@ -182,7 +183,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
           {type === 'transfer' && (
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs text-muted-foreground">Jumlah Masuk (Rp)</label>
+                <label className="text-xs text-muted-foreground">{t('tx.amountInRp')}</label>
                 <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
                   <input
                     type="checkbox"
@@ -190,7 +191,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
                     onChange={(e) => setSameAmount(e.target.checked)}
                     className="rounded"
                   />
-                  Sama
+                  {t('tx.same')}
                 </label>
               </div>
               {!sameAmount && (
@@ -204,7 +205,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
               )}
               {!sameAmount && Number(amount) > 0 && Number(amountIn) > 0 && Number(amount) > Number(amountIn) && (
                 <p className="text-xs text-muted-foreground mt-1">
-                  Admin fee: Rp {new Intl.NumberFormat('id-ID').format(Number(amount) - Number(amountIn))}
+                  {t('tx.adminFee')}: Rp {new Intl.NumberFormat('id-ID').format(Number(amount) - Number(amountIn))}
                 </p>
               )}
             </div>
@@ -213,25 +214,25 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
           {/* Description + Merchant */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Deskripsi</label>
-              <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Opsional" />
+              <label className="text-xs text-muted-foreground mb-1 block">{t('tx.description')}</label>
+              <Input value={description} onChange={(e) => setDescription(e.target.value)} placeholder={t('tx.optional')} />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Merchant</label>
-              <Input value={merchant} onChange={(e) => setMerchant(e.target.value)} placeholder="Opsional" />
+              <label className="text-xs text-muted-foreground mb-1 block">{t('tx.merchant')}</label>
+              <Input value={merchant} onChange={(e) => setMerchant(e.target.value)} placeholder={t('tx.optional')} />
             </div>
           </div>
 
           {/* Category */}
           <div>
-            <label className="text-xs text-muted-foreground mb-1 block">Kategori</label>
+            <label className="text-xs text-muted-foreground mb-1 block">{t('tx.category')}</label>
             <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? '')}>
                           <SelectTrigger className="w-full">
                             <div data-slot="select-value" className="flex flex-1 text-left items-center gap-1.5">
                               {categoryId && categories.find((c) => c.id === categoryId) ? (
                                 <>{categories.find((c) => c.id === categoryId)?.name}</>
                               ) : (
-                                <span className="text-muted-foreground">Pilih kategori...</span>
+                                <span className="text-muted-foreground">{t('tx.selectCategory')}</span>
                               )}
                             </div>
                           </SelectTrigger>              <SelectContent>
@@ -246,7 +247,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
           {type === 'expense' ? (
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="text-xs text-muted-foreground">Dibayar via</label>
+                <label className="text-xs text-muted-foreground">{t('tx.paidVia')}</label>
                 <div className="flex gap-1 text-xs">
                   <button
                     type="button"
@@ -257,7 +258,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
                         : 'bg-muted text-muted-foreground border-border'
                     }`}
                   >
-                    Akun
+                    {t('tx.account')}
                   </button>
                   <button
                     type="button"
@@ -268,7 +269,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
                         : 'bg-muted text-muted-foreground border-border'
                     }`}
                   >
-                    Cicilan
+                    {t('nav.installments')}
                   </button>
                 </div>
               </div>
@@ -278,10 +279,10 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
                     <div data-slot="select-value" className="flex flex-1 text-left items-center gap-1.5">
                       {installmentId && installments.find((i) => i.id === installmentId) ? (
                         <span className="text-purple-400">
-                          Cicilan · {installments.find((i) => i.id === installmentId)?.name}
+                          {t('nav.installments')} · {installments.find((i) => i.id === installmentId)?.name}
                         </span>
                       ) : (
-                        <span className="text-muted-foreground">Pilih cicilan...</span>
+                        <span className="text-muted-foreground">{t('tx.selectInstallment')}</span>
                       )}
                     </div>
                   </SelectTrigger>
@@ -298,7 +299,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
                       {accountId && accounts.find((a) => a.id === accountId) ? (
                         <>{accounts.find((a) => a.id === accountId)?.name}</>
                       ) : (
-                        <span className="text-muted-foreground">Pilih akun...</span>
+                        <span className="text-muted-foreground">{t('tx.selectAccount')}</span>
                       )}
                     </div>
                   </SelectTrigger>
@@ -313,7 +314,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
           ) : (
             <div>
               <label className="text-xs text-muted-foreground mb-1 block">
-                {type === 'transfer' ? 'Akun Asal' : 'Akun'}
+                {type === 'transfer' ? t('tx.sourceAccount') : t('tx.account')}
               </label>
               <Select value={accountId} onValueChange={(v) => setAccountId(v ?? '')}>
                             <SelectTrigger className="w-full">
@@ -321,7 +322,7 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
                                 {accountId && accounts.find((a) => a.id === accountId) ? (
                                   <>{accounts.find((a) => a.id === accountId)?.name}</>
                                 ) : (
-                                  <span className="text-muted-foreground">Pilih akun...</span>
+                                  <span className="text-muted-foreground">{t('tx.selectAccount')}</span>
                                 )}
                               </div>
                             </SelectTrigger>              <SelectContent>
@@ -336,14 +337,14 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
           {/* To Account (transfer only) */}
           {type === 'transfer' && (
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Akun Tujuan</label>
+              <label className="text-xs text-muted-foreground mb-1 block">{t('tx.toAccount')}</label>
               <Select value={toAccountId} onValueChange={(v) => setToAccountId(v ?? '')}>
                 <SelectTrigger className="w-full">
                   <div data-slot="select-value" className="flex flex-1 text-left items-center gap-1.5">
                     {toAccountId && accounts.find((a) => a.id === toAccountId) ? (
                       <>{accounts.find((a) => a.id === toAccountId)?.name}</>
                     ) : (
-                      <span className="text-muted-foreground">Pilih akun tujuan...</span>
+                      <span className="text-muted-foreground">{t('tx.selectToAccount')}</span>
                     )}
                   </div>
                 </SelectTrigger>
@@ -359,14 +360,14 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
           {/* Date */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Tanggal</label>
+              <label className="text-xs text-muted-foreground mb-1 block">{t('filters.date')}</label>
               <DatePicker
                 value={transactionDate ? parseISO(transactionDate.slice(0, 10)) : undefined}
                 onChange={(d) => d && setTransactionDate(`${format(d, 'yyyy-MM-dd')}T${transactionDate.slice(11, 16) || '00:00'}`)}
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Jam</label>
+              <label className="text-xs text-muted-foreground mb-1 block">{t('tx.time')}</label>
               <Input
                 type="time"
                 value={transactionDate.slice(11, 16)}
@@ -382,10 +383,10 @@ export default function TransactionEditDialog({ tx, open, onOpenChange, categori
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Batal
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Menyimpan...' : 'Simpan'}
+              {loading ? t('common.saving') : t('common.save')}
             </Button>
           </DialogFooter>
         </form>

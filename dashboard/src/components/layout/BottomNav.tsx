@@ -1,22 +1,23 @@
 'use client';
 
 import { Link, useLocation } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Home, Receipt, Plus, BarChart3, Menu } from 'lucide-react';
 import { useAddTransaction } from '@/lib/add-transaction-context';
 
-const leftTabs = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/transactions', label: 'Transaksi', icon: Receipt },
-];
-
-const rightTabs = [
-  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/more', label: 'Lainnya', icon: Menu },
-];
-
 export function BottomNav() {
+  const { t } = useTranslation();
   const { pathname } = useLocation();
   const { openModal } = useAddTransaction();
+
+  const leftTabs = [
+    { href: '/', label: t('nav.home'), icon: Home },
+    { href: '/transactions', label: t('nav.transactions'), icon: Receipt },
+  ];
+  const rightTabs = [
+    { href: '/analytics', label: t('nav.analytics'), icon: BarChart3 },
+    { href: '/more', label: t('nav.more'), icon: Menu },
+  ];
 
   const renderTab = (tab: { href: string; label: string; icon: typeof Home }) => {
     const isActive = tab.href === '/' ? pathname === '/' : pathname.startsWith(tab.href);
@@ -48,7 +49,7 @@ export function BottomNav() {
           <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg">
             <Plus className="h-6 w-6" />
           </div>
-          <span className="mt-1 text-[10px] font-medium text-primary">Tambah</span>
+          <span className="mt-1 text-[10px] font-medium text-primary">{t('nav.add')}</span>
         </button>
 
         {rightTabs.map(renderTab)}

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { ChatMessage } from '@/types';
+import { useTranslation } from 'react-i18next';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -14,6 +15,7 @@ const QUICK_PROMPTS = [
 ];
 
 export default function InsightsPage() {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
@@ -77,9 +79,9 @@ export default function InsightsPage() {
       {/* Header */}
       <div className="px-6 py-5 border-b border-border bg-background flex-shrink-0">
         <div className="flex items-center gap-2">
-          <h1 className="text-xl font-bold text-foreground">Insights AI</h1>
+          <h1 className="text-xl font-bold text-foreground">{t('page.insightsTitle')}</h1>
         </div>
-        <p className="text-muted-foreground text-sm mt-1">Tanya apa saja tentang keuangan kamu</p>
+        <p className="text-muted-foreground text-sm mt-1">{t('page.insightsSubtitle')}</p>
       </div>
 
       {/* Messages */}
@@ -140,7 +142,7 @@ export default function InsightsPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder="Tanya tentang keuangan kamu... (Enter untuk kirim)"
+            placeholder={t('page.insightsPlaceholder')}
             rows={1}
             className="flex-1 resize-none rounded-xl border border-input bg-background px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-ring max-h-32 text-foreground placeholder:text-muted-foreground"
             style={{ minHeight: '44px' }}

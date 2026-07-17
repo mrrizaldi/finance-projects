@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -21,6 +22,7 @@ const TYPE_LABEL: Record<InstrumentType, string> = {
 };
 
 export function AddInstrumentDialog({ accounts, open, onOpenChange, onSuccess }: AddInstrumentDialogProps) {
+  const { t } = useTranslation();
   const [accountId, setAccountId] = useState('');
   const [type, setType] = useState<InstrumentType>('saham');
   const [name, setName] = useState('');
@@ -68,13 +70,13 @@ export function AddInstrumentDialog({ accounts, open, onOpenChange, onSuccess }:
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error || 'Gagal menyimpan');
+        setError(json.error || t('settings.saveFailed'));
         return;
       }
       onSuccess();
       onOpenChange(false);
     } catch {
-      setError('Terjadi kesalahan, coba lagi');
+      setError(t('common.errorRetry'));
     } finally {
       setLoading(false);
     }
@@ -88,14 +90,14 @@ export function AddInstrumentDialog({ accounts, open, onOpenChange, onSuccess }:
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Tambah Instrumen (Saham / Obligasi)</DialogTitle>
+          <DialogTitle>{t('inv.addInstrumentTitle')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Akun Investasi</label>
+            <label className="text-sm font-medium">{t('inv.investmentAccount')}</label>
             <Select value={accountId} onValueChange={(v) => setAccountId(v ?? '')}>
               <SelectTrigger>
-                <SelectValue placeholder="Pilih akun">
+                <SelectValue placeholder={t('inv.selectAccount')}>
                   {(v: string | null) => accounts.find((a) => a.id === v)?.name ?? 'Pilih akun'}
                 </SelectValue>
               </SelectTrigger>
@@ -108,25 +110,25 @@ export function AddInstrumentDialog({ accounts, open, onOpenChange, onSuccess }:
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Jenis Instrumen</label>
+            <label className="text-sm font-medium">{t('inv.instrumentType')}</label>
             <Select value={type} onValueChange={(v) => setType((v as InstrumentType) ?? 'saham')}>
               <SelectTrigger>
-                <SelectValue placeholder="Pilih jenis">{(v: string | null) => TYPE_LABEL[(v as InstrumentType) ?? 'saham']}</SelectValue>
+                <SelectValue placeholder={t('inv.selectType')}>{(v: string | null) => t(`inv.type.${(v as InstrumentType) ?? 'saham'}`)}</SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(TYPE_LABEL) as InstrumentType[]).map((t) => (
-                  <SelectItem key={t} value={t}>{TYPE_LABEL[t]}</SelectItem>
+                {(Object.keys(TYPE_LABEL) as InstrumentType[]).map((opt) => (
+                  <SelectItem key={opt} value={opt}>{t(`inv.type.${opt}`)}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Nama</label>
+            <label className="text-sm font-medium">{t('inv.name')}</label>
             <Input
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder={type === 'saham' ? 'Bank Central Asia Tbk' : 'ORI029 Tenor 3 Tahun'}
+              placeholder={type === 'saham' ? t('inv.namePlaceholderStock') : t('inv.namePlaceholderBond')}
             />
           </div>
 
@@ -134,27 +136,27 @@ export function AddInstrumentDialog({ accounts, open, onOpenChange, onSuccess }:
             <div className="space-y-1.5">
               <label className="text-sm font-medium">Ticker</label>
               <Input value={ticker} onChange={(e) => setTicker(e.target.value.toUpperCase())} placeholder="BBCA" />
-              <p className="text-xs text-muted-foreground">Tanpa suffix .JK, cuma kode 4 huruf BEI.</p>
+              <p className="text-xs text-muted-foreground">{t('inv.tickerHint')}</p>
             </div>
           )}
 
           {(type === 'obligasi_tradable' || type === 'obligasi_nontradable') && (
             <>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Seri SBN</label>
+                <label className="text-sm font-medium">{t('inv.sbnSeries')}</label>
                 <Input value={sbnSeries} onChange={(e) => setSbnSeries(e.target.value.toUpperCase())} placeholder={type === 'obligasi_tradable' ? 'ORI029T3' : 'SBR014T2'} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Tanggal Jatuh Tempo</label>
+                <label className="text-sm font-medium">{t('inv.maturityDate')}</label>
                 <Input type="date" value={maturityDate} onChange={(e) => setMaturityDate(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Tanggal Bayar Kupon (per bulan)</label>
+                <label className="text-sm font-medium">{t('inv.couponPayDay')}</label>
                 <Input type="number" min={1} max={28} value={couponPayDay} onChange={(e) => setCouponPayDay(e.target.value)} placeholder={type === 'obligasi_tradable' ? '15' : '10'} />
               </div>
               {type === 'obligasi_tradable' && (
                 <div className="space-y-1.5">
-                  <label className="text-sm font-medium">Kupon Fixed (% p.a.)</label>
+                  <label className="text-sm font-medium">{t('inv.couponFixed')}</label>
                   <Input type="number" step="any" value={couponFixedPct} onChange={(e) => setCouponFixedPct(e.target.value)} placeholder="6.90" />
                 </div>
               )}
@@ -168,8 +170,8 @@ export function AddInstrumentDialog({ accounts, open, onOpenChange, onSuccess }:
 
           {error && <p className="text-sm text-red-500">{error}</p>}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
-            <Button type="submit" disabled={loading || !canSubmit}>{loading ? 'Menyimpan...' : 'Simpan'}</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
+            <Button type="submit" disabled={loading || !canSubmit}>{loading ? t('common.saving') : t('common.save')}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

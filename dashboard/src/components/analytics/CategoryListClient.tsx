@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { CategoryBreakdown } from '@/types';
 import { formatRupiah } from '@/lib/utils';
 import CategoryTransactionsModal from './CategoryTransactionsModal';
@@ -12,6 +13,7 @@ interface Props {
 }
 
 export default function CategoryListClient({ categories, start, end }: Props) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<CategoryBreakdown | null>(null);
   const max = Number(categories[0]?.percentage ?? 100);
 
@@ -58,7 +60,7 @@ export default function CategoryListClient({ categories, start, end }: Props) {
           );
         })}
         {categories.length === 0 && (
-          <p className="text-xs text-muted-foreground text-center py-4">Tidak ada data</p>
+          <p className="text-xs text-muted-foreground text-center py-4">{t('common.noData')}</p>
         )}
       </div>
 

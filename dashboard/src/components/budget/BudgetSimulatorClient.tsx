@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useId } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Category, Account } from '@/types';
 import { formatRupiah, cn } from '@/lib/utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,6 +45,7 @@ function nextId() {
 // ─── Component ───────────────────────────────────────────────────────────────
 
 export default function BudgetSimulatorClient({ categories, accounts }: Props) {
+  const { t } = useTranslation();
   const totalAccountBalance = accounts.reduce((s, a) => s + a.balance, 0);
 
   // Income
@@ -226,9 +228,9 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
     <div className="p-4 sm:p-6 max-w-5xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-foreground">Simulasi Budget</h1>
+        <h1 className="text-2xl font-bold text-foreground">{t('budget.title')}</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          Rencanakan alokasi dan catat rencana pembelian per kategori.
+          {t('budget.subtitle')}
         </p>
       </div>
 
@@ -237,7 +239,7 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
         {/* Income */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold">Pemasukan</CardTitle>
+            <CardTitle className="text-sm font-semibold">{t('budget.income')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex rounded-lg border overflow-hidden text-xs font-medium">
@@ -249,9 +251,7 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
                     ? 'bg-primary text-primary-foreground'
                     : 'hover:bg-muted text-muted-foreground'
                 )}
-              >
-                Saldo Akun
-              </button>
+              >{t('budget.accountBalance')}</button>
               <button
                 onClick={() => setIncomeSource('manual')}
                 className={cn(
@@ -260,15 +260,13 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
                     ? 'bg-primary text-primary-foreground'
                     : 'hover:bg-muted text-muted-foreground'
                 )}
-              >
-                Input Manual
-              </button>
+              >{t('budget.manualInput')}</button>
             </div>
 
             {incomeSource === 'accounts' ? (
               <div className="space-y-1.5">
                 {accounts.length === 0 ? (
-                  <p className="text-xs text-muted-foreground">Tidak ada akun aktif.</p>
+                  <p className="text-xs text-muted-foreground">{t('budget.noActiveAccounts')}</p>
                 ) : (
                   accounts.map((a) => (
                     <div key={a.id} className="flex justify-between text-xs">
@@ -278,17 +276,17 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
                   ))
                 )}
                 <div className="flex justify-between text-sm font-bold border-t pt-2 mt-1">
-                  <span>Total Saldo</span>
+                  <span>{t('budget.totalBalance')}</span>
                   <span className="tabular-nums">{formatRupiah(totalAccountBalance)}</span>
                 </div>
               </div>
             ) : (
               <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Jumlah pemasukan (Rp)</label>
+                <label className="text-xs text-muted-foreground">{t('budget.incomeAmount')}</label>
                 <Input
                   type="text"
                   inputMode="numeric"
-                  placeholder="Contoh: 5.000.000"
+                  placeholder={t('budget.incomePlaceholder')}
                   value={fmtInput(manualIncome)}
                   onChange={(e) => setManualIncome(e.target.value.replace(/\D/g, ''))}
                   className="text-right tabular-nums"
@@ -301,12 +299,12 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
         {/* Savings */}
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-semibold">Target Tabungan</CardTitle>
+            <CardTitle className="text-sm font-semibold">{t('budget.savingsTarget')}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Jumlah (Rp)</label>
+                <label className="text-xs text-muted-foreground">{t('budget.amountRp')}</label>
                 <Input
                   type="text"
                   inputMode="numeric"
@@ -317,7 +315,7 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs text-muted-foreground">Persentase (%)</label>
+                <label className="text-xs text-muted-foreground">{t('budget.percent')}</label>
                 <Input
                   type="number"
                   min="0"
@@ -332,15 +330,15 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
             </div>
             <div className="bg-muted/50 rounded-lg p-3 space-y-1.5 text-xs">
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Pemasukan</span>
+                <span className="text-muted-foreground">{t('budget.income')}</span>
                 <span className="font-medium tabular-nums">{formatRupiah(income)}</span>
               </div>
               <div className="flex justify-between">
-                <span className="text-muted-foreground">Tabungan</span>
+                <span className="text-muted-foreground">{t('budget.savings')}</span>
                 <span className="font-medium tabular-nums text-amber-500">− {formatRupiah(savings)}</span>
               </div>
               <div className="flex justify-between text-sm font-bold border-t border-border/60 pt-1.5">
-                <span>Bisa Dialokasikan</span>
+                <span>{t('budget.allocatable')}</span>
                 <span className="tabular-nums text-primary">{formatRupiah(allocatable)}</span>
               </div>
             </div>
@@ -381,19 +379,19 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
             <div className="flex flex-wrap gap-x-5 gap-y-1 mt-2.5 text-xs text-muted-foreground">
               <div className="flex items-center gap-1.5">
                 <span className="w-2.5 h-2.5 rounded-sm bg-amber-400 inline-block flex-shrink-0" />
-                Tabungan {formatRupiah(savings)}
+                {t('budget.savings')} {formatRupiah(savings)}
               </div>
               <div className="flex items-center gap-1.5">
                 <span className={cn('w-2.5 h-2.5 rounded-sm inline-block flex-shrink-0', surplus < 0 ? 'bg-red-400' : 'bg-primary/70')} />
-                Dialokasikan {formatRupiah(totalAllocated)}
+                {t('budget.allocated')} {formatRupiah(totalAllocated)}
               </div>
               {surplus >= 0 ? (
                 <div className="flex items-center gap-1.5">
                   <span className="w-2.5 h-2.5 rounded-sm bg-emerald-400/50 inline-block flex-shrink-0" />
-                  Sisa {formatRupiah(surplus)}
+                  {t('budget.remaining')} {formatRupiah(surplus)}
                 </div>
               ) : (
-                <span className="text-red-500 font-medium">⚠ Over-alokasi {formatRupiah(Math.abs(surplus))}</span>
+                <span className="text-red-500 font-medium">⚠ {t('budget.overAllocated')} {formatRupiah(Math.abs(surplus))}</span>
               )}
             </div>
           </CardContent>
@@ -405,14 +403,14 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
         <CardHeader className="pb-2">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <CardTitle className="text-sm font-semibold">Alokasi per Kategori</CardTitle>
+              <CardTitle className="text-sm font-semibold">{t('budget.categoryAllocation')}</CardTitle>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Set budget simulasi, lalu tambah rencana pembelian per kategori.
+                {t('budget.categoryAllocationDesc')}
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="ghost" size="sm" onClick={handleReset} className="text-xs h-8">
-                Reset
+                {t('budget.reset')}
               </Button>
               <Button
                 variant="outline"
@@ -424,22 +422,22 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
                 {isAiLoading ? (
                   <>
                     <span className="inline-block w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
-                    Memproses...
+                    {t('common.processing')}
                   </>
                 ) : (
-                  '✦ Saran AI'
+                  '✦ ' + t('budget.aiSuggest')
                 )}
               </Button>
               <Button size="sm" onClick={handleSave} disabled={isSaving} className="text-xs h-8">
-                {isSaving ? 'Menyimpan...' : 'Simpan Budget'}
+                {isSaving ? t('common.saving') : t('budget.saveBudget')}
               </Button>
             </div>
           </div>
           {saveStatus === 'success' && (
-            <p className="text-xs text-emerald-600 mt-1">✓ Budget berhasil disimpan.</p>
+            <p className="text-xs text-emerald-600 mt-1">✓ {t('budget.saveSuccess')}</p>
           )}
           {saveStatus === 'error' && (
-            <p className="text-xs text-red-500 mt-1">✗ Gagal menyimpan. Coba lagi.</p>
+            <p className="text-xs text-red-500 mt-1">✗ {t('budget.saveErr')}</p>
           )}
         </CardHeader>
 
@@ -449,16 +447,16 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
               <thead>
                 <tr className="border-t border-b bg-muted/30">
                   <th className="text-left px-4 py-2.5 text-xs font-medium text-muted-foreground min-w-[140px]">
-                    Kategori
+                    {t('tx.category')}
                   </th>
                   <th className="text-right px-3 py-2.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
-                    Budget Sim
+                    {t('budget.budgetSim')}
                   </th>
                   <th className="text-right px-3 py-2.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
-                    Rencana
+                    {t('budget.plan')}
                   </th>
                   <th className="text-right px-4 py-2.5 text-xs font-medium text-muted-foreground whitespace-nowrap">
-                    Sisa
+                    {t('budget.remaining')}
                   </th>
                 </tr>
               </thead>
@@ -482,7 +480,7 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
                             <button
                               onClick={() => toggleExpand(cat.id)}
                               className="text-muted-foreground hover:text-foreground transition-colors text-xs w-4 flex-shrink-0"
-                              title={isExpanded ? 'Sembunyikan rencana' : 'Tampilkan rencana'}
+                              title={isExpanded ? t('budget.hidePlan') : t('budget.showPlan')}
                             >
                               {isExpanded ? '▾' : '▸'}
                             </button>
@@ -521,7 +519,7 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
                             <button
                               onClick={() => addItem(cat.id)}
                               className="text-muted-foreground/50 hover:text-muted-foreground text-xs transition-colors"
-                              title="Tambah rencana pembelian"
+                              title={t('budget.addPlanItem')}
                             >
                               + tambah
                             </button>
@@ -552,14 +550,14 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
                             <div className="ml-6 space-y-2">
                               {items.length === 0 && (
                                 <p className="text-xs text-muted-foreground italic">
-                                  Belum ada rencana pembelian.
+                                  {t('budget.noPlanItems')}
                                 </p>
                               )}
                               {items.map((item) => (
                                 <div key={item.id} className="flex items-center gap-2">
                                   <Input
                                     type="text"
-                                    placeholder="Nama barang/keperluan"
+                                    placeholder={t('budget.itemNamePlaceholder')}
                                     value={item.name}
                                     onChange={(e) => updateItem(cat.id, item.id, 'name', e.target.value)}
                                     className="h-7 text-xs flex-1 min-w-0"
@@ -567,7 +565,7 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
                                   <Input
                                     type="text"
                                     inputMode="numeric"
-                                    placeholder="Harga"
+                                    placeholder={t('budget.pricePlaceholder')}
                                     value={fmtInput(item.amount)}
                                     onChange={(e) => updateItem(cat.id, item.id, 'amount', e.target.value)}
                                     className="h-7 text-xs w-32 text-right tabular-nums flex-shrink-0"
@@ -575,7 +573,7 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
                                   <button
                                     onClick={() => removeItem(cat.id, item.id)}
                                     className="text-muted-foreground/50 hover:text-red-500 transition-colors text-sm flex-shrink-0 w-5 text-center"
-                                    title="Hapus"
+                                    title={t('tx.delete')}
                                   >
                                     ×
                                   </button>
@@ -585,7 +583,7 @@ export default function BudgetSimulatorClient({ categories, accounts }: Props) {
                                 onClick={() => addItem(cat.id)}
                                 className="text-xs text-primary hover:underline mt-1 block"
                               >
-                                + Tambah item
+                                + {t('budget.addItem')}
                               </button>
                             </div>
                           </td>

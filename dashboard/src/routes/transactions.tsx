@@ -1,5 +1,7 @@
 import { useLoaderData } from 'react-router';
 import type { ClientLoaderFunctionArgs } from 'react-router';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 import { getBrowserClient } from '@/lib/supabase';
 import { VTransaction, Category, Account, Installment } from '@/types';
 import TransactionListClient from '@/components/transactions/TransactionListClient';
@@ -37,7 +39,7 @@ function computeCategoryStats(transactions: VTransaction[]): CategoryStat[] {
     } else {
       map.set(id, {
         category_id: id,
-        category_name: tx.category_name || 'Tanpa Kategori',
+        category_name: tx.category_name || i18n.t('page.uncategorized'),
         category_color: tx.category_color || null,
         total: tx.amount,
         percentage: 0,
@@ -64,7 +66,7 @@ function computeAccountStats(transactions: VTransaction[], accounts: Account[]):
     } else {
       map.set(id, {
         account_id: id,
-        account_name: tx.account_name || 'Tidak diketahui',
+        account_name: tx.account_name || i18n.t('page.unknown'),
         account_type: accTypeMap.get(id) || '',
         total: tx.amount,
         percentage: 0,
@@ -171,6 +173,7 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
 }
 
 export default function TransactionsPage() {
+  const { t } = useTranslation();
   const {
     transactions, hasMore, page, categories, accounts, installments,
     filterStart, filterEnd, startParam, endParam, sortParam,
@@ -243,7 +246,7 @@ export default function TransactionsPage() {
                 Halaman {page} dari {totalPages}
               </p>
               <div className="flex items-center gap-1.5">
-                <PaginationLink href={buildPageUrl(page - 1)} disabled={page <= 1}>Prev</PaginationLink>
+                <PaginationLink href={buildPageUrl(page - 1)} disabled={page <= 1}>{t('page.prev')}</PaginationLink>
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                   let p: number;
                   if (totalPages <= 5) p = i + 1;
@@ -262,7 +265,7 @@ export default function TransactionsPage() {
                     </a>
                   );
                 })}
-                <PaginationLink href={buildPageUrl(page + 1)} disabled={!hasMore}>Next</PaginationLink>
+                <PaginationLink href={buildPageUrl(page + 1)} disabled={!hasMore}>{t('page.next')}</PaginationLink>
               </div>
             </div>
           )}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Sparkles, ArrowRight } from 'lucide-react';
 import { Link } from 'react-router';
 
@@ -10,6 +11,7 @@ interface Props {
 }
 
 export function AiInsightWidget({ hasOverrun }: Props) {
+  const { t } = useTranslation();
   const [insight, setInsight] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -52,7 +54,7 @@ export function AiInsightWidget({ hasOverrun }: Props) {
         <div className="flex items-center gap-2">
           <Sparkles className="h-4 w-4" style={{ color: 'var(--accent-hi)' }} />
           <span className="text-sm font-semibold" style={{ color: 'var(--text-mid)' }}>
-            Insight Hari Ini
+            {t('insight.today')}
           </span>
         </div>
         <span
@@ -63,7 +65,7 @@ export function AiInsightWidget({ hasOverrun }: Props) {
               : { background: 'var(--positive-soft)', color: 'var(--positive)' }
           }
         >
-          {hasOverrun ? 'Perhatian' : 'Baik'}
+          {hasOverrun ? t('insight.warning') : t('insight.good')}
         </span>
       </div>
 
@@ -76,7 +78,7 @@ export function AiInsightWidget({ hasOverrun }: Props) {
               style={{ background: 'var(--accent-hi)' }}
             />
             <span className="text-xs" style={{ color: 'var(--text-dim)' }}>
-              Menganalisis keuangan kamu...
+              {t('insight.analyzing')}
             </span>
           </div>
         ) : insight ? (
@@ -85,7 +87,7 @@ export function AiInsightWidget({ hasOverrun }: Props) {
           </p>
         ) : (
           <p className="text-xs" style={{ color: 'var(--text-dim)' }}>
-            Gagal memuat insight. Coba refresh.
+            {t('insight.loadFailed')}
           </p>
         )}
       </div>
@@ -96,7 +98,7 @@ export function AiInsightWidget({ hasOverrun }: Props) {
         className="mt-3 flex items-center gap-1 text-xs font-medium"
         style={{ color: 'var(--accent-hi)' }}
       >
-        Tanya lebih lanjut
+        {t('insight.askMore')}
         <ArrowRight className="h-3 w-3" />
       </Link>
     </div>

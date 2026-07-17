@@ -1,6 +1,7 @@
 'use client';
 
 import { Link, useLocation } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { useAddTransaction } from '@/lib/add-transaction-context';
 import {
   Sidebar,
@@ -32,21 +33,6 @@ import {
 import { getBrowserClient } from '@/lib/supabase';
 import { useIsAdmin } from '@/lib/use-is-admin';
 
-const mainNav = [
-  { href: '/', label: 'Home', icon: Home },
-  { href: '/transactions', label: 'Transaksi', icon: Receipt },
-  { href: '/bulk', label: 'Bulk Input', icon: FileText },
-  { href: '/installments', label: 'Cicilan', icon: CreditCard },
-  { href: '/balances', label: 'Saldo Akun', icon: Landmark },
-  { href: '/investasi', label: 'Investasi', icon: TrendingUp },
-];
-
-const secondaryNav = [
-  { href: '/analytics', label: 'Analytics', icon: BarChart3 },
-  { href: '/budget', label: 'Budget', icon: Wallet },
-  { href: '/insights', label: 'AI Insights', icon: Sparkles },
-];
-
 async function handleLogout() {
   const supabase = getBrowserClient();
   await supabase.auth.signOut();
@@ -54,9 +40,24 @@ async function handleLogout() {
 }
 
 export function AppSidebar() {
+  const { t } = useTranslation();
   const { pathname } = useLocation();
   const { openModal } = useAddTransaction();
   const isAdmin = useIsAdmin();
+
+  const mainNav = [
+    { href: '/', label: t('nav.home'), icon: Home },
+    { href: '/transactions', label: t('nav.transactions'), icon: Receipt },
+    { href: '/bulk', label: t('nav.bulk'), icon: FileText },
+    { href: '/installments', label: t('nav.installments'), icon: CreditCard },
+    { href: '/balances', label: t('nav.balances'), icon: Landmark },
+    { href: '/investasi', label: t('nav.investments'), icon: TrendingUp },
+  ];
+  const secondaryNav = [
+    { href: '/analytics', label: t('nav.analytics'), icon: BarChart3 },
+    { href: '/budget', label: t('nav.budget'), icon: Wallet },
+    { href: '/insights', label: t('nav.insights'), icon: Sparkles },
+  ];
 
   const isActive = (href: string) =>
     href === '/' ? pathname === '/' : pathname.startsWith(href);
@@ -67,10 +68,10 @@ export function AppSidebar() {
       <SidebarHeader className="px-4 py-5 border-b border-[var(--border-faint)]">
         <div>
           <span className="font-semibold text-lg" style={{ color: 'var(--text-mid)' }}>
-            Finance
+            {t('app.name')}
           </span>
           <p className="text-xs mt-0.5" style={{ color: 'var(--text-dim)' }}>
-            Personal Dashboard
+            {t('app.subtitle')}
           </p>
         </div>
       </SidebarHeader>
@@ -87,7 +88,7 @@ export function AppSidebar() {
                   className="cursor-pointer"
                 >
                   <Plus className="h-4 w-4" />
-                  <span>Tambah Transaksi</span>
+                  <span>{t('nav.addTransaction')}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
@@ -139,7 +140,7 @@ export function AppSidebar() {
                   isActive={isActive('/settings')}
                 >
                   <Settings className="h-4 w-4" />
-                  <span>Settings</span>
+                  <span>{t('nav.settings')}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               {isAdmin && (
@@ -149,7 +150,7 @@ export function AppSidebar() {
                     isActive={isActive('/admin')}
                   >
                     <ShieldCheck className="h-4 w-4" />
-                    <span>Admin</span>
+                    <span>{t('nav.admin')}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               )}
@@ -178,7 +179,7 @@ export function AppSidebar() {
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout} className="text-sm">
               <LogOut className="h-4 w-4" />
-              <span>Logout</span>
+              <span>{t('nav.logout')}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>

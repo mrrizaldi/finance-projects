@@ -1,5 +1,6 @@
 import { useLoaderData } from 'react-router';
 import { getBrowserClient } from '@/lib/supabase';
+import { useTranslation } from 'react-i18next';
 import { Installment, Category, Account } from '@/types';
 import InstallmentListClient from '@/components/installments/InstallmentListClient';
 import InstallmentSummaryCards from '@/components/installments/InstallmentSummaryCards';
@@ -88,6 +89,7 @@ export async function clientLoader() {
 }
 
 export default function InstallmentsPage() {
+  const { t } = useTranslation();
   const { installments, categories, accounts } = useLoaderData<typeof clientLoader>();
 
   const active = installments.filter(i => i.status === 'active');
@@ -113,8 +115,8 @@ export default function InstallmentsPage() {
     <div className="p-4 sm:p-6 max-w-7xl mx-auto">
       <div className="mb-6 flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-foreground">Cicilan</h1>
-          <p className="text-muted-foreground text-sm mt-1">Kelola semua cicilan aktif kamu</p>
+          <h1 className="text-2xl font-bold text-foreground">{t('nav.installments')}</h1>
+          <p className="text-muted-foreground text-sm mt-1">{t('page.installmentsSubtitle')}</p>
         </div>
         <InstallmentCreateButton accounts={accounts} categories={categories} />
       </div>
@@ -130,14 +132,14 @@ export default function InstallmentsPage() {
 
       {installments.length === 0 ? (
         <div className="py-16 text-center text-muted-foreground border border-border rounded-xl">
-          <p className="text-sm">Belum ada cicilan</p>
-          <p className="text-xs text-muted-foreground/60 mt-1">Tambah via Telegram: /installment add</p>
+          <p className="text-sm">{t('inst.noInstallments')}</p>
+          <p className="text-xs text-muted-foreground/60 mt-1">{t('page.addViaTelegram')}</p>
         </div>
       ) : (
         <>
-          <InstallmentListClient installments={active} categories={categories} accounts={accounts} title="Cicilan Aktif" count={active.length} />
-          <InstallmentListClient installments={other} categories={categories} accounts={accounts} title="Lainnya" count={other.length} />
-          <InstallmentListClient installments={completed} categories={categories} accounts={accounts} title="Lunas" count={completed.length} />
+          <InstallmentListClient installments={active} categories={categories} accounts={accounts} title={t('inst.activeCount')} count={active.length} />
+          <InstallmentListClient installments={other} categories={categories} accounts={accounts} title={t('page.others')} count={other.length} />
+          <InstallmentListClient installments={completed} categories={categories} accounts={accounts} title={t('inst.status.completed')} count={completed.length} />
         </>
       )}
     </div>

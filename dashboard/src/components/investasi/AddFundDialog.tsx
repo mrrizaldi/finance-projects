@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,6 +24,7 @@ interface AddFundDialogProps {
 }
 
 export function AddFundDialog({ accounts, open, onOpenChange, onSuccess }: AddFundDialogProps) {
+  const { t } = useTranslation();
   const [accountId, setAccountId] = useState('');
   const [manualMode, setManualMode] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -101,14 +103,14 @@ export function AddFundDialog({ accounts, open, onOpenChange, onSuccess }: AddFu
 
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error || 'Gagal menyimpan');
+        setError(json.error || t('settings.saveFailed'));
         return;
       }
 
       onSuccess();
       onOpenChange(false);
     } catch {
-      setError('Terjadi kesalahan, coba lagi');
+      setError(t('common.errorRetry'));
     } finally {
       setLoading(false);
     }
@@ -129,14 +131,14 @@ export function AddFundDialog({ accounts, open, onOpenChange, onSuccess }: AddFu
           </div>
         )}
         <DialogHeader>
-          <DialogTitle>Tambah Fund (Reksadana)</DialogTitle>
+          <DialogTitle>{t('inv.addFundTitle')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Akun Investasi</label>
+            <label className="text-sm font-medium">{t('inv.investmentAccount')}</label>
             <Select value={accountId} onValueChange={(v) => setAccountId(v ?? '')}>
               <SelectTrigger>
-                <SelectValue placeholder="Pilih akun">
+                <SelectValue placeholder={t('inv.selectAccount')}>
                   {(v: string | null) => accounts.find((a) => a.id === v)?.name ?? 'Pilih akun'}
                 </SelectValue>
               </SelectTrigger>
@@ -150,7 +152,7 @@ export function AddFundDialog({ accounts, open, onOpenChange, onSuccess }: AddFu
 
           {!manualMode ? (
             <div className="space-y-1.5">
-              <label className="text-sm font-medium">Cari Fund</label>
+              <label className="text-sm font-medium">{t('inv.searchFund')}</label>
               <Combobox<BareksaSearchResult>
                 items={results}
                 value={selected}
@@ -160,10 +162,10 @@ export function AddFundDialog({ accounts, open, onOpenChange, onSuccess }: AddFu
                 itemToStringLabel={(item) => item.name}
                 filter={null}
               >
-                <ComboboxInput placeholder="Misal: Sucorinvest Money Market Fund" />
+                <ComboboxInput placeholder={t('inv.fundSearchPlaceholder')} />
                 <ComboboxContent>
                   <ComboboxEmpty>
-                    {searching ? 'Nyari...' : query.trim().length < 2 ? 'Ketik minimal 2 huruf' : 'Gak ketemu'}
+                    {searching ? t('inv.searching') : query.trim().length < 2 ? t('inv.typeMin2') : t('inv.notFound')}
                   </ComboboxEmpty>
                   <ComboboxList>
                     {(item: BareksaSearchResult) => (
@@ -187,8 +189,8 @@ export function AddFundDialog({ accounts, open, onOpenChange, onSuccess }: AddFu
           ) : (
             <>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium">Nama Fund</label>
-                <Input value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder="Misal: Sucorinvest Money Market Fund" />
+                <label className="text-sm font-medium">{t('inv.fundName')}</label>
+                <Input value={manualName} onChange={(e) => setManualName(e.target.value)} placeholder={t('inv.fundSearchPlaceholder')} />
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium">Bareksa ID</label>
@@ -221,9 +223,9 @@ export function AddFundDialog({ accounts, open, onOpenChange, onSuccess }: AddFu
 
           {error && <p className="text-sm text-red-500">{error}</p>}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
             <Button type="submit" disabled={loading || !canSubmit}>
-              {loading ? 'Menyimpan...' : 'Simpan'}
+              {loading ? t('common.saving') : t('common.save')}
             </Button>
           </DialogFooter>
         </form>

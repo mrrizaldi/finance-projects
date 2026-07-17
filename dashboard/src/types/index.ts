@@ -177,6 +177,7 @@ export interface Profile {
   id: string;
   display_name: string;
   default_account_id: string | null;
+  locale: 'id' | 'en';
   created_at: string;
   updated_at: string;
 }

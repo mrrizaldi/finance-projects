@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,6 +17,7 @@ interface ConfirmDistributionDialogProps {
 }
 
 export function ConfirmDistributionDialog({ distribution, accounts, onOpenChange, onSuccess }: ConfirmDistributionDialogProps) {
+  const { t } = useTranslation();
   const [toAccountId, setToAccountId] = useState('');
   const [netOverride, setNetOverride] = useState('');
   const [loading, setLoading] = useState(false);
@@ -50,13 +52,13 @@ export function ConfirmDistributionDialog({ distribution, accounts, onOpenChange
       });
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error || 'Gagal konfirmasi');
+        setError(json.error || t('inv.confirmFailed'));
         return;
       }
       onSuccess();
       onOpenChange(false);
     } catch {
-      setError('Terjadi kesalahan, coba lagi');
+      setError(t('common.errorRetry'));
     } finally {
       setLoading(false);
     }
@@ -66,7 +68,7 @@ export function ConfirmDistributionDialog({ distribution, accounts, onOpenChange
     <Dialog open={!!distribution} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Konfirmasi {distribution.kind === 'coupon' ? 'Kupon' : 'Dividen'}</DialogTitle>
+          <DialogTitle>{t('inv.confirmTitle')} {distribution.kind === 'coupon' ? t('inv.coupon') : t('inv.dividend')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <p className="text-sm text-muted-foreground">
@@ -78,10 +80,10 @@ export function ConfirmDistributionDialog({ distribution, accounts, onOpenChange
             </p>
           )}
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Rekening Penerima</label>
+            <label className="text-sm font-medium">{t('inv.recipientAccount')}</label>
             <Select value={toAccountId} onValueChange={(v) => setToAccountId(v ?? '')}>
               <SelectTrigger>
-                <SelectValue placeholder="Pilih rekening">
+                <SelectValue placeholder={t('inv.selectRecipient')}>
                   {(v: string | null) => accounts.find((a) => a.id === v)?.name ?? 'Pilih rekening'}
                 </SelectValue>
               </SelectTrigger>
@@ -92,14 +94,14 @@ export function ConfirmDistributionDialog({ distribution, accounts, onOpenChange
             <p className="text-xs text-muted-foreground">Default: akun investasi asal (kupon/dividen numpuk di situ).</p>
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Net Amount Aktual (opsional)</label>
+            <label className="text-sm font-medium">{t('inv.netAmountActual')}</label>
             <Input type="number" value={netOverride} onChange={(e) => setNetOverride(e.target.value)} placeholder={String(distribution.net_amount)} />
-            <p className="text-xs text-muted-foreground">Kosongkan kalau sama persis dengan proyeksi.</p>
+            <p className="text-xs text-muted-foreground">{t('inv.netAmountHint')}</p>
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
-            <Button type="submit" disabled={loading || !toAccountId}>{loading ? 'Memproses...' : 'Confirm'}</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
+            <Button type="submit" disabled={loading || !toAccountId}>{loading ? t('common.processing') : t('inv.confirm')}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
 import { ChevronDownIcon } from 'lucide-react';
@@ -19,12 +20,13 @@ interface DateTimePickerProps {
 }
 
 export function DateTimePicker({ date, time, onDateChange, onTimeChange, className }: DateTimePickerProps) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
 
   return (
     <div className={className ?? 'flex gap-2'}>
       <div className="flex-1 space-y-2">
-        <Label htmlFor="date-picker">Tanggal</Label>
+        <Label htmlFor="date-picker">{t('filters.date')}</Label>
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger
             render={
@@ -55,7 +57,7 @@ export function DateTimePicker({ date, time, onDateChange, onTimeChange, classNa
         </Popover>
       </div>
       <div className="w-28 space-y-2">
-        <Label htmlFor="time-picker">Jam</Label>
+        <Label htmlFor="time-picker">{t('tx.time')}</Label>
         <Input
           type="time"
           id="time-picker"

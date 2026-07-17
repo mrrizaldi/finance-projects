@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRevalidator } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
 import { getBrowserClient } from '@/lib/supabase';
 import { combineDateTimeWIB } from '@/lib/utils';
@@ -29,6 +30,7 @@ function formatRupiahInput(amount: number): string {
 }
 
 export function TransferForm({ accounts, onSuccess }: Props) {
+  const { t } = useTranslation();
   const revalidator = useRevalidator();
   const [amountOutRaw, setAmountOutRaw] = useState('');
   const [amountOut, setAmountOut] = useState(0);
@@ -88,7 +90,7 @@ export function TransferForm({ accounts, onSuccess }: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div className="space-y-2">
-        <Label>Jumlah Keluar</Label>
+        <Label>{t('tx.amountOut')}</Label>
         <Input
           type="text"
           inputMode="decimal"
@@ -105,7 +107,7 @@ export function TransferForm({ accounts, onSuccess }: Props) {
 
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Label>Jumlah Masuk</Label>
+          <Label>{t('tx.amountIn')}</Label>
           <label className="flex items-center gap-1.5 text-xs text-muted-foreground">
             <input
               type="checkbox"
@@ -113,7 +115,7 @@ export function TransferForm({ accounts, onSuccess }: Props) {
               onChange={(e) => setSameAmount(e.target.checked)}
               className="rounded"
             />
-            Sama
+            {t('tx.same')}
           </label>
         </div>
         {!sameAmount && (
@@ -132,13 +134,13 @@ export function TransferForm({ accounts, onSuccess }: Props) {
         )}
         {!sameAmount && amountOut > 0 && amountIn > 0 && amountOut > amountIn && (
           <p className="text-xs text-muted-foreground">
-            Admin fee: Rp {new Intl.NumberFormat('id-ID').format(amountOut - amountIn)}
+            {t('tx.adminFee')}: Rp {new Intl.NumberFormat('id-ID').format(amountOut - amountIn)}
           </p>
         )}
       </div>
 
       <div className="space-y-2">
-        <Label>Dari Akun</Label>
+        <Label>{t('tx.fromAccount')}</Label>
         <select
           value={fromAccountId}
           onChange={(e) => {
@@ -155,7 +157,7 @@ export function TransferForm({ accounts, onSuccess }: Props) {
       </div>
 
       <div className="space-y-2">
-        <Label>Ke Akun</Label>
+        <Label>{t('tx.toAccount')}</Label>
         <select
           value={toAccountId}
           onChange={(e) => setToAccountId(e.target.value)}
@@ -168,9 +170,9 @@ export function TransferForm({ accounts, onSuccess }: Props) {
       </div>
 
       <div className="space-y-2">
-        <Label>Catatan</Label>
+        <Label>{t('tx.note')}</Label>
         <Input
-          placeholder="Opsional"
+          placeholder={t('tx.optional')}
           value={note}
           onChange={(e) => setNote(e.target.value)}
         />
@@ -188,7 +190,7 @@ export function TransferForm({ accounts, onSuccess }: Props) {
         className="w-full"
         disabled={loading || amountOut <= 0 || fromAccountId === toAccountId}
       >
-        {success ? 'Tersimpan!' : loading ? 'Menyimpan...' : 'Simpan Transfer'}
+        {success ? t('common.saved') : loading ? t('common.saving') : t('tx.saveTransfer')}
       </Button>
     </form>
   );

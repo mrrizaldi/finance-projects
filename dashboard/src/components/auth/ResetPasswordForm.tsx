@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { getBrowserClient } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 export function ResetPasswordForm() {
+  const { t } = useTranslation();
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [error, setError] = useState('');
@@ -18,11 +20,11 @@ export function ResetPasswordForm() {
     setError('');
 
     if (password !== confirm) {
-      setError('Password tidak cocok');
+      setError(t('auth.register.passwordMismatch'));
       return;
     }
     if (password.length < 6) {
-      setError('Password minimal 6 karakter');
+      setError(t('auth.register.passwordTooShort'));
       return;
     }
 
@@ -45,28 +47,28 @@ export function ResetPasswordForm() {
       <div className="w-full max-w-md mx-auto">
         <Card>
           <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Buat Password Baru</CardTitle>
-            <CardDescription>Masukkan password baru kamu</CardDescription>
+            <CardTitle className="text-2xl">{t('auth.reset.title')}</CardTitle>
+            <CardDescription>{t('auth.reset.subtitle')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="password">Password Baru</Label>
+                <Label htmlFor="password">{t('auth.reset.newPassword')}</Label>
                 <Input
                   id="password"
                   type="password"
-                  placeholder="Minimal 6 karakter"
+                  placeholder={t('auth.register.passwordPlaceholder')}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="confirm">Konfirmasi Password</Label>
+                <Label htmlFor="confirm">{t('auth.register.confirmPassword')}</Label>
                 <Input
                   id="confirm"
                   type="password"
-                  placeholder="Ulangi password baru"
+                  placeholder={t('auth.reset.confirmPlaceholder')}
                   value={confirm}
                   onChange={(e) => setConfirm(e.target.value)}
                   required
@@ -74,7 +76,7 @@ export function ResetPasswordForm() {
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Menyimpan...' : 'Simpan Password'}
+                {loading ? t('common.saving') : t('auth.reset.submit')}
               </Button>
             </form>
           </CardContent>

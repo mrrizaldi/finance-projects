@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useLoaderData, useRevalidator } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { getBrowserClient } from '@/lib/supabase';
 import {
   Account, Fund, PortfolioFundValue, PortfolioSummary,
@@ -45,6 +46,7 @@ export async function clientLoader() {
 }
 
 export default function InvestasiPage() {
+  const { t } = useTranslation();
   const {
     accounts, funds, portfolioFunds, summary,
     instruments, instrumentValues, distributions, corporateActions,
@@ -80,7 +82,7 @@ export default function InvestasiPage() {
     <div className="p-4 sm:p-6 min-h-screen" style={{ background: 'var(--bg)' }}>
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold">Investasi</h1>
+          <h1 className="text-2xl font-bold">{t('nav.investments')}</h1>
           <p className="text-sm text-muted-foreground">Reksadana &amp; instrumen lain</p>
         </div>
         <div className="flex flex-wrap gap-2 justify-end">
@@ -102,7 +104,7 @@ export default function InvestasiPage() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
         <Card>
           <CardContent className="p-4">
-            <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Total Nilai</p>
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{t('page.totalValue')}</p>
             <p className="num text-xl font-bold mt-1">{formatRupiah((summary?.total_value ?? 0) + (summary?.idle_cash ?? 0))}</p>
             {(summary?.idle_cash ?? 0) > 0 && (
               <p className="text-[10px] text-muted-foreground mt-1">
@@ -113,7 +115,7 @@ export default function InvestasiPage() {
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">Total Kontribusi</p>
+            <p className="text-[10px] uppercase tracking-wider font-semibold text-muted-foreground">{t('page.totalContribution')}</p>
             <p className="num text-xl font-bold mt-1">{formatRupiah(summary?.total_contributed ?? 0)}</p>
           </CardContent>
         </Card>
@@ -143,7 +145,7 @@ export default function InvestasiPage() {
 
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-sm font-semibold text-muted-foreground">Fund yang Dipegang</CardTitle>
+          <CardTitle className="text-sm font-semibold text-muted-foreground">{t('page.fundsHeld')}</CardTitle>
         </CardHeader>
         <CardContent>
           {portfolioFunds.length === 0 ? (
@@ -209,7 +211,7 @@ export default function InvestasiPage() {
                   <div>
                     <p className="font-medium text-sm">
                       {d.instruments?.name} · {d.kind === 'coupon' ? 'Kupon' : 'Dividen'} {d.period}
-                      {d.needs_review && <span className="ml-2 text-amber-600 text-xs">perlu review</span>}
+                      {d.needs_review && <span className="ml-2 text-amber-600 text-xs">{t('page.needReview')}</span>}
                     </p>
                     <p className="text-xs text-muted-foreground">Proyeksi net {formatRupiah(d.net_amount)}</p>
                   </div>

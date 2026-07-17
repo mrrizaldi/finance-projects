@@ -1,22 +1,24 @@
 'use client';
 
 import { Link } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { CreditCard, Wallet, FileText, Landmark, Sparkles, Settings, ShieldCheck, LogOut } from 'lucide-react';
 import { getBrowserClient } from '@/lib/supabase';
 import { useIsAdmin } from '@/lib/use-is-admin';
 
-const menuItems = [
-  { href: '/installments', label: 'Cicilan', description: 'Lihat & kelola cicilan', icon: CreditCard },
-  { href: '/budget', label: 'Budget', description: 'Simulasi & alokasi budget', icon: Wallet },
-  { href: '/bulk', label: 'Bulk Input', description: 'Input banyak transaksi sekaligus', icon: FileText },
-  { href: '/balances', label: 'Saldo Akun', description: 'Lihat & adjust saldo', icon: Landmark },
-  { href: '/insights', label: 'AI Insights', description: 'Tanya AI soal keuangan', icon: Sparkles },
-  { href: '/settings', label: 'Settings', description: 'Akun, kategori, profil', icon: Settings },
-  { href: '/admin', label: 'Admin', description: 'Kelola user & invite', icon: ShieldCheck },
-];
-
 export function MoreMenu() {
+  const { t } = useTranslation();
   const isAdmin = useIsAdmin();
+
+  const menuItems = [
+    { href: '/installments', label: t('nav.installments'), description: t('more.installmentsDesc'), icon: CreditCard },
+    { href: '/budget', label: t('nav.budget'), description: t('more.budgetDesc'), icon: Wallet },
+    { href: '/bulk', label: t('nav.bulk'), description: t('more.bulkDesc'), icon: FileText },
+    { href: '/balances', label: t('nav.balances'), description: t('more.balancesDesc'), icon: Landmark },
+    { href: '/insights', label: t('nav.insights'), description: t('more.insightsDesc'), icon: Sparkles },
+    { href: '/settings', label: t('nav.settings'), description: t('more.settingsDesc'), icon: Settings },
+    { href: '/admin', label: t('nav.admin'), description: t('more.adminDesc'), icon: ShieldCheck },
+  ];
   const items = menuItems.filter((item) => item.href !== '/admin' || isAdmin);
 
   async function handleLogout() {
@@ -56,7 +58,7 @@ export function MoreMenu() {
         className="flex w-full items-center gap-3 rounded-lg border border-border p-4 hover:bg-muted/50 transition-colors"
       >
         <LogOut className="h-5 w-5 text-destructive" />
-        <span className="text-sm font-medium text-destructive">Logout</span>
+        <span className="text-sm font-medium text-destructive">{t('nav.logout')}</span>
       </button>
     </div>
   );

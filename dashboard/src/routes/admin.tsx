@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { redirect, useLoaderData, useRevalidator } from 'react-router';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -46,7 +48,7 @@ export async function clientLoader() {
 
   if (usersRes.status === 401 || invitesRes.status === 401 || telegramRes.status === 401) throw redirect('/login');
   if (usersRes.status === 403 || invitesRes.status === 403 || telegramRes.status === 403) throw redirect('/');
-  if (!usersRes.ok || !invitesRes.ok || !telegramRes.ok) throw new Error('Gagal memuat data admin');
+  if (!usersRes.ok || !invitesRes.ok || !telegramRes.ok) throw new Error(i18n.t('page.adminLoadFailed'));
 
   const users: AdminUser[] = await usersRes.json();
   const invites: InviteCode[] = await invitesRes.json();
@@ -56,12 +58,13 @@ export async function clientLoader() {
 }
 
 function inviteStatus(invite: InviteCode): { label: string; variant: 'secondary' | 'outline' | 'destructive' } {
-  if (invite.used_by) return { label: 'Terpakai', variant: 'secondary' };
-  if (new Date(invite.expires_at) < new Date()) return { label: 'Expired', variant: 'destructive' };
-  return { label: 'Aktif', variant: 'outline' };
+  if (invite.used_by) return { label: i18n.t('page.used'), variant: 'secondary' };
+  if (new Date(invite.expires_at) < new Date()) return { label: i18n.t('page.expired'), variant: 'destructive' };
+  return { label: i18n.t('page.active'), variant: 'outline' };
 }
 
 export default function AdminPage() {
+  const { t } = useTranslation();
   const { users, invites, telegramRequests } = useLoaderData<typeof clientLoader>();
   const revalidator = useRevalidator();
   const [error, setError] = useState<string | null>(null);
@@ -85,7 +88,7 @@ export default function AdminPage() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error ?? 'Gagal update user');
+        setError(data?.error ?? t('page.updateUserFailed'));
         return;
       }
       setSuspendedIds((prev) => {
@@ -106,7 +109,7 @@ export default function AdminPage() {
       const res = await fetch('/api/admin/invites', { method: 'POST' });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error ?? 'Gagal generate invite');
+        setError(data?.error ?? t('page.genInviteFailed'));
         return;
       }
       setNewCode(data.code);
@@ -123,7 +126,7 @@ export default function AdminPage() {
       const res = await fetch(`/api/admin/telegram-requests/${chatId}/${action}`, { method: 'POST' });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error ?? 'Gagal update request');
+        setError(data?.error ?? t('page.updateReqFailed'));
         return;
       }
       revalidator.revalidate();
@@ -161,10 +164,10 @@ export default function AdminPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Email</TableHead>
-                <TableHead>Nama</TableHead>
+                <TableHead>{t('inv.name')}</TableHead>
                 <TableHead>Telegram</TableHead>
                 <TableHead>Role</TableHead>
-                <TableHead>Aksi</TableHead>
+                <TableHead>{t('page.action')}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -174,7 +177,7 @@ export default function AdminPage() {
                   <TableCell style={{ color: 'var(--text-mute)' }}>{u.display_name ?? '-'}</TableCell>
                   <TableCell>
                     <Badge variant={u.telegram_linked ? 'default' : 'outline'}>
-                      {u.telegram_linked ? 'Terhubung' : 'Belum'}
+                      {u.telegram_linked ? t('page.connected') : t('page.notYet')}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -187,7 +190,7 @@ export default function AdminPage() {
                       disabled={busyId === u.id}
                       onClick={() => toggleSuspend(u)}
                     >
-                      {busyId === u.id ? '...' : suspendedIds.has(u.id) ? 'Unsuspend' : 'Suspend'}
+                      {busyId === u.id ? '...' : suspendedIds.has(u.id) ? t('page.unsuspend') : t('page.suspend')}
                     </Button>
                   </TableCell>
                 </TableRow>
@@ -202,15 +205,15 @@ export default function AdminPage() {
           Pending Telegram Requests
         </h2>
         {telegramRequests.length === 0 ? (
-          <p className="text-sm" style={{ color: 'var(--text-mute)' }}>Belum ada request.</p>
+          <p className="text-sm" style={{ color: 'var(--text-mute)' }}>{t('page.noRequests')}</p>
         ) : (
           <div className="rounded-lg" style={{ border: '1px solid var(--border-faint)' }}>
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>Email</TableHead>
-                  <TableHead>Requested At</TableHead>
-                  <TableHead>Aksi</TableHead>
+                  <TableHead>{t('page.requestedAt')}</TableHead>
+                  <TableHead>{t('page.action')}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -226,7 +229,7 @@ export default function AdminPage() {
                         disabled={busyChatId === r.chat_id}
                         onClick={() => handleTelegramRequest(r.chat_id, 'approve')}
                       >
-                        {busyChatId === r.chat_id ? '...' : 'Approve'}
+                        {busyChatId === r.chat_id ? '...' : t('page.approve')}
                       </Button>
                       <Button
                         size="sm"
@@ -234,7 +237,7 @@ export default function AdminPage() {
                         disabled={busyChatId === r.chat_id}
                         onClick={() => handleTelegramRequest(r.chat_id, 'reject')}
                       >
-                        {busyChatId === r.chat_id ? '...' : 'Reject'}
+                        {busyChatId === r.chat_id ? '...' : t('page.reject')}
                       </Button>
                     </TableCell>
                   </TableRow>
@@ -251,7 +254,7 @@ export default function AdminPage() {
             Invites
           </h2>
           <Button size="sm" disabled={generating} onClick={generateInvite}>
-            {generating ? 'Membuat...' : 'Generate Invite'}
+            {generating ? t('page.creating') : t('page.genInvite')}
           </Button>
         </div>
 

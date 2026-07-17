@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +20,7 @@ interface PurchaseFundDialogProps {
 export function PurchaseFundDialog({
   sourceAccounts, funds, accountsById, open, onOpenChange, onSuccess,
 }: PurchaseFundDialogProps) {
+  const { t } = useTranslation();
   const [fromAccountId, setFromAccountId] = useState('');
   const [fundId, setFundId] = useState('');
   const [amountIdr, setAmountIdr] = useState('');
@@ -56,14 +58,14 @@ export function PurchaseFundDialog({
 
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error || 'Gagal menyimpan');
+        setError(json.error || t('settings.saveFailed'));
         return;
       }
 
       onSuccess();
       onOpenChange(false);
     } catch {
-      setError('Terjadi kesalahan, coba lagi');
+      setError(t('common.errorRetry'));
     } finally {
       setLoading(false);
     }
@@ -80,14 +82,14 @@ export function PurchaseFundDialog({
           </div>
         )}
         <DialogHeader>
-          <DialogTitle>Catat Pembelian Reksadana</DialogTitle>
+          <DialogTitle>{t('inv.recordPurchaseFund')}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Dari Akun</label>
+            <label className="text-sm font-medium">{t('tx.fromAccount')}</label>
             <Select value={fromAccountId} onValueChange={(v) => setFromAccountId(v ?? '')}>
               <SelectTrigger>
-                <SelectValue placeholder="Pilih akun sumber">
+                <SelectValue placeholder={t('inv.selectSourceAccount')}>
                   {(v: string | null) => sourceAccounts.find((a) => a.id === v)?.name ?? 'Pilih akun sumber'}
                 </SelectValue>
               </SelectTrigger>
@@ -102,13 +104,13 @@ export function PurchaseFundDialog({
             </p>
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Fund (Reksadana)</label>
+            <label className="text-sm font-medium">{t('inv.fund')}</label>
             <Select value={fundId} onValueChange={(v) => setFundId(v ?? '')}>
               <SelectTrigger>
-                <SelectValue placeholder="Pilih fund">
+                <SelectValue placeholder={t('inv.selectFund')}>
                   {(v: string | null) => {
                     const f = funds.find((x) => x.id === v);
-                    return f ? `${f.name} — ${accountsById[f.account_id]?.name ?? '?'}` : 'Pilih fund';
+                    return f ? `${f.name} — ${accountsById[f.account_id]?.name ?? '?'}` : t('inv.selectFund');
                   }}
                 </SelectValue>
               </SelectTrigger>
@@ -127,7 +129,7 @@ export function PurchaseFundDialog({
             )}
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Rupiah Dikeluarkan</label>
+            <label className="text-sm font-medium">{t('inv.rupiahOut')}</label>
             <Input
               type="number"
               value={amountIdr}
@@ -136,7 +138,7 @@ export function PurchaseFundDialog({
             />
           </div>
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Unit Didapat</label>
+            <label className="text-sm font-medium">{t('inv.unitsReceived')}</label>
             <Input
               type="number"
               step="any"
@@ -144,13 +146,13 @@ export function PurchaseFundDialog({
               onChange={(e) => setUnits(e.target.value)}
               placeholder="307.912"
             />
-            <p className="text-xs text-muted-foreground">Dari konfirmasi pembelian di app Bibit</p>
+            <p className="text-xs text-muted-foreground">{t('inv.unitsHint')}</p>
           </div>
           {error && <p className="text-sm text-red-500">{error}</p>}
           <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
             <Button type="submit" disabled={loading || !fromAccountId || !fundId}>
-              {loading ? 'Menyimpan...' : 'Simpan'}
+              {loading ? t('common.saving') : t('common.save')}
             </Button>
           </DialogFooter>
         </form>

@@ -1,5 +1,7 @@
 import { useLoaderData } from 'react-router';
 import type { ClientLoaderFunctionArgs } from 'react-router';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 import { Link } from 'react-router';
 import { getBrowserClient } from '@/lib/supabase';
 import { rp } from '@/lib/utils';
@@ -190,7 +192,7 @@ function BalanceSummaryCard({
         <div className="p-4 md:border-r flex flex-col" style={{ borderColor: 'var(--border-faint)' }}>
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <span className="label-up">Total Saldo Bersih</span>
+              <span className="label-up">{i18n.t('page.netBalance')}</span>
               <span
                 className="text-xs font-medium px-2 py-0.5 rounded-full"
                 style={{ background: 'var(--surface-hi)', color: 'var(--text-dim)' }}
@@ -263,7 +265,7 @@ function BalanceSummaryCard({
 
         {/* Right: Per-account list */}
         <div className="p-4">
-          <p className="label-up mb-3">Saldo Per Akun</p>
+          <p className="label-up mb-3">{i18n.t('page.balancePerAccount')}</p>
           <div className="space-y-2.5">
             {accounts.map((acc) => {
               const isNegative = acc.balance < 0;
@@ -303,7 +305,7 @@ function BalanceSummaryCard({
 function DailyChartCard({ dailyData }: { dailyData: DailyDataPoint[] }) {
   return (
     <SectionCard className="p-4">
-      <p className="label-up mb-3">Arus Kas Harian</p>
+      <p className="label-up mb-3">{i18n.t('page.dailyCashflow')}</p>
       <DailyCumulativeChart data={dailyData} />
       <div className="flex items-center gap-4 mt-2">
         <div className="flex items-center gap-1.5">
@@ -376,7 +378,7 @@ function BudgetSnapshotCard({ items, month }: { items: CategoryWithBudget[]; mon
   return (
     <SectionCard className="p-4">
       <div className="flex items-center justify-between mb-0.5">
-        <p className="text-sm font-semibold" style={{ color: 'var(--text-mid)' }}>Budget Bulan Ini</p>
+        <p className="text-sm font-semibold" style={{ color: 'var(--text-mid)' }}>{i18n.t('page.budgetThisMonth')}</p>
         <Link to="/budget" className="text-xs font-medium flex items-center gap-0.5" style={{ color: 'var(--text-dim)' }}>
           Detail →
         </Link>
@@ -509,6 +511,7 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
 // --- Page ---
 
 export default function OverviewPage() {
+  const { t } = useTranslation();
   const { month, summary, accounts, monthlyTx, categoryBreakdown, budgetCategories, recentTx } =
     useLoaderData<typeof clientLoader>();
 

@@ -1,8 +1,10 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { Installment } from '@/types';
 import { formatRupiah, formatDate } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import i18n from '@/i18n';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress, ProgressTrack, ProgressIndicator } from '@/components/ui/progress';
@@ -14,12 +16,13 @@ interface Props {
 
 function StatusBadge({ status }: { status: Installment['status'] }) {
   const config = {
-    active: { label: 'Aktif', variant: 'default' as const, className: 'bg-blue-100 text-blue-700 border-blue-200' },
-    completed: { label: 'Lunas', variant: 'default' as const, className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    paused: { label: 'Jeda', variant: 'default' as const, className: 'bg-amber-100 text-amber-700 border-amber-200' },
-    cancelled: { label: 'Batal', variant: 'secondary' as const, className: '' },
+    active: { variant: 'default' as const, className: 'bg-blue-100 text-blue-700 border-blue-200' },
+    completed: { variant: 'default' as const, className: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
+    paused: { variant: 'default' as const, className: 'bg-amber-100 text-amber-700 border-amber-200' },
+    cancelled: { variant: 'secondary' as const, className: '' },
   };
-  const { label, variant, className } = config[status];
+  const { variant, className } = config[status];
+  const label = i18n.t(`inst.status.${status}`);
   return (
     <Badge variant={variant} className={cn('text-xs', className)}>
       {label}
@@ -28,6 +31,7 @@ function StatusBadge({ status }: { status: Installment['status'] }) {
 }
 
 export default function InstallmentCard({ inst, onClick }: Props) {
+  const { t } = useTranslation();
   const progress = inst.total_months > 0 ? (inst.paid_months / inst.total_months) * 100 : 0;
   const remaining = inst.total_months - inst.paid_months;
 
@@ -57,14 +61,14 @@ export default function InstallmentCard({ inst, onClick }: Props) {
           </div>
           <div className="text-right">
             <p className="text-sm font-bold text-foreground">{formatRupiah(nextAmount)}</p>
-            <p className="text-xs text-muted-foreground">/bulan</p>
+            <p className="text-xs text-muted-foreground">{t('inst.perMonth')}</p>
           </div>
         </div>
 
         {/* Progress */}
         <div className="mb-3">
           <div className="flex justify-between text-xs text-muted-foreground mb-1">
-            <span>{inst.paid_months} dari {inst.total_months} bulan</span>
+            <span>{t('inst.monthsProgress', { paid: inst.paid_months, total: inst.total_months })}</span>
             <span>{progress.toFixed(0)}%</span>
           </div>
           <Progress value={progress} className="gap-0">
@@ -76,12 +80,12 @@ export default function InstallmentCard({ inst, onClick }: Props) {
 
         {/* Meta */}
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-          <span>Mulai {formatDate(inst.start_date, 'MMM YYYY')}</span>
+          <span>{t('inst.startedPrefix')} {formatDate(inst.start_date, 'MMM YYYY')}</span>
           {inst.due_day && (
-            <span>· Jatuh tempo tgl {inst.due_day}</span>
+            <span>· {t('inst.dueDay', { day: inst.due_day })}</span>
           )}
           {remaining > 0 && inst.status !== 'completed' && (
-            <span className="text-blue-500">· Sisa {remaining} bulan</span>
+            <span className="text-blue-500">· {t('inst.remainingMonths', { count: remaining })}</span>
           )}
           {inst.account_name && (
             <span>· {inst.account_name}</span>

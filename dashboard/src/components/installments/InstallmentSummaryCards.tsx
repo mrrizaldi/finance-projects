@@ -2,6 +2,7 @@
 
 import { useState, useCallback } from 'react';
 import { useRevalidator } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Card, CardContent } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Installment, Account } from '@/types';
@@ -27,6 +28,7 @@ export default function InstallmentSummaryCards({
   totalSisa,
   accounts,
 }: Props) {
+  const { t } = useTranslation();
   const revalidator = useRevalidator();
   const [openCard, setOpenCard] = useState<CardKey | null>(null);
   const [detailInst, setDetailInst] = useState<Installment | null>(null);
@@ -35,7 +37,7 @@ export default function InstallmentSummaryCards({
   const loadDetail = useCallback(async (id: string) => {
     const res = await fetch(`/api/installments/${id}`);
     const data = await res.json();
-    if (!res.ok) throw new Error(data?.error || 'Gagal memuat detail');
+    if (!res.ok) throw new Error(data?.error || t('inst.loadDetailFailed'));
     return data?.data as Installment;
   }, []);
 
@@ -61,22 +63,22 @@ export default function InstallmentSummaryCards({
   const cards: { key: CardKey; label: string; value: React.ReactNode }[] = [
     {
       key: 'active',
-      label: 'Cicilan Aktif',
+      label: t('inst.activeCount'),
       value: <p className="text-2xl font-bold text-foreground mt-1">{activeInstallments.length}</p>,
     },
     {
       key: 'this-month',
-      label: 'Bulan Ini',
+      label: t('inst.thisMonth'),
       value: <p className="text-xl font-bold text-red-500 mt-1">{formatRupiah(totalMonthly)}</p>,
     },
     {
       key: 'total',
-      label: 'Total Sisa',
+      label: t('inst.totalRemaining'),
       value: <p className="text-xl font-bold text-orange-500 mt-1">{formatRupiah(totalSisa)}</p>,
     },
     {
       key: 'completed',
-      label: 'Sudah Lunas',
+      label: t('inst.paidOff'),
       value: <p className="text-2xl font-bold text-emerald-600 mt-1">{completedInstallments.length}</p>,
     },
   ];
@@ -84,13 +86,13 @@ export default function InstallmentSummaryCards({
   function getBreakdown(key: CardKey): { title: string; items: Installment[]; getAmount: (i: Installment) => number; amountLabel: string } {
     switch (key) {
       case 'active':
-        return { title: `Cicilan Aktif (${activeInstallments.length})`, items: activeInstallments, getAmount: (i) => Number(i.next_amount ?? i.monthly_amount), amountLabel: 'Tagihan berikutnya' };
+        return { title: `${t('inst.activeCount')} (${activeInstallments.length})`, items: activeInstallments, getAmount: (i) => Number(i.next_amount ?? i.monthly_amount), amountLabel: t('inst.nextBill') };
       case 'this-month':
-        return { title: 'Tagihan Bulan Ini', items: thisMonthInstallments, getAmount: (i) => Number(i.next_amount ?? i.monthly_amount), amountLabel: 'Tagihan bulan ini' };
+        return { title: t('inst.thisMonthBills'), items: thisMonthInstallments, getAmount: (i) => Number(i.next_amount ?? i.monthly_amount), amountLabel: t('inst.thisMonthBill') };
       case 'total':
-        return { title: 'Total Sisa Cicilan', items: activeInstallments, getAmount: (i) => Number(i.remaining_amount_total ?? 0), amountLabel: 'Sisa' };
+        return { title: t('inst.totalRemainingTitle'), items: activeInstallments, getAmount: (i) => Number(i.remaining_amount_total ?? 0), amountLabel: t('inst.remaining') };
       case 'completed':
-        return { title: `Lunas (${completedInstallments.length})`, items: completedInstallments, getAmount: (i) => Number(i.paid_amount_total ?? 0), amountLabel: 'Total terbayar' };
+        return { title: `${t('inst.status.completed')} (${completedInstallments.length})`, items: completedInstallments, getAmount: (i) => Number(i.paid_amount_total ?? 0), amountLabel: t('inst.totalPaid') };
     }
   }
 
@@ -121,7 +123,7 @@ export default function InstallmentSummaryCards({
           </DialogHeader>
           <div className="overflow-y-auto max-h-96">
             {breakdown?.items.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-10">Tidak ada cicilan</p>
+              <p className="text-sm text-muted-foreground text-center py-10">{t('inst.noInstallments')}</p>
             ) : (
               breakdown?.items.map((inst) => {
                 const amt = breakdown.getAmount(inst);
@@ -134,7 +136,7 @@ export default function InstallmentSummaryCards({
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium text-foreground truncate">{inst.name}</p>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {inst.paid_months}/{inst.total_months} bulan · {inst.account_name}
+                        {inst.paid_months}/{inst.total_months} {t('inst.months')} · {inst.account_name}
                       </p>
                     </div>
                     {amt > 0 && (

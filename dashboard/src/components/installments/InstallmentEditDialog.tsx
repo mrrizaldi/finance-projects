@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -37,6 +38,7 @@ interface Props {
 }
 
 export default function InstallmentEditDialog({ inst, open, onOpenChange, categories, accounts, onSuccess }: Props) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -136,7 +138,7 @@ export default function InstallmentEditDialog({ inst, open, onOpenChange, catego
 
     const validRows = monthRows.filter((r) => parseFloat(r.amount) > 0);
     if (validRows.length === 0) {
-      setError('Minimal harus ada 1 bulan dengan nominal valid.');
+      setError(t('inst.needOneMonth'));
       return;
     }
 
@@ -170,13 +172,13 @@ export default function InstallmentEditDialog({ inst, open, onOpenChange, catego
       });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Gagal menyimpan cicilan');
+        setError(data.error || t('inst.saveFailed'));
         return;
       }
       onOpenChange(false);
       onSuccess();
     } catch {
-      setError('Terjadi kesalahan jaringan');
+      setError(t('common.networkError'));
     } finally {
       setLoading(false);
     }
@@ -188,18 +190,18 @@ export default function InstallmentEditDialog({ inst, open, onOpenChange, catego
         {loading && (
           <div className="absolute inset-0 z-20 bg-black/70 backdrop-blur-sm rounded-lg flex items-center justify-center">
             <div className="rounded-md border border-border bg-card px-3 py-2 text-sm">
-              Menyimpan cicilan...
+              {t('inst.savingInst')}
             </div>
           </div>
         )}
         <DialogHeader className="p-4 pb-0 flex-shrink-0">
-          <DialogTitle>Edit Cicilan</DialogTitle>
+          <DialogTitle>{t('inst.editTitle')}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
           <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Nama Cicilan</label>
+              <label className="text-xs text-muted-foreground mb-1 block">{t('inst.name')}</label>
               <Input value={name} onChange={(e) => setName(e.target.value)} required />
             </div>
 
@@ -207,9 +209,9 @@ export default function InstallmentEditDialog({ inst, open, onOpenChange, catego
             <div>
               <div className="flex items-center justify-between mb-1.5">
                 <label className="text-xs text-muted-foreground">
-                  Nominal per Bulan <span className="text-muted-foreground/60">({monthRows.filter(r => parseFloat(r.amount) > 0).length} bulan · {formatRupiah(totalAmount)})</span>
+                  {t('inst.amountPerMonth')} <span className="text-muted-foreground/60">({monthRows.filter(r => parseFloat(r.amount) > 0).length} {t('inst.months')} · {formatRupiah(totalAmount)})</span>
                 </label>
-                <span className="text-xs text-muted-foreground">{paidCount} sudah dibayar</span>
+                <span className="text-xs text-muted-foreground">{t('inst.alreadyPaid', { count: paidCount })}</span>
               </div>
               <div className="border border-border rounded-xl divide-y divide-border overflow-hidden">
                 {monthRows.map((row, idx) => (
@@ -221,7 +223,7 @@ export default function InstallmentEditDialog({ inst, open, onOpenChange, catego
                     )}
                   >
                     <span className={cn('text-xs w-16 flex-shrink-0', row.is_paid ? 'text-muted-foreground line-through' : 'text-foreground')}>
-                      Bln {row.month_number}
+                      {t('inst.moShort')} {row.month_number}
                     </span>
                     <Input
                       type="number"
@@ -233,7 +235,7 @@ export default function InstallmentEditDialog({ inst, open, onOpenChange, catego
                       required
                     />
                     {row.is_paid ? (
-                      <span className="text-[10px] text-emerald-500 w-8 text-center flex-shrink-0">Paid</span>
+                      <span className="text-[10px] text-emerald-500 w-8 text-center flex-shrink-0">{t('inst.paid')}</span>
                     ) : (
                       <button
                         type="button"
@@ -241,7 +243,7 @@ export default function InstallmentEditDialog({ inst, open, onOpenChange, catego
                         className="text-[10px] text-muted-foreground hover:text-destructive transition-colors flex-shrink-0 inline-flex items-center gap-1"
                       >
                         <Trash2 className="h-3 w-3" />
-                        Hapus
+                        {t('tx.delete')}
                       </button>
                     )}
                   </div>
@@ -253,19 +255,19 @@ export default function InstallmentEditDialog({ inst, open, onOpenChange, catego
                 className="mt-2 w-full text-xs text-muted-foreground hover:text-foreground border border-dashed border-border rounded-lg py-1.5 transition-colors inline-flex items-center justify-center gap-1"
               >
                 <Plus className="h-3 w-3" />
-                Tambah Bulan
+                {t('inst.addMonthTitle')}
               </button>
             </div>
 
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Kategori</label>
+              <label className="text-xs text-muted-foreground mb-1 block">{t('tx.category')}</label>
               <Select value={categoryId} onValueChange={(v) => setCategoryId(v ?? '')}>
                 <SelectTrigger className="w-full">
                   <div data-slot="select-value" className="flex flex-1 text-left items-center gap-1.5">
                     {categoryId && categories.find((c) => c.id === categoryId) ? (
                       <>{categories.find((c) => c.id === categoryId)?.name}</>
                     ) : (
-                      <span className="text-muted-foreground">Pilih kategori...</span>
+                      <span className="text-muted-foreground">{t('tx.selectCategory')}</span>
                     )}
                   </div>
                 </SelectTrigger>
@@ -278,14 +280,14 @@ export default function InstallmentEditDialog({ inst, open, onOpenChange, catego
             </div>
 
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Akun</label>
+              <label className="text-xs text-muted-foreground mb-1 block">{t('tx.account')}</label>
               <Select value={accountId} onValueChange={(v) => setAccountId(v ?? '')}>
                 <SelectTrigger className="w-full">
                   <div data-slot="select-value" className="flex flex-1 text-left items-center gap-1.5">
                     {accountId && accounts.find((a) => a.id === accountId) ? (
                       <>{accounts.find((a) => a.id === accountId)?.name}</>
                     ) : (
-                      <span className="text-muted-foreground">Pilih akun...</span>
+                      <span className="text-muted-foreground">{t('tx.selectAccount')}</span>
                     )}
                   </div>
                 </SelectTrigger>
@@ -299,35 +301,35 @@ export default function InstallmentEditDialog({ inst, open, onOpenChange, catego
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Tanggal Mulai</label>
+                <label className="text-xs text-muted-foreground mb-1 block">{t('inst.startDate')}</label>
                 <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} required />
               </div>
               <div>
-                <label className="text-xs text-muted-foreground mb-1 block">Jatuh Tempo (Tgl)</label>
-                <Input type="number" value={dueDay} onChange={(e) => setDueDay(e.target.value)} placeholder="Opsional" min="1" max="31" />
+                <label className="text-xs text-muted-foreground mb-1 block">{t('inst.dueDayLabel')}</label>
+                <Input type="number" value={dueDay} onChange={(e) => setDueDay(e.target.value)} placeholder={t('tx.optional')} min="1" max="31" />
               </div>
             </div>
 
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Status</label>
+              <label className="text-xs text-muted-foreground mb-1 block">{t('inst.statusLabel')}</label>
               <Select value={status} onValueChange={(v) => setStatus(v as Installment['status'])}>
                 <SelectTrigger className="w-full">
                   <div data-slot="select-value" className="flex flex-1 text-left items-center gap-1.5">
-                    {status === 'active' ? 'Aktif' : status === 'completed' ? 'Lunas' : status === 'paused' ? 'Jeda' : 'Batal'}
+                    {t(`inst.status.${status}`)}
                   </div>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="active">Aktif</SelectItem>
-                  <SelectItem value="completed">Lunas</SelectItem>
-                  <SelectItem value="paused">Jeda</SelectItem>
-                  <SelectItem value="cancelled">Batal</SelectItem>
+                  <SelectItem value="active">{t('inst.status.active')}</SelectItem>
+                  <SelectItem value="completed">{t('inst.status.completed')}</SelectItem>
+                  <SelectItem value="paused">{t('inst.status.paused')}</SelectItem>
+                  <SelectItem value="cancelled">{t('inst.status.cancelled')}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
 
             <div>
-              <label className="text-xs text-muted-foreground mb-1 block">Catatan</label>
-              <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Opsional" />
+              <label className="text-xs text-muted-foreground mb-1 block">{t('tx.note')}</label>
+              <Input value={notes} onChange={(e) => setNotes(e.target.value)} placeholder={t('tx.optional')} />
             </div>
 
             {error && (
@@ -336,8 +338,8 @@ export default function InstallmentEditDialog({ inst, open, onOpenChange, catego
           </div>
 
           <DialogFooter className="px-4 pt-3 pb-5 border-t border-border flex-shrink-0">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>Batal</Button>
-            <Button type="submit" disabled={loading}>{loading ? 'Menyimpan...' : 'Simpan'}</Button>
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>{t('common.cancel')}</Button>
+            <Button type="submit" disabled={loading}>{loading ? t('common.saving') : t('common.save')}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

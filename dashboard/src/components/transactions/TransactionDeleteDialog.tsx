@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -11,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { VTransaction } from '@/types';
 import { Trash2 } from 'lucide-react';
-import { formatRupiah, TRANSACTION_TYPE_LABEL } from '@/lib/utils';
+import { formatRupiah } from '@/lib/utils';
 
 interface Props {
   tx: VTransaction | null;
@@ -21,6 +22,7 @@ interface Props {
 }
 
 export default function TransactionDeleteDialog({ tx, open, onOpenChange, onSuccess }: Props) {
+  const { t } = useTranslation();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,13 +37,13 @@ export default function TransactionDeleteDialog({ tx, open, onOpenChange, onSucc
       const res = await fetch(`/api/transactions/${tx.id}`, { method: 'DELETE' });
       const data = await res.json();
       if (!res.ok) {
-        setError(data.error || 'Gagal menghapus transaksi');
+        setError(data.error || t('tx.deleteFailed'));
         return;
       }
       onOpenChange(false);
       onSuccess();
     } catch {
-      setError('Terjadi kesalahan jaringan');
+      setError(t('common.networkError'));
     } finally {
       setLoading(false);
     }
@@ -53,23 +55,23 @@ export default function TransactionDeleteDialog({ tx, open, onOpenChange, onSucc
         {loading && (
           <div className="absolute inset-0 z-20 bg-black/70 backdrop-blur-sm rounded-lg flex items-center justify-center">
             <div className="rounded-md border border-border bg-card px-3 py-2 text-sm">
-              Menghapus transaksi...
+              {t('tx.deleting')}
             </div>
           </div>
         )}
         <DialogHeader>
-          <DialogTitle>Hapus Transaksi</DialogTitle>
+          <DialogTitle>{t('tx.deleteTitle')}</DialogTitle>
         </DialogHeader>
 
         <div className="py-2 text-sm text-muted-foreground">
-          <p>Yakin ingin menghapus transaksi ini?</p>
+          <p>{t('tx.deleteConfirm')}</p>
           <div className="mt-3 rounded-lg bg-muted p-3 space-y-1">
             <p className="text-foreground font-medium">
-              {tx.description || tx.merchant || TRANSACTION_TYPE_LABEL[tx.type]}
+              {tx.description || tx.merchant || t(`tx.type.${tx.type}`)}
             </p>
-            <p className="text-xs">{formatRupiah(tx.amount)} · {TRANSACTION_TYPE_LABEL[tx.type]}</p>
+            <p className="text-xs">{formatRupiah(tx.amount)} · {t(`tx.type.${tx.type}`)}</p>
           </div>
-          <p className="mt-3 text-xs text-destructive/80">Aksi ini tidak dapat dibatalkan.</p>
+          <p className="mt-3 text-xs text-destructive/80">{t('tx.deleteIrreversible')}</p>
         </div>
 
         {error && (
@@ -78,15 +80,15 @@ export default function TransactionDeleteDialog({ tx, open, onOpenChange, onSucc
 
         <DialogFooter>
           <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-            Batal
+            {t('common.cancel')}
           </Button>
           <Button variant="destructive" onClick={handleDelete} disabled={loading}>
             {loading ? (
-              'Menghapus...'
+              t('tx.deletingShort')
             ) : (
               <>
                 <Trash2 className="h-3.5 w-3.5 mr-1" />
-                Hapus
+                {t('tx.delete')}
               </>
             )}
           </Button>

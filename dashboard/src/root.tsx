@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Links, Meta, Outlet, Scripts, ScrollRestoration } from 'react-router';
 import './globals.css';
+import '@/i18n';
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
 
 export const meta = () => [

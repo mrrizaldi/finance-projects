@@ -2,27 +2,37 @@ import { clsx, type ClassValue } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
+import 'dayjs/locale/en';
 import utc from 'dayjs/plugin/utc';
 import timezone from 'dayjs/plugin/timezone';
+import i18n from '@/i18n';
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
 dayjs.locale('id');
+
+// Locale aktif dari i18next. Grouping angka & nama bulan ikut bahasa; currency tetap IDR.
+function activeLocale(): 'id' | 'en' {
+  return i18n.language === 'en' ? 'en' : 'id';
+}
+function intlLocale(): string {
+  return activeLocale() === 'en' ? 'en-US' : 'id-ID';
+}
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export function formatRupiah(amount: number): string {
-  return `Rp ${amount.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`;
+  return `Rp ${amount.toLocaleString(intlLocale(), { maximumFractionDigits: 0 })}`;
 }
 
 export function formatDate(date: string | Date, format = 'DD MMM YYYY'): string {
-  return dayjs(date).tz('Asia/Jakarta').format(format);
+  return dayjs(date).tz('Asia/Jakarta').locale(activeLocale()).format(format);
 }
 
 export function formatDatetime(date: string | Date): string {
-  return dayjs(date).tz('Asia/Jakarta').format('DD MMM YYYY, HH:mm');
+  return dayjs(date).tz('Asia/Jakarta').locale(activeLocale()).format('DD MMM YYYY, HH:mm');
 }
 
 export function startOfMonth(date?: Date): string {
@@ -45,28 +55,15 @@ export function nMonthsAgo(n: number): string {
   return dayjs().subtract(n, 'month').startOf('month').toISOString();
 }
 
-export const TRANSACTION_TYPE_LABEL: Record<string, string> = {
-  income: 'Pemasukan',
-  expense: 'Pengeluaran',
-  transfer: 'Transfer',
-};
+// Source label dari katalog i18n (fallback ke raw key). Sebagian besar proper noun.
+export function sourceLabel(source: string): string {
+  return i18n.t(`source.${source}`, { defaultValue: source });
+}
 
-export const SOURCE_LABEL: Record<string, string> = {
-  manual_telegram: 'Telegram',
-  manual_web: 'Web',
-  email_bca: 'Email BCA',
-  email_bsi: 'Email BSI',
-  email_gopay: 'Email GoPay',
-  email_ovo: 'Email OVO',
-  email_dana: 'Email Dana',
-  email_shopeepay: 'Email ShopeePay',
-  email_shopee: 'Email Shopee',
-  email_tokopedia: 'Email Tokopedia',
-  openclaw: 'OpenClaw AI',
-  api: 'API',
-};
-
-export const DAY_NAMES = ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'];
+// Nama hari singkat sesuai locale (Min/Sen.. atau Sun/Mon..).
+export function dayNames(): string[] {
+  return i18n.t('common.dayNames', { returnObjects: true }) as string[];
+}
 
 export function combineDateTimeWIB(date: string, time: string): string {
   return `${date}T${time || '00:00'}:00+07:00`;
@@ -81,7 +78,7 @@ export function parseAmountInput(raw: string): number {
 
 export function formatRupiahInput(amount: number): string {
   if (amount === 0) return '';
-  return new Intl.NumberFormat('id-ID').format(amount);
+  return new Intl.NumberFormat(intlLocale()).format(amount);
 }
 
 /**

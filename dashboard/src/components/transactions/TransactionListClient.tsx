@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRevalidator } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import TransactionRow, { TransactionRowMobile, TX_GRID } from './TransactionRow';
 import TransactionDetailDialog from './TransactionDetailDialog';
 import TransactionEditDialog from './TransactionEditDialog';
@@ -17,9 +18,9 @@ interface Props {
 
 type DialogMode = 'detail' | 'edit' | 'delete' | null;
 
-const TABLE_HEADERS = ['TANGGAL', 'DESKRIPSI', 'KATEGORI', 'AKUN', 'JUMLAH', ''];
-
 export default function TransactionListClient({ transactions, categories, accounts, installments }: Props) {
+  const { t } = useTranslation();
+  const TABLE_HEADERS = [t('tx.col.date'), t('tx.col.description'), t('tx.col.category'), t('tx.col.account'), t('tx.col.amount'), ''];
   const revalidator = useRevalidator();
   const [selected, setSelected] = useState<VTransaction | null>(null);
   const [mode, setMode] = useState<DialogMode>(null);
@@ -46,7 +47,7 @@ export default function TransactionListClient({ transactions, categories, accoun
       {isRefreshing && (
         <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm flex items-center justify-center">
           <div className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground shadow-xl">
-            Memuat ulang transaksi...
+            {t('tx.reloading')}
           </div>
         </div>
       )}
@@ -68,7 +69,7 @@ export default function TransactionListClient({ transactions, categories, accoun
 
       {transactions.length === 0 ? (
         <div className="py-16 text-center" style={{ color: 'var(--text-dim)' }}>
-          <p className="text-sm">Tidak ada transaksi yang sesuai filter</p>
+          <p className="text-sm">{t('tx.noneMatch')}</p>
         </div>
       ) : (
         transactions.map((tx) => (

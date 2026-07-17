@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -9,7 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Pencil, Trash2 } from 'lucide-react';
 import { VTransaction } from '@/types';
-import { formatRupiah, formatDatetime, TRANSACTION_TYPE_LABEL, SOURCE_LABEL } from '@/lib/utils';
+import { formatRupiah, formatDatetime, sourceLabel } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 
 interface Props {
@@ -30,6 +31,7 @@ function DetailRow({ label, value }: { label: string; value: React.ReactNode }) 
 }
 
 export default function TransactionDetailDialog({ tx, open, onOpenChange, onEdit, onDelete }: Props) {
+  const { t } = useTranslation();
   if (!tx) return null;
 
   const isIncome = tx.type === 'income';
@@ -39,7 +41,7 @@ export default function TransactionDetailDialog({ tx, open, onOpenChange, onEdit
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Detail Transaksi</DialogTitle>
+          <DialogTitle>{t('tx.detailTitle')}</DialogTitle>
         </DialogHeader>
 
         {/* Amount hero */}
@@ -63,11 +65,11 @@ export default function TransactionDetailDialog({ tx, open, onOpenChange, onEdit
               variant="outline"
               className="text-xs"
             >
-              {TRANSACTION_TYPE_LABEL[tx.type]}
+              {t(`tx.type.${tx.type}`)}
             </Badge>
             {tx.is_adjustment && (
               <Badge variant="secondary" className="text-xs">
-                Adjustment
+                {t('tx.adjustment')}
               </Badge>
             )}
           </div>
@@ -75,33 +77,33 @@ export default function TransactionDetailDialog({ tx, open, onOpenChange, onEdit
 
         {/* Details */}
         <div className="text-sm">
-          <DetailRow label="Deskripsi" value={tx.description} />
-          <DetailRow label="Merchant" value={tx.merchant} />
-          <DetailRow label="Kategori" value={tx.category_name} />
+          <DetailRow label={t('tx.description')} value={tx.description} />
+          <DetailRow label={t('tx.merchant')} value={tx.merchant} />
+          <DetailRow label={t('tx.category')} value={tx.category_name} />
           {tx.installment_name ? (
             <DetailRow
-              label="Cicilan"
+              label={t('nav.installments')}
               value={
-                <span className="text-purple-400 font-medium">Cicilan · {tx.installment_name}</span>
+                <span className="text-purple-400 font-medium">{t('nav.installments')} · {tx.installment_name}</span>
               }
             />
           ) : (
-            <DetailRow label="Akun" value={tx.account_name} />
+            <DetailRow label={t('tx.account')} value={tx.account_name} />
           )}
-          {isTransfer && <DetailRow label="Akun Tujuan" value={tx.to_account_name} />}
-          <DetailRow label="Tanggal" value={formatDatetime(tx.transaction_date)} />
-          <DetailRow label="Sumber" value={SOURCE_LABEL[tx.source] || tx.source} />
-          {tx.is_adjustment && <DetailRow label="Catatan Adjust" value={tx.adjustment_note || '–'} />}
-          <DetailRow label="Saldo Sebelum" value={tx.balance_before == null ? '–' : formatRupiah(tx.balance_before)} />
-          <DetailRow label="Saldo Sesudah" value={tx.balance_after == null ? '–' : formatRupiah(tx.balance_after)} />
+          {isTransfer && <DetailRow label={t('tx.toAccount')} value={tx.to_account_name} />}
+          <DetailRow label={t('filters.date')} value={formatDatetime(tx.transaction_date)} />
+          <DetailRow label={t('tx.source')} value={sourceLabel(tx.source)} />
+          {tx.is_adjustment && <DetailRow label={t('tx.adjustNote')} value={tx.adjustment_note || '–'} />}
+          <DetailRow label={t('tx.balanceBefore')} value={tx.balance_before == null ? '–' : formatRupiah(tx.balance_before)} />
+          <DetailRow label={t('tx.balanceAfter')} value={tx.balance_after == null ? '–' : formatRupiah(tx.balance_after)} />
           {isTransfer && (
             <>
               <DetailRow
-                label="Saldo Tujuan Sebelum"
+                label={t('tx.toBalanceBefore')}
                 value={tx.to_balance_before == null ? '–' : formatRupiah(tx.to_balance_before)}
               />
               <DetailRow
-                label="Saldo Tujuan Sesudah"
+                label={t('tx.toBalanceAfter')}
                 value={tx.to_balance_after == null ? '–' : formatRupiah(tx.to_balance_after)}
               />
             </>
@@ -115,14 +117,14 @@ export default function TransactionDetailDialog({ tx, open, onOpenChange, onEdit
             className="flex-1 h-8 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/80 transition-colors inline-flex items-center justify-center gap-1"
           >
             <Pencil className="h-3 w-3" />
-            Edit
+            {t('common.edit')}
           </button>
           <button
             onClick={onDelete}
             className="flex-1 h-8 rounded-lg bg-destructive/15 text-destructive text-sm font-medium hover:bg-destructive/25 transition-colors inline-flex items-center justify-center gap-1"
           >
             <Trash2 className="h-3 w-3" />
-            Hapus
+            {t('tx.delete')}
           </button>
         </div>
       </DialogContent>

@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRevalidator } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { getBrowserClient } from '@/lib/supabase';
 import { parseBulkInput, type ParsedLine } from '@/lib/bulk-parser';
 import { Button } from '@/components/ui/button';
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function BulkInputClient({ accounts, defaultAccountId }: Props) {
+  const { t } = useTranslation();
   const revalidator = useRevalidator();
   const [text, setText] = useState('');
   const [parsed, setParsed] = useState<ParsedLine[]>([]);
@@ -96,15 +98,15 @@ export function BulkInputClient({ accounts, defaultAccountId }: Props) {
   return (
     <div className="space-y-6">
       <div className="rounded-lg border border-border p-4 text-sm text-muted-foreground space-y-1">
-        <p className="font-medium text-foreground">Format per baris:</p>
+        <p className="font-medium text-foreground">{t('bulk.formatPerLine')}</p>
         <code className="block">DD/MM nominal deskripsi [akun]</code>
-        <p>Prefix <code>+</code> untuk pemasukan. Contoh:</p>
+        <p>{t('bulk.prefixHint')} <code>+</code> {t('bulk.forIncome')}</p>
         <code className="block">23/04 35rb Makan siang</code>
         <code className="block">+23/04 8.5jt Gaji [BCA]</code>
       </div>
 
       <div className="space-y-2">
-        <Label>Input Transaksi</Label>
+        <Label>{t('bulk.inputLabel')}</Label>
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
@@ -115,7 +117,7 @@ export function BulkInputClient({ accounts, defaultAccountId }: Props) {
       </div>
 
       <Button onClick={handleParse} variant="outline" className="w-full" disabled={!text.trim()}>
-        Parse &amp; Preview
+        {t('bulk.parsePreview')}
       </Button>
 
       {parsed.length > 0 && (
@@ -124,11 +126,11 @@ export function BulkInputClient({ accounts, defaultAccountId }: Props) {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
-                  <th className="px-3 py-2 text-left">Tanggal</th>
-                  <th className="px-3 py-2 text-left">Tipe</th>
-                  <th className="px-3 py-2 text-right">Jumlah</th>
-                  <th className="px-3 py-2 text-left">Deskripsi</th>
-                  <th className="px-3 py-2 text-left">Akun</th>
+                  <th className="px-3 py-2 text-left">{t('filters.date')}</th>
+                  <th className="px-3 py-2 text-left">{t('filters.type')}</th>
+                  <th className="px-3 py-2 text-right">{t('filters.amountLabel')}</th>
+                  <th className="px-3 py-2 text-left">{t('tx.description')}</th>
+                  <th className="px-3 py-2 text-left">{t('tx.account')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -144,7 +146,7 @@ export function BulkInputClient({ accounts, defaultAccountId }: Props) {
                         <td className="px-3 py-2">{line.date}</td>
                         <td className="px-3 py-2">
                           <span className={line.type === 'income' ? 'text-green-400' : 'text-red-400'}>
-                            {line.type === 'income' ? 'Masuk' : 'Keluar'}
+                            {line.type === 'income' ? t('bulk.in') : t('bulk.out')}
                           </span>
                         </td>
                         <td className="px-3 py-2 text-right font-mono">
@@ -152,7 +154,7 @@ export function BulkInputClient({ accounts, defaultAccountId }: Props) {
                         </td>
                         <td className="px-3 py-2">{line.description}</td>
                         <td className="px-3 py-2 text-muted-foreground">
-                          {line.accountName ?? 'Default'}
+                          {line.accountName ?? t('bulk.default')}
                         </td>
                       </>
                     )}
@@ -163,15 +165,15 @@ export function BulkInputClient({ accounts, defaultAccountId }: Props) {
           </div>
 
           {errorLines.length > 0 && (
-            <p className="text-sm text-red-400">{errorLines.length} baris error, akan diskip.</p>
+            <p className="text-sm text-red-400">{t('bulk.errorLines', { count: errorLines.length })}</p>
           )}
 
           <Button onClick={handleSave} className="w-full" disabled={saving || validLines.length === 0}>
-            {saving ? 'Menyimpan...' : `Simpan Semua (${validLines.length} transaksi)`}
+            {saving ? t('common.saving') : t('bulk.saveAll', { count: validLines.length })}
           </Button>
 
           {savedCount > 0 && (
-            <p className="text-sm text-green-400 text-center">{savedCount} transaksi berhasil disimpan!</p>
+            <p className="text-sm text-green-400 text-center">{t('bulk.savedCount', { count: savedCount })}</p>
           )}
         </div>
       )}

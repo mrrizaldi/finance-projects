@@ -2,7 +2,9 @@
 
 import { useState, useCallback, useEffect, useTransition } from 'react';
 import { useRevalidator } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Account, Category, Profile } from '@/types';
+import i18n, { setLocale, storedLocale, type Locale } from '@/i18n';
 import { formatRupiah } from '@/lib/utils';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -43,13 +45,14 @@ async function getActiveReg(timeoutMs = 5000): Promise<ServiceWorkerRegistration
     const regs = await navigator.serviceWorker.getRegistrations();
     const active = regs.find((r) => r.active);
     if (active) return active;
-    throw new Error('Tidak ada service worker aktif. Coba tutup dan buka ulang aplikasi.');
+    throw new Error(i18n.t('settings.push.noSW'));
   }
 }
 
 type PushStatus = 'loading' | 'unsupported' | 'denied' | 'inactive' | 'active';
 
 function PushNotificationSection() {
+  const { t } = useTranslation();
   const [status, setStatus] = useState<PushStatus>('loading');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -86,7 +89,7 @@ function PushNotificationSection() {
       }
       const vapidRes = await fetch('/api/push/vapid-key');
       if (!vapidRes.ok) {
-        setError('Gagal mengambil konfigurasi notifikasi. Coba lagi.');
+        setError(t('settings.push.configFailed'));
         return;
       }
       const { publicKey } = await vapidRes.json();
@@ -104,13 +107,13 @@ function PushNotificationSection() {
       });
       if (!res.ok) {
         await sub.unsubscribe();
-        setError('Gagal menyimpan langganan notifikasi. Coba lagi.');
+        setError(t('settings.push.subFailed'));
         return;
       }
       setStatus('active');
     } catch (err) {
       console.error('Push subscribe error:', err);
-      setError('Terjadi kesalahan. Coba lagi.');
+      setError(t('settings.push.error'));
     } finally {
       setSaving(false);
     }
@@ -129,7 +132,7 @@ function PushNotificationSection() {
           body: JSON.stringify({ action: 'unsubscribe', subscription: sub.toJSON() }),
         });
         if (!res.ok) {
-          setError('Gagal menonaktifkan notifikasi. Coba lagi.');
+          setError(t('settings.push.unsubFailed'));
           return;
         }
         await sub.unsubscribe();
@@ -137,7 +140,7 @@ function PushNotificationSection() {
       setStatus('inactive');
     } catch (err) {
       console.error('Push unsubscribe error:', err);
-      setError('Terjadi kesalahan. Coba lagi.');
+      setError(t('settings.push.error'));
     } finally {
       setSaving(false);
     }
@@ -146,35 +149,35 @@ function PushNotificationSection() {
   return (
     <Card className="mb-6">
       <CardHeader>
-        <CardTitle className="text-base">Notifikasi Push</CardTitle>
+        <CardTitle className="text-base">{t('settings.push.title')}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
         {error && (
           <p className="text-sm text-red-500">{error}</p>
         )}
         {status === 'loading' && (
-          <p className="text-sm text-muted-foreground">Memeriksa status...</p>
+          <p className="text-sm text-muted-foreground">{t('settings.push.checking')}</p>
         )}
         {status === 'unsupported' && (
           <p className="text-sm text-muted-foreground">
-            Browser ini tidak mendukung push notification.
+            {t('settings.push.unsupported')}
           </p>
         )}
         {status === 'denied' && (
           <p className="text-sm text-muted-foreground">
-            Notifikasi diblokir. Izinkan di pengaturan browser untuk mengaktifkan.
+            {t('settings.push.denied')}
           </p>
         )}
         {(status === 'inactive' || status === 'active') && (
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium">
-                {status === 'active' ? 'Aktif' : 'Nonaktif'}
+                {status === 'active' ? t('settings.push.active') : t('settings.push.inactive')}
               </p>
               <p className="text-xs text-muted-foreground">
                 {status === 'active'
-                  ? 'Notifikasi muncul saat ada transaksi baru'
-                  : 'Aktifkan untuk menerima notifikasi transaksi'}
+                  ? t('settings.push.activeDesc')
+                  : t('settings.push.inactiveDesc')}
               </p>
             </div>
             <Button
@@ -183,7 +186,7 @@ function PushNotificationSection() {
               onClick={status === 'active' ? handleDisable : handleEnable}
               disabled={saving}
             >
-              {saving ? 'Memproses...' : status === 'active' ? 'Nonaktifkan' : 'Aktifkan'}
+              {saving ? t('common.processing') : status === 'active' ? t('settings.push.disable') : t('settings.push.enable')}
             </Button>
           </div>
         )}
@@ -193,27 +196,74 @@ function PushNotificationSection() {
 }
 
 function ThemeSection() {
+  const { t } = useTranslation();
   const { theme, setTheme } = useTheme();
 
   return (
     <Card className="mb-6">
       <CardHeader>
-        <CardTitle className="text-base">Tampilan</CardTitle>
+        <CardTitle className="text-base">{t('settings.theme.title')}</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm font-medium">Tema</p>
-            <p className="text-xs text-muted-foreground">Pilih tampilan aplikasi</p>
+            <p className="text-sm font-medium">{t('settings.theme.label')}</p>
+            <p className="text-xs text-muted-foreground">{t('settings.theme.desc')}</p>
           </div>
           <Select value={theme} onValueChange={(v) => v && setTheme(v)}>
             <SelectTrigger className="w-36">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="light">Terang</SelectItem>
-              <SelectItem value="dark">Gelap</SelectItem>
-              <SelectItem value="system">Ikuti sistem</SelectItem>
+              <SelectItem value="light">{t('settings.theme.light')}</SelectItem>
+              <SelectItem value="dark">{t('settings.theme.dark')}</SelectItem>
+              <SelectItem value="system">{t('settings.theme.system')}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function LanguageSection({ profile }: { profile: Profile | null }) {
+  const { t } = useTranslation();
+  // profiles.locale = source of truth; localStorage sbg cache/anti-flash.
+  const [locale, setLocaleValue] = useState<Locale>(profile?.locale ?? storedLocale());
+  const [saving, setSaving] = useState(false);
+
+  async function handleChange(v: string | null) {
+    if (!v) return;
+    const next = (v === 'en' ? 'en' : 'id') as Locale;
+    setLocaleValue(next);
+    setLocale(next); // ganti bahasa UI live + localStorage
+    setSaving(true);
+    await fetch('/api/profile', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locale: next }),
+    }).catch(() => {});
+    setSaving(false);
+  }
+
+  return (
+    <Card className="mb-6">
+      <CardHeader>
+        <CardTitle className="text-base">{t('settings.language.title')}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-sm font-medium">{t('settings.language.title')}</p>
+            <p className="text-xs text-muted-foreground">{t('settings.language.desc')}</p>
+          </div>
+          <Select value={locale} onValueChange={handleChange} disabled={saving}>
+            <SelectTrigger className="w-44">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="id">{t('languages.id')}</SelectItem>
+              <SelectItem value="en">{t('languages.en')}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -223,6 +273,7 @@ function ThemeSection() {
 }
 
 export function SettingsClient({ initialAccounts, initialCategories, profile, email }: SettingsClientProps) {
+  const { t } = useTranslation();
   const revalidator = useRevalidator();
   const [accounts, setAccounts] = useState<Account[]>(initialAccounts);
   const [categories, setCategories] = useState<Category[]>(initialCategories);
@@ -287,7 +338,7 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
   }, [revalidator]);
 
   async function handleDeactivateAccount(acc: Account) {
-    if (!confirm(`Nonaktifkan akun "${acc.name}"? Akun tidak akan terhapus.`)) return;
+    if (!confirm(t('settings.confirmDeactivateAccount', { name: acc.name }))) return;
     setDeactivatingId(acc.id);
     try {
       const res = await fetch(`/api/accounts/${acc.id}`, { method: 'DELETE' });
@@ -301,7 +352,7 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
   }
 
   async function handleDeactivateCategory(cat: Category) {
-    if (!confirm(`Nonaktifkan kategori "${cat.name}"? Kategori tidak akan terhapus.`)) return;
+    if (!confirm(t('settings.confirmDeactivateCategory', { name: cat.name }))) return;
     setDeactivatingId(cat.id);
     try {
       const res = await fetch(`/api/categories/${cat.id}`, { method: 'DELETE' });
@@ -322,7 +373,7 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
       {isRefreshing && (
         <div className="fixed inset-0 z-[120] bg-black/70 backdrop-blur-sm flex items-center justify-center">
           <div className="rounded-xl border border-border bg-card px-4 py-3 text-sm text-foreground shadow-xl">
-            Menyinkronkan data...
+            {t('common.syncing')}
           </div>
         </div>
       )}
@@ -330,42 +381,43 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
       {/* Profile */}
       <Card className="mb-6">
         <CardHeader>
-          <CardTitle className="text-base">Profil</CardTitle>
+          <CardTitle className="text-base">{t('settings.profile')}</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           {email && (
             <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground">Email</Label>
+              <Label className="text-xs text-muted-foreground">{t('auth.login.email')}</Label>
               <p className="text-sm">{email}</p>
             </div>
           )}
           <div className="space-y-2">
-            <Label>Nama Tampil</Label>
+            <Label>{t('settings.displayName')}</Label>
             <Input
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
-              placeholder="Nama kamu"
+              placeholder={t('settings.displayNamePlaceholder')}
             />
           </div>
           <div className="space-y-2">
-            <Label>Akun Default</Label>
+            <Label>{t('settings.defaultAccount')}</Label>
             <select
               value={defaultAccountId}
               onChange={(e) => setDefaultAccountId(e.target.value)}
               className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
             >
-              <option value="">Tidak ada</option>
+              <option value="">{t('settings.none')}</option>
               {initialAccounts.filter(a => a.is_active).map(a => (
                 <option key={a.id} value={a.id}>{a.name}</option>
               ))}
             </select>
           </div>
           <Button onClick={handleSaveProfile} disabled={savingProfile} size="sm">
-            {profileSaved ? 'Tersimpan!' : savingProfile ? 'Menyimpan...' : 'Simpan Profil'}
+            {profileSaved ? t('common.saved') : savingProfile ? t('common.saving') : t('settings.saveProfile')}
           </Button>
         </CardContent>
       </Card>
 
+      <LanguageSection profile={profile} />
       <ThemeSection />
       <PushNotificationSection />
 
@@ -373,7 +425,7 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
       <Card className="mb-6">
         <CardHeader className="border-b border-border">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold text-foreground">Akun ({accounts.length})</CardTitle>
+            <CardTitle className="text-sm font-semibold text-foreground">{t('settings.accounts')} ({accounts.length})</CardTitle>
             <Button
               size="sm"
               variant="outline"
@@ -381,7 +433,7 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
               onClick={() => setAccountDialog({ open: true, account: null })}
             >
               <Plus className="h-3 w-3 mr-1" />
-              Tambah Akun
+              {t('settings.addAccount')}
             </Button>
           </div>
         </CardHeader>
@@ -396,7 +448,7 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="text-sm font-medium text-foreground break-words">{acc.name}</p>
                     {acc.is_active === false && (
-                      <Badge variant="secondary" className="text-xs h-4 px-1.5">Nonaktif</Badge>
+                      <Badge variant="secondary" className="text-xs h-4 px-1.5">{t('settings.inactive')}</Badge>
                     )}
                   </div>
                   <p className="text-xs text-muted-foreground capitalize">{acc.type}</p>
@@ -413,10 +465,10 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
                       variant="ghost"
                       className="h-7 px-2 text-xs"
                       onClick={() => setAdjustDialog({ open: true, account: acc })}
-                      title="Adjust saldo"
+                      title={t('settings.adjustBalance')}
                     >
                       <ArrowUpDown className="h-3 w-3 mr-1" />
-                      Adjust
+                      {t('settings.adjust')}
                     </Button>
                     <Button
                       size="sm"
@@ -425,7 +477,7 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
                       onClick={() => setAccountDialog({ open: true, account: acc })}
                     >
                       <Pencil className="h-3 w-3 mr-1" />
-                      Edit
+                      {t('common.edit')}
                     </Button>
                     <Button
                       size="sm"
@@ -435,7 +487,7 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
                       onClick={() => handleDeactivateAccount(acc)}
                     >
                       <Ban className="h-3 w-3 mr-1" />
-                      Nonaktifkan
+                      {t('settings.deactivate')}
                     </Button>
                   </>
                 )}
@@ -449,7 +501,7 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
       <Card>
         <CardHeader className="border-b border-border">
           <div className="flex items-center justify-between">
-            <CardTitle className="text-sm font-semibold text-foreground">Kategori ({categories.length})</CardTitle>
+            <CardTitle className="text-sm font-semibold text-foreground">{t('settings.categories')} ({categories.length})</CardTitle>
             <Button
               size="sm"
               variant="outline"
@@ -457,7 +509,7 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
               onClick={() => setCategoryDialog({ open: true, category: null })}
             >
               <Plus className="h-3 w-3 mr-1" />
-              Tambah Kategori
+              {t('settings.addCategory')}
             </Button>
           </div>
         </CardHeader>
@@ -465,7 +517,7 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
         {/* Expense */}
         <div className="px-4 py-3 bg-muted/30 border-b border-border">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Pengeluaran ({expenseCategories.length})
+            {t('tx.type.expense')} ({expenseCategories.length})
           </p>
         </div>
         <div className="divide-y divide-border">
@@ -483,7 +535,7 @@ export function SettingsClient({ initialAccounts, initialCategories, profile, em
         {/* Income */}
         <div className="px-4 py-3 bg-muted/30 border-y border-border">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Pemasukan ({incomeCategories.length})
+            {t('tx.type.income')} ({incomeCategories.length})
           </p>
         </div>
         <div className="divide-y divide-border">
@@ -532,6 +584,7 @@ function CategoryRow({
   onEdit: () => void;
   onDeactivate: () => void;
 }) {
+  const { t } = useTranslation();
   return (
     <div className={`flex flex-wrap items-center justify-between gap-2 px-4 py-3 ${cat.is_active === false ? 'opacity-50' : ''}`}>
       <div className="flex items-center gap-3 min-w-0">
@@ -542,23 +595,23 @@ function CategoryRow({
         <div className="flex flex-wrap items-center gap-2">
           <p className="text-sm text-foreground break-words">{cat.name}</p>
           {cat.is_active === false && (
-            <Badge variant="secondary" className="text-xs h-4 px-1.5">Nonaktif</Badge>
+            <Badge variant="secondary" className="text-xs h-4 px-1.5">{t('settings.inactive')}</Badge>
           )}
         </div>
       </div>
       <div className="flex items-center gap-2 ml-auto">
         {cat.budget_monthly ? (
           <Badge variant="secondary" className="text-xs">
-            Budget: {formatRupiah(cat.budget_monthly)}
+            {t('settings.budgetLabel')}: {formatRupiah(cat.budget_monthly)}
           </Badge>
         ) : (
-          <span className="text-xs text-muted-foreground/50">No budget</span>
+          <span className="text-xs text-muted-foreground/50">{t('settings.noBudget')}</span>
         )}
         {cat.is_active !== false && (
           <>
             <Button size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={onEdit}>
               <Pencil className="h-3 w-3 mr-1" />
-              Edit
+              {t('common.edit')}
             </Button>
             <Button
               size="sm"
@@ -568,7 +621,7 @@ function CategoryRow({
               onClick={onDeactivate}
             >
               <Ban className="h-3 w-3 mr-1" />
-              Nonaktifkan
+              {t('settings.deactivate')}
             </Button>
           </>
         )}

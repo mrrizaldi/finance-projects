@@ -5,6 +5,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Dokumen & Histori
 
 - **`README.md`** — entry point: peta komponen (repo vs server) + "butuh ngapain → mulai dari sini".
+- **`docs/FEATURES.md`** — peta lengkap semua fitur (dasar + advanced) + alur data (diagram Mermaid), tiap section ada pointer `file:line` ke kode.
+- **`docs/RECONCILE.md`** — deep-dive sistem saldo & snapshot kronologis (fitur paling rawan): algoritma, trigger, gotchas, runbook.
+- **`docs/I18N.md`** — internationalization (ID/EN): string UI vs data user, seed bahasa saat signup, katalog, cara konversi layar.
 - **`SERVER.md`** — inventori home server (pm2, n8n, openclaw, env, deploy).
 - Histori implementasi & keputusan lama: **git log** (PROGRESS.md dan finance-automation-spec.md sudah dihapus — lihat git history kalau butuh).
 

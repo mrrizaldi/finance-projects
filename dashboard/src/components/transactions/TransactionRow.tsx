@@ -1,16 +1,21 @@
 'use client';
 
+import { useTranslation } from 'react-i18next';
 import { VTransaction } from '@/types';
 import { formatRupiah } from '@/lib/utils';
 import { cn } from '@/lib/utils';
+import i18n from '@/i18n';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
+import 'dayjs/locale/en';
 import isToday from 'dayjs/plugin/isToday';
 import isYesterday from 'dayjs/plugin/isYesterday';
 
 dayjs.extend(isToday);
 dayjs.extend(isYesterday);
 dayjs.locale('id');
+
+type TFn = (key: string) => string;
 
 // Shared grid definition — must match table header in TransactionListClient
 export const TX_GRID = 'grid-cols-[2fr_4fr_3fr_1fr_2fr_28px]';
@@ -20,16 +25,17 @@ interface Props {
   onClick?: () => void;
 }
 
-function splitDate(dateStr: string): { label: string; time: string } {
-  const d = dayjs(dateStr);
+function splitDate(dateStr: string, t: TFn): { label: string; time: string } {
+  const d = dayjs(dateStr).locale(i18n.language === 'en' ? 'en' : 'id');
   let label: string;
-  if (d.isToday()) label = 'Hari ini';
-  else if (d.isYesterday()) label = 'Kemarin';
+  if (d.isToday()) label = t('tx.today');
+  else if (d.isYesterday()) label = t('tx.yesterday');
   else label = d.format('D MMM');
   return { label, time: d.format('HH:mm') };
 }
 
 export default function TransactionRow({ tx, onClick }: Props) {
+  const { t } = useTranslation();
   const isIncome = tx.type === 'income';
   const isTransfer = tx.type === 'transfer';
 
@@ -47,7 +53,7 @@ export default function TransactionRow({ tx, onClick }: Props) {
 
   const amountPrefix = isIncome ? '+' : isTransfer ? '' : '−';
 
-  const { label: dateLabel, time } = splitDate(tx.transaction_date);
+  const { label: dateLabel, time } = splitDate(tx.transaction_date, t);
 
   return (
     <div
@@ -77,11 +83,11 @@ export default function TransactionRow({ tx, onClick }: Props) {
             className="text-sm font-medium truncate"
             style={{ color: 'var(--text-hi)' }}
           >
-            {tx.description || tx.merchant || (isTransfer ? 'Transfer' : '–')}
+            {tx.description || tx.merchant || (isTransfer ? t('tx.type.transfer') : '–')}
           </p>
           {tx.installment_name && (
             <p className="text-xs" style={{ color: 'var(--info)' }}>
-              Cicilan · {tx.installment_name}
+              {t('nav.installments')} · {tx.installment_name}
             </p>
           )}
         </div>
@@ -107,7 +113,7 @@ export default function TransactionRow({ tx, onClick }: Props) {
         </p>
         <p className="num text-xs" style={{ color: 'var(--text-dim)' }}>
           {tx.is_adjustment
-            ? 'Adj'
+            ? t('tx.adj')
             : tx.balance_after == null
             ? '–'
             : formatRupiah(tx.balance_after)}
@@ -128,11 +134,12 @@ export default function TransactionRow({ tx, onClick }: Props) {
 
 /* Mobile fallback row */
 export function TransactionRowMobile({ tx, onClick }: Props) {
+  const { t } = useTranslation();
   const isIncome = tx.type === 'income';
   const isTransfer = tx.type === 'transfer';
   const amountColor = isIncome ? 'var(--positive)' : isTransfer ? 'var(--info)' : 'var(--negative)';
   const amountPrefix = isIncome ? '+' : isTransfer ? '' : '−';
-  const { label: dateLabel, time } = splitDate(tx.transaction_date);
+  const { label: dateLabel, time } = splitDate(tx.transaction_date, t);
 
   return (
     <div

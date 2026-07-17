@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useLoaderData, useRevalidator } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 
 type Status = 'none' | 'pending' | 'approved';
@@ -12,6 +13,7 @@ export async function clientLoader() {
 }
 
 export default function ConnectPage() {
+  const { t } = useTranslation();
   const { status } = useLoaderData<typeof clientLoader>();
   const revalidator = useRevalidator();
   const [deepLink, setDeepLink] = useState<string | null>(null);
@@ -25,7 +27,7 @@ export default function ConnectPage() {
       const res = await fetch('/api/telegram/connect-token', { method: 'POST' });
       const data = await res.json();
       if (!res.ok) {
-        setError(data?.error ?? 'Gagal generate link');
+        setError(data?.error ?? t('page.genLinkFailed'));
         return;
       }
       setDeepLink(data.deepLink);
@@ -63,7 +65,7 @@ export default function ConnectPage() {
             ⏳ Requestmu lagi nunggu di-approve admin.
           </div>
           <Button variant="outline" onClick={() => revalidator.revalidate()} disabled={revalidator.state === 'loading'}>
-            {revalidator.state === 'loading' ? 'Mengecek...' : 'Cek status'}
+            {revalidator.state === 'loading' ? t('page.checking') : t('page.checkStatus')}
           </Button>
         </div>
       )}
@@ -73,14 +75,14 @@ export default function ConnectPage() {
           {error && <p className="text-sm text-destructive">{error}</p>}
           {!deepLink && (
             <Button onClick={generateToken} disabled={generating}>
-              {generating ? 'Membuat link...' : 'Hubungkan Telegram'}
+              {generating ? t('page.creatingLink') : t('page.connectTelegram')}
             </Button>
           )}
 
           {deepLink && (
             <div className="space-y-4">
               <a href={deepLink} target="_blank" rel="noreferrer">
-                <Button className="w-full">Buka Telegram</Button>
+                <Button className="w-full">{t('page.openTelegram')}</Button>
               </a>
               <div
                 className="text-xs rounded-lg px-3 py-2 break-all font-mono"
@@ -89,12 +91,12 @@ export default function ConnectPage() {
                 {deepLink}
               </div>
               <ol className="text-sm space-y-1 list-decimal list-inside" style={{ color: 'var(--text-mid)' }}>
-                <li>Klik tombol → buka bot</li>
-                <li>Bot kirim request otomatis</li>
-                <li>Tunggu admin approve</li>
+                <li>{t('page.step1')}</li>
+                <li>{t('page.step2')}</li>
+                <li>{t('page.step3')}</li>
               </ol>
               <Button variant="outline" onClick={() => revalidator.revalidate()} disabled={revalidator.state === 'loading'}>
-                {revalidator.state === 'loading' ? 'Mengecek...' : 'Cek status'}
+                {revalidator.state === 'loading' ? t('page.checking') : t('page.checkStatus')}
               </Button>
             </div>
           )}

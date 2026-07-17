@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -21,6 +22,7 @@ interface AccountAdjustDialogProps {
 }
 
 export function AccountAdjustDialog({ account, open, onOpenChange, onSuccess }: AccountAdjustDialogProps) {
+  const { t } = useTranslation();
   const [targetBalance, setTargetBalance] = useState('');
   const [note, setNote] = useState('');
   const [loading, setLoading] = useState(false);
@@ -46,7 +48,7 @@ export function AccountAdjustDialog({ account, open, onOpenChange, onSuccess }: 
     try {
       const target = Number(targetBalance);
       if (!Number.isFinite(target)) {
-        setError('Target saldo tidak valid');
+        setError(t('settings.invalidTarget'));
         return;
       }
 
@@ -58,14 +60,14 @@ export function AccountAdjustDialog({ account, open, onOpenChange, onSuccess }: 
 
       const json = await res.json();
       if (!res.ok) {
-        setError(json.error || 'Gagal adjust saldo');
+        setError(json.error || t('settings.adjustFailed'));
         return;
       }
 
       onSuccess();
       onOpenChange(false);
     } catch {
-      setError('Terjadi kesalahan, coba lagi');
+      setError(t('common.errorRetry'));
     } finally {
       setLoading(false);
     }
@@ -77,27 +79,27 @@ export function AccountAdjustDialog({ account, open, onOpenChange, onSuccess }: 
         {loading && (
           <div className="absolute inset-0 z-20 bg-black/70 backdrop-blur-sm rounded-lg flex items-center justify-center">
             <div className="rounded-md border border-border bg-card px-3 py-2 text-sm">
-              Menyesuaikan saldo...
+              {t('settings.adjusting')}
             </div>
           </div>
         )}
 
         <DialogHeader>
-          <DialogTitle>Adjust Saldo</DialogTitle>
+          <DialogTitle>{t('settings.adjustBalance')}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
           <div className="text-xs text-muted-foreground rounded-lg border border-border bg-muted/30 px-3 py-2 space-y-1">
             <p>
-              Akun: <span className="text-foreground font-medium">{account.name}</span>
+              {t('tx.account')}: <span className="text-foreground font-medium">{account.name}</span>
             </p>
             <p>
-              Saldo saat ini: <span className="text-foreground font-medium">{formatRupiah(account.balance)}</span>
+              {t('settings.currentBalance')}: <span className="text-foreground font-medium">{formatRupiah(account.balance)}</span>
             </p>
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Target Saldo</label>
+            <label className="text-sm font-medium">{t('settings.targetBalance')}</label>
             <Input
               type="number"
               value={targetBalance}
@@ -109,11 +111,11 @@ export function AccountAdjustDialog({ account, open, onOpenChange, onSuccess }: 
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-sm font-medium">Catatan (opsional)</label>
+            <label className="text-sm font-medium">{t('settings.noteOptional')}</label>
             <Input
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="Contoh: sinkron mutasi rekening"
+              placeholder={t('settings.adjustNotePlaceholder')}
               maxLength={200}
             />
           </div>
@@ -122,10 +124,10 @@ export function AccountAdjustDialog({ account, open, onOpenChange, onSuccess }: 
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Batal
+              {t('common.cancel')}
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'Menyimpan...' : 'Simpan Adjust'}
+              {loading ? t('common.saving') : t('settings.saveAdjust')}
             </Button>
           </DialogFooter>
         </form>

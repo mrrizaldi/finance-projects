@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRevalidator } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import {
   Dialog,
   DialogContent,
@@ -60,6 +61,7 @@ export default function InstallmentDetailDialog({
   onPaySuccess,
   accounts = [],
 }: Props) {
+  const { t, i18n } = useTranslation();
   const revalidator = useRevalidator();
   const [payDialog, setPayDialog] = useState(false);
   const [appendDialog, setAppendDialog] = useState(false);
@@ -171,7 +173,7 @@ export default function InstallmentDetailDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md max-h-[85vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="p-4 pb-0 flex-shrink-0">
-          <DialogTitle>Detail Cicilan</DialogTitle>
+          <DialogTitle>{t('inst.detailTitle')}</DialogTitle>
         </DialogHeader>
 
         <ScrollArea className="flex-1 px-4 pb-4">
@@ -180,27 +182,27 @@ export default function InstallmentDetailDialog({
             <div className={cn('w-14 h-2 rounded-full mx-auto mb-3', current.status === 'completed' ? 'bg-emerald-500/50' : 'bg-blue-500/50')} />
             <p className="text-xl font-bold text-foreground">{current.name}</p>
             <p className="text-sm font-medium text-muted-foreground mt-1">
-              Tagihan selanjutnya: {formatRupiah(nextAmount)}
+              {t('inst.nextBill')}: {formatRupiah(nextAmount)}
             </p>
-            {loading && <p className="text-xs text-muted-foreground mt-1">Memuat detail lengkap...</p>}
+            {loading && <p className="text-xs text-muted-foreground mt-1">{t('inst.loadingFull')}</p>}
             <Badge variant="outline" className="mt-2 text-xs">{current.status.toUpperCase()}</Badge>
           </div>
 
           {/* Core Details */}
           <div className="text-sm bg-muted/30 p-3 rounded-xl border border-border mb-4">
-            <DetailRow label="Kategori" value={current.category_name || '–'} />
-            <DetailRow label="Akun Pendebet" value={current.account_name} />
-            <DetailRow label="Tanggal Mulai" value={formatDate(current.start_date, 'DD MMM YYYY')} />
-            <DetailRow label="Jatuh Tempo" value={current.due_day ? `Tanggal ${current.due_day}` : '–'} />
-            <DetailRow label="Catatan" value={current.notes} />
+            <DetailRow label={t('tx.category')} value={current.category_name || '–'} />
+            <DetailRow label={t('inst.debitAccount')} value={current.account_name} />
+            <DetailRow label={t('inst.startDate')} value={formatDate(current.start_date, 'DD MMM YYYY')} />
+            <DetailRow label={t('inst.dueDate')} value={current.due_day ? t('inst.onDay', { day: current.due_day }) : '–'} />
+            <DetailRow label={t('tx.note')} value={current.notes} />
           </div>
 
           {/* Schedule Breakdown */}
           <div className="mt-6">
             <h3 className="text-sm font-semibold text-foreground mb-3 flex justify-between items-center">
-              <span>Jadwal Pembayaran</span>
+              <span>{t('inst.schedule')}</span>
               <span className="text-xs text-muted-foreground font-normal">
-                {current.paid_months} / {current.total_months} bulan
+                {current.paid_months} / {current.total_months} {t('inst.months')}
               </span>
             </h3>
             <div className="border border-border rounded-xl overflow-hidden divide-y divide-border text-sm">
@@ -220,12 +222,12 @@ export default function InstallmentDetailDialog({
                   >
                     <div className="flex items-center gap-3">
                       <span className="w-5 text-center text-xs opacity-60">{i + 1}</span>
-                      <span>Bulan ke-{i + 1}</span>
+                      <span>{t('inst.monthNo', { n: i + 1 })}</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <span>{formatRupiah(amt)}</span>
                       {isPaid ? (
-                        <span className="text-xs text-emerald-500">Paid</span>
+                        <span className="text-xs text-emerald-500">{t('inst.paid')}</span>
                       ) : isCurrent ? (
                         <span className="h-2 w-2 rounded-full bg-blue-500 animate-pulse mr-1" />
                       ) : (
@@ -238,7 +240,7 @@ export default function InstallmentDetailDialog({
             </div>
             {isVariable && (
               <p className="text-xs text-muted-foreground mt-2 text-center">
-                *Cicilan ini memiliki nominal yang berubah-ubah tiap bulannya.
+                {t('inst.variableNote')}
               </p>
             )}
           </div>
@@ -250,14 +252,14 @@ export default function InstallmentDetailDialog({
               className="flex-1 h-8 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/80 transition-colors inline-flex items-center justify-center gap-1"
             >
               <Pencil className="h-3 w-3" />
-              Edit
+              {t('common.edit')}
             </button>
             {current.status === 'active' && current.paid_months < current.total_months && (
               <button
                 onClick={() => setPayDialog(true)}
                 className="flex-1 h-8 rounded-lg bg-green-600 text-white text-sm font-medium hover:bg-green-700 transition-colors inline-flex items-center justify-center"
               >
-                Bayar
+                {t('inst.pay')}
               </button>
             )}
             <button
@@ -267,7 +269,7 @@ export default function InstallmentDetailDialog({
               }}
               className="flex-1 h-8 rounded-lg bg-muted text-foreground text-sm font-medium hover:bg-muted/80 transition-colors inline-flex items-center justify-center"
             >
-              +Bulan
+              {t('inst.plusMonth')}
             </button>
           </div>
         </ScrollArea>
@@ -278,20 +280,20 @@ export default function InstallmentDetailDialog({
     <Dialog open={payDialog} onOpenChange={(v) => { setPayDialog(v); if (!v) setSelectedTx(null); }}>
       <DialogContent className="sm:max-w-lg max-h-[85vh] flex flex-col p-0 overflow-hidden">
         <DialogHeader className="px-4 pt-4 pb-3 border-b border-border flex-shrink-0">
-          <DialogTitle className="text-base">Pilih Transaksi Pembayaran</DialogTitle>
+          <DialogTitle className="text-base">{t('inst.selectPayTx')}</DialogTitle>
           <p className="text-xs text-muted-foreground mt-0.5">
             {current.name} ·{' '}
             {cappedCount === 1
-              ? `Bulan ke-${current.paid_months + 1}`
-              : `Bulan ke-${current.paid_months + 1} s/d ke-${lastPayMonth}`}
-            {' '}· Total:{' '}
+              ? t('inst.monthNo', { n: current.paid_months + 1 })
+              : t('inst.monthRange', { from: current.paid_months + 1, to: lastPayMonth })}
+            {' '}· {t('inst.total')}:{' '}
             <span className="font-medium text-foreground">{formatRupiah(totalTarget)}</span>
           </p>
 
           {/* Months count stepper */}
           {remainingMonths > 1 && (
             <div className="flex items-center gap-2 mt-2">
-              <span className="text-xs text-muted-foreground">Bayar sekaligus:</span>
+              <span className="text-xs text-muted-foreground">{t('inst.payAtOnce')}:</span>
               <div className="flex items-center gap-1 ml-auto">
                 <button
                   onClick={() => setMonthsCount((n) => Math.max(1, n - 1))}
@@ -299,7 +301,7 @@ export default function InstallmentDetailDialog({
                 >
                   −
                 </button>
-                <span className="w-12 text-center text-sm font-semibold">{cappedCount} bln</span>
+                <span className="w-12 text-center text-sm font-semibold">{cappedCount} {t('inst.mo')}</span>
                 <button
                   onClick={() => setMonthsCount((n) => Math.min(remainingMonths, n + 1))}
                   className="h-6 w-6 rounded-md border border-border text-sm font-medium hover:bg-muted/60 transition-colors flex items-center justify-center"
@@ -316,16 +318,16 @@ export default function InstallmentDetailDialog({
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
               <Input
                 className="pl-8 h-8 text-sm"
-                placeholder="Cari deskripsi, merchant, akun..."
+                placeholder={t('inst.searchTxPlaceholder')}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
             </div>
             <div className="flex gap-1">
               {([
-                { key: 'date_desc', label: 'Terbaru' },
-                { key: 'amount_desc', label: 'Terbesar' },
-                { key: 'amount_asc', label: 'Terkecil' },
+                { key: 'date_desc', label: t('inst.sortNewest') },
+                { key: 'amount_desc', label: t('inst.sortLargest') },
+                { key: 'amount_asc', label: t('inst.sortSmallest') },
               ] as { key: SortKey; label: string }[]).map((opt) => (
                 <button
                   key={opt.key}
@@ -347,9 +349,9 @@ export default function InstallmentDetailDialog({
         {/* Transaction List */}
         <div className="flex-1 overflow-y-auto">
           {txLoading ? (
-            <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">Memuat...</div>
+            <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">{t('common.loading')}</div>
           ) : filteredTx.length === 0 ? (
-            <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">Tidak ada transaksi</div>
+            <div className="flex items-center justify-center py-12 text-sm text-muted-foreground">{t('inst.noTx')}</div>
           ) : (
             filteredTx.map((tx) => {
               const diff = tx.amount - totalTarget;
@@ -372,14 +374,14 @@ export default function InstallmentDetailDialog({
                       <p className="text-xs text-muted-foreground truncate">{tx.description}</p>
                     )}
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {new Date(tx.transaction_date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
+                      {new Date(tx.transaction_date).toLocaleDateString(i18n.language === 'en' ? 'en-US' : 'id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                       {tx.account_name && ` · ${tx.account_name}`}
                     </p>
                   </div>
                   <div className="flex-shrink-0 text-right">
                     <p className="text-sm font-semibold text-foreground">{formatRupiah(tx.amount)}</p>
                     {isMatch ? (
-                      <p className="text-xs text-emerald-500">✓ cocok</p>
+                      <p className="text-xs text-emerald-500">✓ {t('inst.match')}</p>
                     ) : (
                       <p className={cn('text-xs', diff > 0 ? 'text-orange-400' : 'text-blue-400')}>
                         {diff > 0 ? `+${formatRupiah(diff)}` : `-${formatRupiah(Math.abs(diff))}`}
@@ -400,20 +402,20 @@ export default function InstallmentDetailDialog({
               'mb-3 px-3 py-2 rounded-lg text-xs',
               amountDiff > 0 ? 'bg-orange-500/10 text-orange-400' : 'bg-blue-500/10 text-blue-400'
             )}>
-              Selisih <span className="font-semibold">{amountDiff > 0 ? '+' : ''}{formatRupiah(Math.abs(amountDiff))}</span> dari total target{cappedCount > 1 ? ` (${cappedCount} bulan)` : ''}.
+              {t('inst.diffPrefix')} <span className="font-semibold">{amountDiff > 0 ? '+' : ''}{formatRupiah(Math.abs(amountDiff))}</span> {t('inst.diffSuffix')}{cappedCount > 1 ? ` (${cappedCount} ${t('inst.months')})` : ''}.
               {cappedCount === 1 && (
-                <> Nominal bulan ke-{current.paid_months + 1} akan diperbarui ke <span className="font-semibold">{formatRupiah(selectedTx.amount)}</span>.</>
+                <> {t('inst.monthAmountUpdate', { n: current.paid_months + 1 })} <span className="font-semibold">{formatRupiah(selectedTx.amount)}</span>.</>
               )}
             </div>
           )}
           <div className="flex gap-2">
-            <Button variant="outline" className="flex-1" onClick={() => setPayDialog(false)}>Batal</Button>
+            <Button variant="outline" className="flex-1" onClick={() => setPayDialog(false)}>{t('common.cancel')}</Button>
             <Button
               className="flex-1 bg-green-600 hover:bg-green-700 text-white"
               disabled={!selectedTx || saving}
               onClick={handlePayWithTx}
             >
-              {saving ? 'Menyimpan...' : selectedTx ? `Tandai ${cappedCount > 1 ? `${cappedCount} Bulan` : ''} Dibayar` : 'Pilih Transaksi'}
+              {saving ? t('common.saving') : selectedTx ? (cappedCount > 1 ? t('inst.markNPaid', { count: cappedCount }) : t('inst.markPaid')) : t('inst.selectTxBtn')}
             </Button>
           </div>
         </div>
@@ -424,15 +426,15 @@ export default function InstallmentDetailDialog({
     <Dialog open={appendDialog} onOpenChange={setAppendDialog}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Tambah Bulan — {current?.name}</DialogTitle>
+          <DialogTitle>{t('inst.addMonthTitle')} — {current?.name}</DialogTitle>
         </DialogHeader>
         <div className="space-y-4 pt-2">
           <div className="space-y-2">
-            <Label>Jumlah Bulan Tambah</Label>
+            <Label>{t('inst.monthsToAdd')}</Label>
             <Input type="number" min={1} value={monthsToAdd} onChange={(e) => setMonthsToAdd(e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Nominal Per Bulan</Label>
+            <Label>{t('inst.amountPerMonth')}</Label>
             <Input
               type="text"
               inputMode="decimal"
@@ -441,7 +443,7 @@ export default function InstallmentDetailDialog({
             />
           </div>
           <Button onClick={handleAppend} className="w-full" disabled={saving}>
-            {saving ? 'Menyimpan...' : 'Tambah'}
+            {saving ? t('common.saving') : t('inst.addBtn')}
           </Button>
         </div>
       </DialogContent>

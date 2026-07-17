@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { useRevalidator } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -14,26 +15,18 @@ interface Props {
 
 type AccountsByType = Record<string, Account[]>;
 
+// Group by type key; header label diterjemahkan saat render.
 function groupByType(accounts: Account[]): AccountsByType {
   const groups: AccountsByType = {};
-  const typeLabels: Record<string, string> = {
-    bank: 'Bank',
-    ewallet: 'E-Wallet',
-    cash: 'Cash',
-    marketplace: 'Marketplace',
-    investment: 'Investasi',
-    other: 'Lainnya',
-  };
-
   for (const account of accounts) {
-    const label = typeLabels[account.type] ?? account.type;
-    if (!groups[label]) groups[label] = [];
-    groups[label].push(account);
+    if (!groups[account.type]) groups[account.type] = [];
+    groups[account.type].push(account);
   }
   return groups;
 }
 
 export function BalancesClient({ accounts: initialAccounts }: Props) {
+  const { t } = useTranslation();
   const revalidator = useRevalidator();
   const [, startTransition] = useTransition();
   const [adjustAccount, setAdjustAccount] = useState<Account | null>(null);
@@ -54,7 +47,7 @@ export function BalancesClient({ accounts: initialAccounts }: Props) {
     const res = await fetch(`/api/accounts/${adjustAccount.id}/adjust`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ target_balance: parsed, note: adjustNote || 'Adjustment dari PWA' }),
+      body: JSON.stringify({ target_balance: parsed, note: adjustNote || t('balances.defaultNote') }),
     });
 
     if (res.ok) {
@@ -70,7 +63,7 @@ export function BalancesClient({ accounts: initialAccounts }: Props) {
     <div className="space-y-6">
       {Object.entries(grouped).map(([type, accs]) => (
         <div key={type}>
-          <h2 className="text-sm font-semibold text-muted-foreground mb-2">{type}</h2>
+          <h2 className="text-sm font-semibold text-muted-foreground mb-2">{t(`settings.accType.${type}`, { defaultValue: type })}</h2>
           <div className="rounded-lg border border-border overflow-hidden">
             {accs.map((account, idx) => (
               <button
@@ -94,7 +87,7 @@ export function BalancesClient({ accounts: initialAccounts }: Props) {
       ))}
 
       <div className="flex items-center justify-between rounded-lg border border-border p-4 bg-muted/30">
-        <span className="font-semibold">Total</span>
+        <span className="font-semibold">{t('inst.total')}</span>
         <span className="font-mono font-bold text-lg">
           Rp {new Intl.NumberFormat('id-ID').format(total)}
         </span>
@@ -103,14 +96,14 @@ export function BalancesClient({ accounts: initialAccounts }: Props) {
       <Dialog open={!!adjustAccount} onOpenChange={(open) => !open && setAdjustAccount(null)}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Adjust Saldo — {adjustAccount?.name}</DialogTitle>
+            <DialogTitle>{t('settings.adjustBalance')} — {adjustAccount?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="text-sm text-muted-foreground">
-              Saldo saat ini: Rp {adjustAccount ? new Intl.NumberFormat('id-ID').format(adjustAccount.balance) : 0}
+              {t('settings.currentBalance')}: Rp {adjustAccount ? new Intl.NumberFormat('id-ID').format(adjustAccount.balance) : 0}
             </div>
             <div className="space-y-2">
-              <Label>Saldo Baru</Label>
+              <Label>{t('balances.newBalance')}</Label>
               <Input
                 type="text"
                 inputMode="decimal"
@@ -119,15 +112,15 @@ export function BalancesClient({ accounts: initialAccounts }: Props) {
               />
             </div>
             <div className="space-y-2">
-              <Label>Catatan</Label>
+              <Label>{t('tx.note')}</Label>
               <Input
-                placeholder="Alasan adjustment"
+                placeholder={t('balances.reasonPlaceholder')}
                 value={adjustNote}
                 onChange={(e) => setAdjustNote(e.target.value)}
               />
             </div>
             <Button onClick={handleAdjust} className="w-full" disabled={saving}>
-              {saving ? 'Menyimpan...' : 'Simpan'}
+              {saving ? t('common.saving') : t('common.save')}
             </Button>
           </div>
         </DialogContent>

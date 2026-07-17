@@ -11,7 +11,12 @@ import {
   ResponsiveContainer,
   ReferenceLine,
 } from 'recharts';
+import { useTranslation } from 'react-i18next';
+import i18n from '@/i18n';
 import { SavingsRateTrend } from '@/types';
+
+const rateLabel = (name: string) =>
+  name === 'cashflow_rate' ? i18n.t('chart.savingsRate') : i18n.t('chart.investmentRate');
 
 interface Props {
   data: SavingsRateTrend[];
@@ -26,7 +31,7 @@ function CustomTooltip({ active, payload, label }: any) {
         <div key={entry.name} className="flex items-center gap-2">
           <span className="w-2 h-2 rounded-full" style={{ background: entry.color }} />
           <span className="text-muted-foreground">
-            {entry.name === 'cashflow_rate' ? 'Savings rate' : 'Rate investasi'}:
+            {rateLabel(entry.name)}:
           </span>
           <span className="font-medium">{entry.value}%</span>
         </div>
@@ -36,10 +41,11 @@ function CustomTooltip({ active, payload, label }: any) {
 }
 
 export default function SavingsRateChart({ data }: Props) {
+  const { t } = useTranslation();
   if (!data.length) {
     return (
       <div className="h-64 flex items-center justify-center text-muted-foreground text-sm">
-        Belum ada data bulanan
+        {t('chart.noMonthlyData')}
       </div>
     );
   }
@@ -65,7 +71,7 @@ export default function SavingsRateChart({ data }: Props) {
         <Tooltip content={<CustomTooltip />} />
         <Legend
           wrapperStyle={{ fontSize: 11, paddingTop: 8 }}
-          formatter={(value) => (value === 'cashflow_rate' ? 'Savings rate' : 'Rate investasi')}
+          formatter={(value) => rateLabel(String(value))}
         />
         <Line
           type="monotone"

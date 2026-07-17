@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useRevalidator } from 'react-router';
+import { useTranslation } from 'react-i18next';
 import { format, parseISO } from 'date-fns';
 import { getBrowserClient } from '@/lib/supabase';
 import { combineDateTimeWIB } from '@/lib/utils';
@@ -38,6 +39,7 @@ function formatRupiahInput(amount: number): string {
 }
 
 export function TransactionForm({ accounts, categories, defaultAccountId, onSuccess }: Props) {
+  const { t } = useTranslation();
   const revalidator = useRevalidator();
   const [type, setType] = useState<TxType>('expense');
   const [amountRaw, setAmountRaw] = useState('');
@@ -152,27 +154,27 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onSucc
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Type toggle */}
       <div className="flex rounded-lg bg-muted p-1">
-        {(['expense', 'income'] as const).map((t) => (
+        {(['expense', 'income'] as const).map((tt) => (
           <button
-            key={t}
+            key={tt}
             type="button"
-            onClick={() => setType(t)}
+            onClick={() => setType(tt)}
             className={`flex-1 rounded-md py-2 text-sm font-semibold transition-colors ${
-              type === t
-                ? t === 'expense'
+              type === tt
+                ? tt === 'expense'
                   ? 'bg-red-600 text-white'
                   : 'bg-green-600 text-white'
                 : 'text-muted-foreground'
             }`}
           >
-            {t === 'expense' ? 'Pengeluaran' : 'Pemasukan'}
+            {tt === 'expense' ? t('tx.type.expense') : t('tx.type.income')}
           </button>
         ))}
       </div>
 
       {/* Amount */}
       <div className="text-center">
-        <Label className="text-xs text-muted-foreground">JUMLAH</Label>
+        <Label className="text-xs text-muted-foreground">{t('tx.amountLabel')}</Label>
         <div className="flex items-center justify-center gap-2 mt-1">
           <span className="text-2xl font-bold text-muted-foreground">Rp</span>
           <Input
@@ -185,14 +187,14 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onSucc
             className="border-none bg-transparent text-center text-3xl font-bold p-0 h-auto focus-visible:ring-0"
           />
         </div>
-        <p className="text-xs text-muted-foreground mt-1">Bisa pakai shorthand: 50rb, 1.5jt</p>
+        <p className="text-xs text-muted-foreground mt-1">{t('tx.amountHint')}</p>
       </div>
 
       {/* Description */}
       <div className="space-y-2">
-        <Label>Deskripsi</Label>
+        <Label>{t('tx.description')}</Label>
         <Input
-          placeholder="Makan siang, transport, dll"
+          placeholder={t('tx.descriptionPlaceholder')}
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           onBlur={handleDescriptionBlur}
@@ -202,10 +204,10 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onSucc
       {/* Category */}
       <div className="space-y-2">
         <div className="flex items-center gap-2">
-          <Label>Kategori</Label>
+          <Label>{t('tx.category')}</Label>
           {aiSuggested && (
             <span className="flex items-center gap-1 text-xs text-blue-400">
-              <Sparkles className="h-3 w-3" /> AI suggested
+              <Sparkles className="h-3 w-3" /> {t('tx.aiSuggested')}
             </span>
           )}
         </div>
@@ -214,7 +216,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onSucc
           onChange={(e) => { setCategoryId(e.target.value); setAiSuggested(false); }}
           className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
         >
-          <option value="">Pilih kategori...</option>
+          <option value="">{t('tx.selectCategory')}</option>
           {filteredCategories.map((c) => (
             <option key={c.id} value={c.id}>{c.name}</option>
           ))}
@@ -231,7 +233,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onSucc
 
       {/* Account */}
       <div className="space-y-2">
-        <Label>Akun</Label>
+        <Label>{t('tx.account')}</Label>
         <select
           value={accountId}
           onChange={(e) => setAccountId(e.target.value)}
@@ -245,7 +247,7 @@ export function TransactionForm({ accounts, categories, defaultAccountId, onSucc
 
       {/* Submit */}
       <Button type="submit" className="w-full" disabled={loading || amount <= 0}>
-        {success ? 'Tersimpan!' : loading ? 'Menyimpan...' : 'Simpan Transaksi'}
+        {success ? t('common.saved') : loading ? t('common.saving') : t('tx.saveTransaction')}
       </Button>
     </form>
   );
