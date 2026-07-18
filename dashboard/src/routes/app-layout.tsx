@@ -42,6 +42,13 @@ export async function clientLoader() {
   return { telegramStatus };
 }
 
+// Data layout ini (telegramStatus + seed locale) = session-level, bukan per-halaman.
+// Tanpa ini React Router revalidate loader tiap navigasi → fetch /api/telegram/status
+// (+ dulu profiles.locale) tiap pindah halaman = latency. Jalan sekali per mount aja.
+export function shouldRevalidate() {
+  return false;
+}
+
 export default function AppLayout() {
   const { telegramStatus } = useLoaderData<typeof clientLoader>();
   const [dismissed, setDismissed] = useState(false);

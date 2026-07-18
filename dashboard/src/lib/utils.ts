@@ -18,13 +18,17 @@ function activeLocale(): 'id' | 'en' {
 function intlLocale(): string {
   return activeLocale() === 'en' ? 'en-US' : 'id-ID';
 }
+// Label mata uang: EN pakai kode ISO "IDR" (kapital), ID pakai "Rp".
+function currencyPrefix(): string {
+  return activeLocale() === 'en' ? 'IDR' : 'Rp';
+}
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
 export function formatRupiah(amount: number): string {
-  return `Rp ${amount.toLocaleString(intlLocale(), { maximumFractionDigits: 0 })}`;
+  return `${currencyPrefix()} ${amount.toLocaleString(intlLocale(), { maximumFractionDigits: 0 })}`;
 }
 
 export function formatDate(date: string | Date, format = 'DD MMM YYYY'): string {
@@ -82,20 +86,20 @@ export function formatRupiahInput(amount: number): string {
 }
 
 /**
- * Compact rupiah formatter for data-dense displays.
- * compact=false: "Rp 1.500.000"
- * compact=true: "1.5jt", "800rb", "500"
+ * Compact rupiah formatter for data-dense displays. Locale-aware:
+ *   ID: "Rp 1.500.000" / "1.5jt","800rb"   EN: "IDR 1,500,000" / "1.5M","800K"
  * Uses en-dash (−) for negatives, Bloomberg-style.
  */
 export function rp(amount: number, compact = false): string {
   if (compact) {
     const abs = Math.abs(amount);
     const sign = amount < 0 ? '\u2212' : '';
-    if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1)}jt`;
-    if (abs >= 1_000) return `${sign}${Math.round(abs / 1_000)}rb`;
+    const en = activeLocale() === 'en';
+    if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(1)}${en ? 'M' : 'jt'}`;
+    if (abs >= 1_000) return `${sign}${Math.round(abs / 1_000)}${en ? 'K' : 'rb'}`;
     return `${sign}${abs}`;
   }
-  return new Intl.NumberFormat('id-ID', {
+  return new Intl.NumberFormat(intlLocale(), {
     style: 'currency',
     currency: 'IDR',
     minimumFractionDigits: 0,
