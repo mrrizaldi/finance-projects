@@ -7,10 +7,21 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 NODE="${NODE_BIN:-node}"
 
-if [ -z "${SUPABASE_SERVICE_ROLE_KEY:-}" ]; then
-  echo "Error: SUPABASE_SERVICE_ROLE_KEY not set"
-  exit 1
+# Ambil kunci dari api/.env kalau belum ada di environment. Tanpa ini suite RLS/JWT
+# ke-skip diam-diam dan cuma keliatan sebagai "0 passed, 0 failed".
+if [ -f "$ROOT/api/.env" ]; then
+  set -a
+  # shellcheck disable=SC1091
+  . "$ROOT/api/.env"
+  set +a
 fi
+
+for v in SUPABASE_SERVICE_ROLE_KEY SUPABASE_ANON_KEY SUPABASE_JWT_SECRET; do
+  if [ -z "$(eval "echo \${$v:-}")" ]; then
+    echo "Error: $v not set (taruh di api/.env atau export manual)"
+    exit 1
+  fi
+done
 
 FAILED=0
 

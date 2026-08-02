@@ -32,6 +32,20 @@ export function asUser(jwt) {
     });
 }
 
+// Hapus user test beserta barisnya. Urutan penting: FK ke auth.users gak pakai
+// cascade, jadi delete user duluan bakal ditolak dan user-nya nyangkut selamanya.
+export async function deleteTestUser(userId) {
+  if (!userId) return;
+  for (const tbl of ['transactions', 'installments', 'recurring_transactions',
+                      'budgets', 'instruments', 'categories', 'accounts']) {
+    await admin(`/rest/v1/${tbl}?user_id=eq.${userId}`, { method: 'DELETE' });
+  }
+  await admin(`/rest/v1/profiles?id=eq.${userId}`, { method: 'DELETE' });
+  const res = await admin(`/auth/v1/admin/users/${userId}`, { method: 'DELETE' });
+  // Jangan gagal diam-diam — user nyangkut numpuk tiap run.
+  if (!res.ok) throw new Error(`hapus user test ${userId} gagal: ${res.status} ${await res.text()}`);
+}
+
 export async function createTestUser(email, password = 'Test-Passw0rd!') {
   const res = await admin('/auth/v1/admin/users', {
     method: 'POST',
@@ -48,15 +62,5 @@ export async function createTestUser(email, password = 'Test-Passw0rd!') {
   const session = await signin.json();
   if (!session.access_token) throw new Error(`signin failed: ${JSON.stringify(session)}`);
 
-  const cleanup = async () => {
-    // Delete owned rows first (FKs to auth.users have no cascade), then the user.
-    for (const tbl of ['transactions', 'installments', 'recurring_transactions',
-                        'budgets', 'instruments', 'categories', 'accounts']) {
-      await admin(`/rest/v1/${tbl}?user_id=eq.${user.id}`, { method: 'DELETE' });
-    }
-    await admin(`/rest/v1/profiles?id=eq.${user.id}`, { method: 'DELETE' });
-    await admin(`/auth/v1/admin/users/${user.id}`, { method: 'DELETE' });
-  };
-
-  return { userId: user.id, jwt: session.access_token, cleanup };
+  return { userId: user.id, jwt: session.access_token, cleanup: () => deleteTestUser(user.id) };
 }

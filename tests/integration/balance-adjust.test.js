@@ -27,7 +27,21 @@ async function getTestAccount() {
   return accounts[0];
 }
 
-await runSuite('Balance Adjustment API', async () => {
+const sbWrite = (path, opts = {}) =>
+  fetch(`${SB_URL}/rest/v1/${path}`, {
+    ...opts,
+    headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`, 'Content-Type': 'application/json' },
+  });
+
+// Suite ini nembak akun PRODUKSI beneran. Tiap adjust bikin baris transaksi
+// permanen — saldo memang direstore, tapi barisnya dulu numpuk di daftar transaksi
+// user. Catat titik awal, hapus semua adjustment yang kita bikin, lalu reconcile.
+const startedAt = new Date().toISOString();
+const target = await getTestAccount();
+const originalBalance = target.balance;
+
+try {
+  await runSuite('Balance Adjustment API', async () => {
 
   await test('rejects missing target_balance', async () => {
     const account = await getTestAccount();
@@ -134,4 +148,19 @@ await runSuite('Balance Adjustment API', async () => {
       body: JSON.stringify({ target_balance: account.balance, note: 'e2e cleanup' }),
     });
   });
-});
+  });
+} finally {
+  // Buang jejak: hapus adjustment yang dibikin run ini, balikin saldo, reconcile.
+  await sbWrite(
+    `transactions?account_id=eq.${target.id}&is_adjustment=eq.true&created_at=gte.${startedAt}`,
+    { method: 'DELETE' }
+  );
+  await sbWrite(`accounts?id=eq.${target.id}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ balance: originalBalance }),
+  });
+  await sbWrite('rpc/reconcile_account_snapshots', {
+    method: 'POST',
+    body: JSON.stringify({ p_account_id: target.id }),
+  });
+}

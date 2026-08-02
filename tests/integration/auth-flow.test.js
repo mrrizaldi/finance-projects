@@ -3,6 +3,7 @@
 // No browser: drives the same auth endpoints the dashboard's supabase-js client hits.
 
 import { test, expect, runSuite } from './run.js';
+import { deleteTestUser } from './helpers/users.js';
 
 const SB_URL = 'https://dqvdhkpqyynvwfbuqyzu.supabase.co';
 const SERVICE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -24,13 +25,6 @@ async function adminCreateUser(email, password) {
   const data = await res.json();
   if (!data.id) throw new Error(`create user failed: ${JSON.stringify(data)}`);
   return data.id;
-}
-
-async function adminDeleteUser(userId) {
-  await fetch(`${SB_URL}/auth/v1/admin/users/${userId}`, {
-    method: 'DELETE',
-    headers: { apikey: SERVICE_KEY, Authorization: `Bearer ${SERVICE_KEY}` },
-  });
 }
 
 async function login(email, password) {
@@ -132,5 +126,5 @@ try {
     });
   });
 } finally {
-  if (userId) await adminDeleteUser(userId);
+  await deleteTestUser(userId);
 }
