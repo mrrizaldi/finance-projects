@@ -8,7 +8,6 @@ import {
   invertEffects,
   buildSnapshotForState,
 } from '../lib/balance-math.js';
-import { recalculateForAccounts } from '../lib/recalculate-snapshots.js';
 
 const VALID_TYPES = ['income', 'expense', 'transfer'] as const;
 type TransactionType = (typeof VALID_TYPES)[number];
@@ -184,10 +183,8 @@ export default async function plugin(app: FastifyInstance) {
         throw new Error(`Gagal update transaksi: ${updateError.message}`);
       }
 
-      const affectedIds = [existing.account_id, existing.to_account_id, nextState.account_id, nextState.to_account_id]
-        .filter((id): id is string => !!id);
-      await recalculateForAccounts(supabase, affectedIds);
-
+      // Snapshot chain di-reconcile oleh trigger DB trg_reconcile_transaction_snapshots
+      // (fire di UPDATE OF type/amount/to_amount/account_id/to_account_id/transaction_date/is_deleted)
       return { success: true };
     } catch (error: any) {
       return reply.code(500).send({ error: error?.message || 'Internal server error' });
@@ -215,9 +212,7 @@ export default async function plugin(app: FastifyInstance) {
         throw new Error(`Gagal menghapus transaksi: ${deleteError.message}`);
       }
 
-      const affectedIds = [existing.account_id, existing.to_account_id].filter((id): id is string => !!id);
-      await recalculateForAccounts(supabase, affectedIds);
-
+      // is_deleted ada di UPDATE OF trigger -> reconcile jalan sendiri
       return { success: true };
     } catch (error: any) {
       return reply.code(500).send({ error: error?.message || 'Internal server error' });

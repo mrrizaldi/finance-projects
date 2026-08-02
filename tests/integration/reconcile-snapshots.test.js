@@ -24,7 +24,9 @@ async function rpc(name, args) {
   const res = await fetch(`${SB_URL}/rest/v1/rpc/${name}`, {
     method: 'POST', headers: H, body: JSON.stringify(args),
   });
-  const body = await res.json();
+  // RPC RETURNS void balikin body kosong -> res.json() throw. Jangan diparse.
+  const text = await res.text();
+  const body = text ? JSON.parse(text) : null;
   if (!res.ok) throw new Error(`rpc ${name} ${res.status}: ${JSON.stringify(body)}`);
   return body;
 }
@@ -151,6 +153,44 @@ await runSuite('Reconcile snapshots — chronological trigger', async () => {
     });
   } finally {
     await cleanup([A]);
+  }
+});
+
+await runSuite('Reconcile snapshots — tanggal kembar (tie-break)', async () => {
+  // REGRESI: recalculateForAccounts() di API dulu urut (transaction_date, created_at)
+  // DESC tanpa tie-break id, sedangkan reconcile_account_snapshots urut
+  // (transaction_date, created_at, id) ASC. Begitu ada >1 tx di tanggal yang sama,
+  // dua urutan itu beda -> yang nulis belakangan (JS) ninggalin chain putus.
+  // Guard: dengan tanggal identik pun, chain dari trigger harus nyambung & deterministik.
+  let B;
+  try {
+    B = await createAccount('TEST_RECON_TIE', 0);
+
+    await test('3 tx tanggal identik: chain nyambung & berakhir di saldo akun', async () => {
+      for (const amt of [10_000, 20_000, 30_000]) {
+        await rpc('record_manual_entry', { p_account: B, p_type: 'income', p_amount: amt, p_date: D1 });
+      }
+      expect(await balanceOf(B)).toBe(60_000);
+
+      const rows = await chain(B);
+      expect(rows.length).toBe(3);
+      // tiap baris nyambung ke baris sebelumnya, mulai 0, berakhir di saldo akun
+      expect(rows[0].before).toBe(0);
+      rows.forEach((row, i) => {
+        if (i > 0) expect(row.before).toBe(rows[i - 1].after);
+      });
+      expect(rows[rows.length - 1].after).toBe(60_000);
+    });
+
+    await test('reconcile diulang: hasil identik (idempoten, gak flip-flop)', async () => {
+      const first = await chain(B);
+      await rpc('reconcile_account_snapshots', { p_account_id: B });
+      await rpc('reconcile_account_snapshots', { p_account_id: B });
+      expectChain(await chain(B), first);
+      expect(await balanceOf(B)).toBe(60_000);
+    });
+  } finally {
+    await cleanup([B]);
   }
 });
 

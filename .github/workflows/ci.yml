@@ -1,0 +1,61 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# api/ dan dashboard/ itu dua project terpisah (lockfile sendiri-sendiri, versi pnpm
+# beda), jadi dua job paralel — kalau merah, langsung ketahuan yang mana.
+#
+# Test integrasi (tests/integration/) SENGAJA gak jalan di sini: dia nembak DB
+# Supabase produksi dan nulis data nyata. Jalanin manual: bash scripts/test-integration.sh
+jobs:
+  api:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: api
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          # api/ pin packageManager: pnpm@10.32.1 — biar sama persis sama server
+          package_json_file: api/package.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22 # versi minimum yang didukung (CLAUDE.md); server jalan lebih baru
+          cache: pnpm
+          cache-dependency-path: api/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm build
+      - run: pnpm test
+
+  dashboard:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: dashboard
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          # dashboard/ gak pin packageManager — samain sama pnpm global di server
+          version: 11
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: dashboard/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm typecheck
+      - run: pnpm build
+      - run: pnpm test
