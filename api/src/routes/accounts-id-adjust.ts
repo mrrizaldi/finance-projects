@@ -1,6 +1,5 @@
 import type { FastifyInstance } from 'fastify';
 import { requireUser } from '../lib/supabase.js';
-import { recalculateForAccounts } from '../lib/recalculate-snapshots.js';
 
 export default async function plugin(app: FastifyInstance) {
   app.post('/api/accounts/:id/adjust', async (request, reply) => {
@@ -60,8 +59,7 @@ export default async function plugin(app: FastifyInstance) {
       });
       if (txError) throw new Error(`Gagal mencatat adjustment: ${txError.message}`);
 
-      await recalculateForAccounts(supabase, [account.id]);
-
+      // INSERT-nya sendiri yang fire trg_reconcile_transaction_snapshots
       return {
         success: true,
         data: { account_id: account.id, balance_before: before, balance_after: after, delta },

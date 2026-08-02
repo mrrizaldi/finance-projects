@@ -15,13 +15,14 @@ function setupMock(
   tableResponses: Record<string, Array<{ data?: any; error?: any }>>,
   rpcResponse: { data?: any; error?: any } = { data: null, error: null }
 ) {
-  const { supabase } = makeSupabaseMock(tableResponses);
+  const { supabase, callCounts } = makeSupabaseMock(tableResponses);
   supabase.rpc = vi.fn().mockResolvedValue(rpcResponse);
   vi.mocked(requireUser).mockResolvedValue({
     supabase: supabase as any,
     user: { id: 'user-1' } as any,
     unauthorized: false,
   });
+  (supabase as any).callCounts = callCounts;
   return supabase;
 }
 
@@ -63,6 +64,23 @@ describe('POST /api/accounts/:id/adjust', () => {
     expect(body.success).toBe(true);
     expect(body.data.delta).toBe(-600000);
     expect(body.data.balance_after).toBe(400000);
+  });
+
+  // REGRESI: dulu route ini manggil recalculateForAccounts() setelah INSERT adjustment.
+  // Terbukti bikin chain rusak (3 break) kalau ada tx bertanggal sama — INSERT-nya
+  // sendiri sudah fire trg_reconcile_transaction_snapshots.
+  it('does not recompute snapshots in JS: transactions touched exactly once (insert)', async () => {
+    const rpcRow = { balance_before: 1000000, balance_after: 1500000, delta: 500000 };
+    const supabase = setupMock(
+      { accounts: [{ data: EXISTING_ACCOUNT, error: null }], transactions: [{ data: null, error: null }] },
+      { data: [rpcRow], error: null }
+    );
+
+    const res = await app.inject({
+      method: 'POST', url: '/api/accounts/acc-1/adjust', payload: { target_balance: 1500000 },
+    });
+    expect(res.statusCode).toBe(200);
+    expect((supabase as any).callCounts.transactions).toBe(1);
   });
 
   it('zero delta: returns success, no transaction inserted', async () => {

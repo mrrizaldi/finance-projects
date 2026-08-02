@@ -23,13 +23,13 @@ const EXISTING_EXPENSE = {
 };
 
 function setupMock(tableResponses: Record<string, any[]>) {
-  const { supabase } = makeSupabaseMock(tableResponses);
+  const { supabase, callCounts } = makeSupabaseMock(tableResponses);
   vi.mocked(requireUser).mockResolvedValue({
     supabase: supabase as any,
     user: { id: 'user-1' } as any,
     unauthorized: false,
   });
-  return supabase;
+  return { supabase, callCounts };
 }
 
 describe('PATCH /api/transactions/:id', () => {
@@ -106,5 +106,27 @@ describe('PATCH /api/transactions/:id', () => {
     const res = await app.inject({ method: 'PATCH', url: '/api/transactions/tx-1', payload: { type: 'transfer' } });
     expect(res.statusCode).toBe(400);
     expect(res.json().error).toMatch(/akun asal dan akun tujuan/);
+  });
+
+  // REGRESI: dulu route ini manggil recalculateForAccounts() yang nulis ulang
+  // snapshot satu-per-satu -> 167 round-trip / 8.5 detik per edit, DAN chain-nya
+  // rusak kalau ada tx bertanggal sama (float drift + tie-break beda dari trigger).
+  // Reconcile milik trigger DB. Route cuma boleh sentuh transactions 2x:
+  // 1 SELECT (baca existing) + 1 UPDATE (tulis perubahan).
+  it('does not recompute snapshots in JS: transactions touched exactly twice', async () => {
+    const { callCounts } = setupMock({
+      transactions: [
+        { data: EXISTING_EXPENSE, error: null },
+        { data: null, error: null },
+      ],
+      accounts: [
+        { data: [{ id: 'bca', balance: 377274 }], error: null },
+        { data: null, error: null },
+      ],
+    });
+
+    const res = await app.inject({ method: 'PATCH', url: '/api/transactions/tx-1', payload: { amount: 200000 } });
+    expect(res.statusCode).toBe(200);
+    expect(callCounts.transactions).toBe(2);
   });
 });
