@@ -18,14 +18,16 @@ jobs:
       run:
         working-directory: api
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
-          # api/ pin packageManager: pnpm@10.32.1 — biar sama persis sama server
+          # api/ pin packageManager: pnpm@10.32.1 — biar sama persis sama server.
+          # Sengaja gak hardcode `version:`, biar pin di package.json yang jadi
+          # satu-satunya sumber kebenaran.
           package_json_file: api/package.json
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22 # versi minimum yang didukung (CLAUDE.md); server jalan lebih baru
           cache: pnpm
@@ -42,14 +44,16 @@ jobs:
       run:
         working-directory: dashboard
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           # dashboard/ gak pin packageManager — samain sama pnpm global di server
+          # (11.10.0). Jangan diturunin ke 10: CI bakal beda dari yang beneran
+          # dipakai buat build produksi.
           version: 11
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: pnpm
