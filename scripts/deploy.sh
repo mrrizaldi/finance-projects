@@ -36,12 +36,17 @@ remote_sha=$(git rev-parse "origin/$BRANCH")
 [[ "$local_sha" == "$remote_sha" ]] \
   || die "HEAD ($(git rev-parse --short HEAD)) beda dari origin/$BRANCH ($(git rev-parse --short origin/$BRANCH)). Push dulu — server clone dari GitHub, bukan dari sini."
 
-# .gitignore baris `*.json` bikin file json baru ke-ignore diam-diam. Pernah kejadian:
-# dashboard/src/i18n/locales/*/common.json gak ke-push -> build gagal di server.
+# .gitignore baris `*.json` bikin file json baru ke-ignore diam-diam. Udah dua kali
+# kejadian: locale i18n (build gagal di server) dan fixture test (CI merah).
+# Scan semua dir yang ke-commit, buang cuma output build.
 untracked_json=()
 while IFS= read -r f; do
   git ls-files --error-unmatch "$f" >/dev/null 2>&1 || untracked_json+=("$f")
-done < <(find api/src dashboard/src -name '*.json' 2>/dev/null)
+done < <(find api dashboard tests scripts supabase -name '*.json' \
+  -not -name '.*' \
+  -not -path '*/node_modules/*' -not -path '*/build/*' -not -path '*/dist/*' \
+  -not -path '*/coverage/*' -not -path '*/.next/*' -not -path '*/.react-router/*' \
+  -not -path '*/test-results/*' -not -path '*/playwright-report/*' 2>/dev/null)
 if (( ${#untracked_json[@]} )); then
   die "file .json di source belum ke-track (ke-ignore sama \`*.json\` di .gitignore).
 Server clone dari GitHub jadi file ini GAK ikut dan build bakal gagal.

@@ -1,0 +1,142 @@
+{
+  "chart": {
+    "result": [
+      {
+        "meta": {
+          "currency": "IDR",
+          "symbol": "BBCA.JK",
+          "exchangeName": "JKT",
+          "fullExchangeName": "Jakarta",
+          "instrumentType": "EQUITY",
+          "firstTradeDate": 1086660000,
+          "regularMarketTime": 1783674897,
+          "hasPrePostMarketData": false,
+          "gmtoffset": 25200,
+          "timezone": "WIB",
+          "exchangeTimezoneName": "Asia/Jakarta",
+          "regularMarketPrice": 6175.0,
+          "fiftyTwoWeekHigh": 8975.0,
+          "fiftyTwoWeekLow": 4820.0,
+          "regularMarketDayHigh": 6300.0,
+          "regularMarketDayLow": 6125.0,
+          "regularMarketVolume": 138050500,
+          "longName": "PT Bank Central Asia Tbk",
+          "shortName": "Bank Central Asia Tbk",
+          "chartPreviousClose": 8125.0,
+          "priceHint": 2,
+          "currentTradingPeriod": {
+            "pre": {
+              "timezone": "WIB",
+              "start": 1783648800,
+              "end": 1783648800,
+              "gmtoffset": 25200
+            },
+            "regular": {
+              "timezone": "WIB",
+              "start": 1783648800,
+              "end": 1783674900,
+              "gmtoffset": 25200
+            },
+            "post": {
+              "timezone": "WIB",
+              "start": 1783674900,
+              "end": 1783674900,
+              "gmtoffset": 25200
+            }
+          },
+          "dataGranularity": "1d",
+          "range": "6mo",
+          "validRanges": [
+            "1d",
+            "5d",
+            "1mo",
+            "3mo",
+            "6mo",
+            "1y",
+            "2y",
+            "5y",
+            "10y",
+            "ytd",
+            "max"
+          ]
+        },
+        "timestamp": [
+          1783303200,
+          1783389600,
+          1783476000,
+          1783562400,
+          1783648800
+        ],
+        "events": {
+          "dividends": {
+            "1783562400": {
+              "amount": 55.0,
+              "date": 1783562400
+            }
+          },
+          "splits": {
+            "1783303200": {
+              "date": 1783303200,
+              "numerator": 1,
+              "denominator": 2,
+              "splitRatio": "1:2"
+            }
+          }
+        },
+        "indicators": {
+          "quote": [
+            {
+              "open": [
+                6050.0,
+                6200.0,
+                6300.0,
+                6100.0,
+                6300.0
+              ],
+              "volume": [
+                148684900,
+                183472100,
+                181123400,
+                181155800,
+                138050500
+              ],
+              "high": [
+                6175.0,
+                6300.0,
+                6325.0,
+                6200.0,
+                6300.0
+              ],
+              "low": [
+                5975.0,
+                6150.0,
+                6175.0,
+                6050.0,
+                6125.0
+              ],
+              "close": [
+                6125.0,
+                6300.0,
+                6175.0,
+                6200.0,
+                6175.0
+              ]
+            }
+          ],
+          "adjclose": [
+            {
+              "adjclose": [
+                6125.0,
+                6300.0,
+                6175.0,
+                6200.0,
+                6175.0
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "error": null
+  }
+}
