@@ -121,7 +121,11 @@ echo "--> build dashboard"
 cd "$APP_DIR/dashboard" && pnpm install --frozen-lockfile && pnpm build
 
 echo "--> build api"
-cd "$APP_DIR/api" && pnpm install --frozen-lockfile && pnpm build
+# tsc gak hapus output dari file sumber yang udah dihapus, jadi dist/ numpuk modul
+# mati tiap deploy. Hapus dulu. Aman karena preflight udah maksa CI hijau di commit
+# yang sama — build di sini gagal cuma kalau toolchain server beda, dan proses lama
+# tetap jalan (kodenya udah kebaca di memori).
+cd "$APP_DIR/api" && pnpm install --frozen-lockfile && rm -rf dist && pnpm build
 
 echo "--> restart finance-api"
 pm2 restart finance-api --update-env
