@@ -11,3 +11,5 @@ dashboard/.env.local
 .worktrees/
 .playwright-mcp/
 .server-pull/
+recap/
+*.tsbuildinfo
