@@ -36,6 +36,9 @@ data class TxFilter(
     val search: String? = null
 )
 
+internal fun escapeLike(query: String): String =
+    query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
 class Repository(
     private val api: SupabaseApi,
     private val accountDao: AccountDao,
@@ -57,7 +60,7 @@ class Repository(
         type = filter.type,
         accountId = filter.accountId,
         categoryId = filter.categoryId,
-        search = filter.search
+        search = filter.search?.let(::escapeLike)
     )
 
     fun recent(limit: Int): Flow<List<TransactionEntity>> = transactionDao.observeRecent(limit)

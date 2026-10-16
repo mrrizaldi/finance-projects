@@ -52,7 +52,7 @@ interface TransactionDao {
           AND (:type IS NULL OR type = :type)
           AND (:accountId IS NULL OR accountId = :accountId OR toAccountId = :accountId)
           AND (:categoryId IS NULL OR categoryId = :categoryId)
-          AND (:search IS NULL OR description LIKE '%' || :search || '%' OR merchant LIKE '%' || :search || '%')
+          AND (:search IS NULL OR description LIKE '%' || :search || '%' ESCAPE '\' OR merchant LIKE '%' || :search || '%' ESCAPE '\')
         ORDER BY transactionDate DESC
         """
     )

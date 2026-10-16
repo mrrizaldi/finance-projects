@@ -342,4 +342,10 @@ class RepositoryTest {
         assertTrue(snapshotDao.data.value.isEmpty())
         assertNull(syncMetaDao.data.value)
     }
+
+    @Test
+    fun `escapeLike bikin persen garis bawah backslash jadi literal`() {
+        assertEquals("50\\% off\\_x\\\\y", escapeLike("50% off_x\\y"))
+        assertEquals("indomaret", escapeLike("indomaret"))
+    }
 }

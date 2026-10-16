@@ -40,6 +40,8 @@ import id.aigra.finance.auth.LoginViewModel
 import id.aigra.finance.ui.home.HomeScreen
 import id.aigra.finance.ui.home.HomeViewModel
 import id.aigra.finance.ui.theme.FinanceTheme
+import id.aigra.finance.ui.transactions.TransactionsScreen
+import id.aigra.finance.ui.transactions.TransactionsViewModel
 import id.aigra.finance.ui.theme.LocalPalette
 import io.github.jan.supabase.auth.status.SessionStatus
 
@@ -112,7 +114,7 @@ private fun MainScaffold(container: AppContainer) {
     ) { padding ->
         NavHost(nav, startDestination = Tab.HOME.route, modifier = Modifier.padding(padding)) {
             composable(Tab.HOME.route) { HomeScreen(viewModel { HomeViewModel(container.repository) }) }
-            composable(Tab.TRANSACTIONS.route) { Placeholder(Tab.TRANSACTIONS) }
+            composable(Tab.TRANSACTIONS.route) { TransactionsScreen(viewModel { TransactionsViewModel(container.repository) }) }
             composable(Tab.ADD.route) { Placeholder(Tab.ADD) }
             composable(Tab.BALANCES.route) { Placeholder(Tab.BALANCES) }
             composable(Tab.MORE.route) { Placeholder(Tab.MORE) }
