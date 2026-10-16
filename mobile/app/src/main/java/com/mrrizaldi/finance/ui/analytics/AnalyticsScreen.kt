@@ -96,6 +96,16 @@ fun AnalyticsScreen(vm: AnalyticsViewModel) {
                     if (state.savings.isNotEmpty()) SavingsChart(state.savings, highlighted, Modifier.fillMaxWidth())
                 }
             }
+            SectionLabel(stringResource(R.string.analytics_by_category))
+            CategoryCard(state.categories)
+            SectionLabel(stringResource(R.string.analytics_daily))
+            DailyCard(state.bounds, state.daily)
+            if (state.bounds.period == AnalyticsPeriod.MONTH) {
+                SectionLabel(stringResource(R.string.analytics_budget))
+                BudgetCard(state.budgets)
+            }
+            SectionLabel(stringResource(R.string.analytics_top))
+            TopCard(state.top)
             Spacer(Modifier.navigationBarsPadding().height(NavBarClearance))
         }
     }

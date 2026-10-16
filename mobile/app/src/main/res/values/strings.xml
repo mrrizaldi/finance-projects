@@ -105,6 +105,14 @@
     <string name="analytics_trend">Tren</string>
     <string name="analytics_million">jt</string>
     <string name="analytics_savings">Savings rate</string>
+    <string name="analytics_by_category">Pengeluaran per kategori</string>
+    <string name="analytics_others">Lainnya</string>
+    <string name="analytics_daily">Pengeluaran harian</string>
+    <string name="analytics_daily_hint">Ketuk tanggal untuk lihat totalnya</string>
+    <string name="analytics_budget">Budget bulanan</string>
+    <string name="analytics_budget_used">%1$s / %2$s</string>
+    <string name="analytics_top">Transaksi terbesar</string>
+    <string name="analytics_empty">Belum ada pengeluaran</string>
 
     <string name="common_ok">OK</string>
     <string name="common_cancel">Batal</string>

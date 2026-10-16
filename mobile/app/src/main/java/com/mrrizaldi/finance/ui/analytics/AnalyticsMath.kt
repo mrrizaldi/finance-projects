@@ -6,7 +6,6 @@ import java.math.RoundingMode
 import java.text.DecimalFormat
 import java.text.DecimalFormatSymbols
 import java.time.LocalDate
-import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import kotlin.math.abs
@@ -58,11 +57,11 @@ internal fun topWithOthers(rows: List<CategoryBreakdownDto>, keep: Int = 6): Lis
 internal fun intensity(amount: Double, max: Double): Float =
     if (amount <= 0.0 || max <= 0.0) 0f else (amount / max).toFloat().coerceIn(0f, 1f)
 
-internal fun monthWeeks(month: YearMonth): List<List<LocalDate?>> {
-    val lead = month.atDay(1).dayOfWeek.value - 1
-    val cells = List<LocalDate?>(lead) { null } + (1..month.lengthOfMonth()).map { month.atDay(it) }
-    return cells.chunked(7) { week -> week + List(7 - week.size) { null } }
-}
+internal fun weeksOf(start: LocalDate, end: LocalDate): List<List<LocalDate?>> =
+    generateSequence(start.minusDays(start.dayOfWeek.value - 1L)) { it.plusWeeks(1) }
+        .takeWhile { it <= end }
+        .map { monday -> (0L..6L).map { d -> monday.plusDays(d).takeIf { it in start..end } } }
+        .toList()
 
 internal fun formatDayDetail(date: LocalDate, amount: String, locale: Locale): String =
     date.format(DateTimeFormatter.ofPattern("EEE, d MMM", locale)) + " · " + amount

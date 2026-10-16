@@ -105,6 +105,14 @@
     <string name="analytics_trend">Trend</string>
     <string name="analytics_million">M</string>
     <string name="analytics_savings">Savings rate</string>
+    <string name="analytics_by_category">Spending by category</string>
+    <string name="analytics_others">Others</string>
+    <string name="analytics_daily">Daily spending</string>
+    <string name="analytics_daily_hint">Tap a day to see its total</string>
+    <string name="analytics_budget">Monthly budget</string>
+    <string name="analytics_budget_used">%1$s / %2$s</string>
+    <string name="analytics_top">Largest expenses</string>
+    <string name="analytics_empty">No spending yet</string>
 
     <string name="common_ok">OK</string>
     <string name="common_cancel">Cancel</string>

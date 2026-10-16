@@ -7,7 +7,6 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.time.LocalDate
-import java.time.YearMonth
 import java.util.Locale
 
 class AnalyticsMathTest {
@@ -88,7 +87,7 @@ class AnalyticsMathTest {
 
     @Test
     fun `kalender mulai senin`() {
-        val oct = monthWeeks(YearMonth.of(2026, 10))
+        val oct = weeksOf(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31))
         assertEquals(5, oct.size)
         assertTrue(oct.all { it.size == 7 })
         assertEquals(
@@ -98,15 +97,33 @@ class AnalyticsMathTest {
         assertEquals(LocalDate.of(2026, 10, 31), oct.last()[5])
         assertNull(oct.last()[6])
 
-        val feb = monthWeeks(YearMonth.of(2027, 2))
+        val feb = weeksOf(LocalDate.of(2027, 2, 1), LocalDate.of(2027, 2, 28))
         assertEquals(4, feb.size)
         assertEquals(LocalDate.of(2027, 2, 1), feb.first().first())
         assertTrue(feb.flatten().none { it == null })
 
-        val nov = monthWeeks(YearMonth.of(2026, 11))
+        val nov = weeksOf(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30))
         assertEquals(6, nov.size)
         assertEquals(LocalDate.of(2026, 11, 1), nov.first()[6])
         assertEquals(30, nov.flatten().count { it != null })
+    }
+
+    @Test
+    fun `grid minggu untuk minggu kuartal dan tahun`() {
+        val week = weeksOf(LocalDate.of(2026, 9, 28), LocalDate.of(2026, 10, 4))
+        assertEquals(1, week.size)
+        assertTrue(week.single().none { it == null })
+
+        val q4 = weeksOf(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 12, 31))
+        assertEquals(14, q4.size)
+        assertEquals(listOf(null, null, null), q4.first().take(3))
+        assertEquals(92, q4.flatten().count { it != null })
+
+        val year = weeksOf(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31))
+        assertEquals(53, year.size)
+        assertEquals(365, year.flatten().count { it != null })
+        assertEquals(LocalDate.of(2026, 12, 31), year.last()[3])
+        assertNull(year.last()[4])
     }
 
     @Test
