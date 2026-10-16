@@ -37,6 +37,8 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import id.aigra.finance.auth.LoginScreen
 import id.aigra.finance.auth.LoginViewModel
+import id.aigra.finance.ui.add.AddScreen
+import id.aigra.finance.ui.add.AddViewModel
 import id.aigra.finance.ui.home.HomeScreen
 import id.aigra.finance.ui.home.HomeViewModel
 import id.aigra.finance.ui.theme.FinanceTheme
@@ -115,7 +117,7 @@ private fun MainScaffold(container: AppContainer) {
         NavHost(nav, startDestination = Tab.HOME.route, modifier = Modifier.padding(padding)) {
             composable(Tab.HOME.route) { HomeScreen(viewModel { HomeViewModel(container.repository) }) }
             composable(Tab.TRANSACTIONS.route) { TransactionsScreen(viewModel { TransactionsViewModel(container.repository) }) }
-            composable(Tab.ADD.route) { Placeholder(Tab.ADD) }
+            composable(Tab.ADD.route) { AddScreen(viewModel { AddViewModel(container.repository) }) }
             composable(Tab.BALANCES.route) { Placeholder(Tab.BALANCES) }
             composable(Tab.MORE.route) { Placeholder(Tab.MORE) }
         }

@@ -77,6 +77,7 @@
     <string name="add_err_same_account">From and to accounts must differ</string>
     <string name="add_err_failed">Failed to save: %1$s</string>
     <string name="add_err_offline">No connection. Offline save comes in a later version</string>
+    <string name="add_err_uncertain">Connection lost. Check the transactions list before retrying; it may already be saved.</string>
 
     <string name="balances_title">Account Balances</string>
     <string name="balances_total">Total</string>
