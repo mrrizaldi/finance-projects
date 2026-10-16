@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Finance</string>
+
+    <string name="login_title">Sign in</string>
+    <string name="login_email">Email</string>
+    <string name="login_password">Password</string>
+    <string name="login_submit">Sign in</string>
+    <string name="login_forgot">Forgot password?</string>
+    <string name="login_error">Wrong email or password</string>
+    <string name="login_error_network">Could not reach the server</string>
+
+    <string name="nav_home">Home</string>
+    <string name="nav_transactions">Transactions</string>
+    <string name="nav_add">Add</string>
+    <string name="nav_balances">Balances</string>
+    <string name="nav_more">More</string>
+
+    <string name="home_total_balance">Total Balance</string>
+    <string name="home_income">In</string>
+    <string name="home_expense">Out</string>
+    <string name="home_budget_title">Budget This Month</string>
+    <string name="home_no_budget">No budget set</string>
+    <string name="home_recent_title">Recent Transactions</string>
+
+    <string name="offline_chip">Offline · data %1$s</string>
+    <string name="offline_never">Offline · no data yet</string>
+    <string name="month_prev">Previous month</string>
+    <string name="month_next">Next month</string>
+
+    <string name="tx_search_hint">Search description or merchant</string>
+    <string name="tx_filter">Filter</string>
+    <string name="tx_empty">No transactions</string>
+    <string name="tx_today">Today</string>
+    <string name="tx_yesterday">Yesterday</string>
+    <string name="tx_type_all">All</string>
+    <string name="tx_type_expense">Expense</string>
+    <string name="tx_type_income">Income</string>
+    <string name="tx_type_transfer">Transfer</string>
+    <string name="tx_filter_account">Account</string>
+    <string name="tx_filter_category">Category</string>
+    <string name="tx_filter_reset">Reset</string>
+    <string name="tx_filter_apply">Apply</string>
+    <string name="tx_detail_title">Transaction Detail</string>
+    <string name="tx_detail_amount">Amount</string>
+    <string name="tx_detail_type">Type</string>
+    <string name="tx_detail_account">Account</string>
+    <string name="tx_detail_to_account">To Account</string>
+    <string name="tx_detail_category">Category</string>
+    <string name="tx_detail_description">Description</string>
+    <string name="tx_detail_merchant">Merchant</string>
+    <string name="tx_detail_source">Source</string>
+    <string name="tx_detail_date">Date</string>
+    <string name="tx_detail_balance_after">Balance After</string>
+    <string name="tx_uncategorized">Uncategorized</string>
+    <string name="tx_adjustment">Adjustment</string>
+
+    <string name="add_tab_entry">Entry</string>
+    <string name="add_tab_transfer">Transfer</string>
+    <string name="add_amount">Amount</string>
+    <string name="add_amount_to">Amount received</string>
+    <string name="add_same_amount">Same as amount sent</string>
+    <string name="add_account">Account</string>
+    <string name="add_from_account">From Account</string>
+    <string name="add_to_account">To Account</string>
+    <string name="add_category">Category</string>
+    <string name="add_description">Description</string>
+    <string name="add_merchant">Merchant</string>
+    <string name="add_date">Date</string>
+    <string name="add_time">Time</string>
+    <string name="add_save">Save</string>
+    <string name="add_saving">Saving…</string>
+    <string name="add_saved">Saved</string>
+    <string name="add_err_amount">Amount must be greater than 0</string>
+    <string name="add_err_account">Pick an account first</string>
+    <string name="add_err_same_account">From and to accounts must differ</string>
+    <string name="add_err_failed">Failed to save: %1$s</string>
+    <string name="add_err_offline">No connection. Offline save comes in a later version</string>
+
+    <string name="balances_title">Account Balances</string>
+    <string name="balances_total">Total</string>
+
+    <string name="more_title">More</string>
+    <string name="more_logout">Sign out</string>
+    <string name="more_version">Version %1$s</string>
+
+    <string name="common_ok">OK</string>
+    <string name="common_cancel">Cancel</string>
+</resources>
