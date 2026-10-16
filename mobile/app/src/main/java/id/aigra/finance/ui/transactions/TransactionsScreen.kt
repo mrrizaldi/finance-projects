@@ -33,6 +33,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
@@ -54,6 +55,7 @@ import id.aigra.finance.ui.components.TxRow
 import id.aigra.finance.ui.theme.LocalPalette
 import id.aigra.finance.util.JakartaDate
 import id.aigra.finance.util.RupiahFormat
+import kotlinx.coroutines.flow.drop
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.util.Locale
@@ -74,7 +76,7 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
     val today = JakartaDate.today()
     val filterActive = filter.type != null || filter.accountId != null || filter.categoryId != null
     val listState = rememberLazyListState()
-    LaunchedEffect(filter) { listState.scrollToItem(0) }
+    LaunchedEffect(Unit) { snapshotFlow { filter }.drop(1).collect { listState.scrollToItem(0) } }
 
     Column(Modifier.fillMaxSize()) {
         Row(
