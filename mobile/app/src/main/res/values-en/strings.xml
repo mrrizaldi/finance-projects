@@ -70,8 +70,6 @@
     <string name="pending_delete_title">Delete pending transaction?</string>
     <string name="pending_delete_body">This transaction has not reached the server and will be removed from this phone.</string>
 
-    <string name="add_tab_entry">Entry</string>
-    <string name="add_tab_transfer">Transfer</string>
     <string name="add_amount">Amount</string>
     <string name="add_amount_to">Amount received</string>
     <string name="add_same_amount">Same as amount sent</string>

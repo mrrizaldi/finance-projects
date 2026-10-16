@@ -19,13 +19,12 @@ import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
 
-enum class AddTab { ENTRY, TRANSFER }
+enum class AddKind(val type: String?) { EXPENSE("expense"), INCOME("income"), TRANSFER(null) }
 
 data class UiMessage(val res: Int, val arg: String = "")
 
 data class AddForm(
-    val tab: AddTab = AddTab.ENTRY,
-    val type: String = "expense",
+    val kind: AddKind = AddKind.EXPENSE,
     val amount: String = "",
     val accountId: String? = null,
     val categoryId: String? = null,
@@ -39,6 +38,12 @@ data class AddForm(
     val time: LocalTime = JakartaDate.now().toLocalTime().withSecond(0).withNano(0),
     val saving: Boolean = false
 )
+
+internal fun AddForm.withKind(next: AddKind, categories: List<CategoryEntity>): AddForm {
+    val type = next.type ?: return copy(kind = next)
+    val fits = categories.firstOrNull { it.id == categoryId }?.type.let { it == type || it == "both" }
+    return copy(kind = next, categoryId = if (fits) categoryId else null)
+}
 
 internal fun defaultAccounts(accounts: List<AccountEntity>): Pair<String?, String?> {
     val (spend, invest) = accounts.partition { it.type != "investment" }
@@ -77,10 +82,10 @@ class AddViewModel(private val repo: Repository) : ViewModel() {
         val toAmount = if (f.sameAmount) null else RupiahFormat.parse(f.toAmount) ?: 0L
         val error = when {
             amount <= 0L -> R.string.add_err_amount
-            f.tab == AddTab.ENTRY && f.accountId == null -> R.string.add_err_account
-            f.tab == AddTab.TRANSFER && (f.fromAccountId == null || f.toAccountId == null) -> R.string.add_err_account
-            f.tab == AddTab.TRANSFER && f.fromAccountId == f.toAccountId -> R.string.add_err_same_account
-            f.tab == AddTab.TRANSFER && toAmount != null && toAmount <= 0L -> R.string.add_err_amount
+            f.kind != AddKind.TRANSFER && f.accountId == null -> R.string.add_err_account
+            f.kind == AddKind.TRANSFER && (f.fromAccountId == null || f.toAccountId == null) -> R.string.add_err_account
+            f.kind == AddKind.TRANSFER && f.fromAccountId == f.toAccountId -> R.string.add_err_same_account
+            f.kind == AddKind.TRANSFER && toAmount != null && toAmount <= 0L -> R.string.add_err_amount
             else -> null
         }
         if (error != null) {
@@ -89,10 +94,10 @@ class AddViewModel(private val repo: Repository) : ViewModel() {
         }
         _form.update { it.copy(saving = true) }
         viewModelScope.launch {
-            val result = if (f.tab == AddTab.ENTRY) {
+            val result = if (f.kind != AddKind.TRANSFER) {
                 repo.addEntry(
                     account = f.accountId!!,
-                    type = f.type,
+                    type = f.kind.type!!,
                     amount = amount,
                     category = f.categoryId,
                     description = f.description.trim().ifBlank { null },

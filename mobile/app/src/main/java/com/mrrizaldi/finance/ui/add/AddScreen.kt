@@ -122,20 +122,16 @@ fun AddScreen(vm: AddViewModel, onBack: () -> Unit) {
             }
 
             GlassSegmented(
-                options = AddTab.entries.map {
-                    stringResource(if (it == AddTab.ENTRY) R.string.add_tab_entry else R.string.add_tab_transfer)
-                },
-                selected = form.tab.ordinal,
-                onSelect = { i -> vm.edit { copy(tab = AddTab.entries[i]) } }
+                options = listOf(
+                    stringResource(R.string.tx_type_expense),
+                    stringResource(R.string.tx_type_income),
+                    stringResource(R.string.tx_type_transfer)
+                ),
+                selected = form.kind.ordinal,
+                onSelect = { i -> vm.edit { withKind(AddKind.entries[i], categories) } }
             )
 
-            if (form.tab == AddTab.ENTRY) {
-                val types = listOf("expense" to R.string.tx_type_expense, "income" to R.string.tx_type_income)
-                GlassSegmented(
-                    options = types.map { stringResource(it.second) },
-                    selected = types.indexOfFirst { it.first == form.type },
-                    onSelect = { i -> vm.edit { copy(type = types[i].first, categoryId = null) } }
-                )
+            if (form.kind != AddKind.TRANSFER) {
                 AmountField(form.amount, { v -> vm.edit { copy(amount = v) } }, stringResource(R.string.add_amount))
                 DropdownField(
                     label = stringResource(R.string.add_account),
@@ -144,7 +140,7 @@ fun AddScreen(vm: AddViewModel, onBack: () -> Unit) {
                     optionLabel = { it.name },
                     onSelect = { a -> vm.edit { copy(accountId = a.id) } }
                 )
-                val visibleCategories = categories.filter { it.type == form.type || it.type == "both" }
+                val visibleCategories = categories.filter { it.type == form.kind.type || it.type == "both" }
                 DropdownField(
                     label = stringResource(R.string.add_category),
                     options = visibleCategories,

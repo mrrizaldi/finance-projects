@@ -70,8 +70,6 @@
     <string name="pending_delete_title">Hapus transaksi tertunda?</string>
     <string name="pending_delete_body">Transaksi ini belum sampai ke server dan akan hilang dari HP ini.</string>
 
-    <string name="add_tab_entry">Transaksi</string>
-    <string name="add_tab_transfer">Transfer</string>
     <string name="add_amount">Nominal</string>
     <string name="add_amount_to">Nominal diterima</string>
     <string name="add_same_amount">Sama dengan nominal keluar</string>
