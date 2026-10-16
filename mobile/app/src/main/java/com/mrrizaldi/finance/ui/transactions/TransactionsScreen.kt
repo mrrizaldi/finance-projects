@@ -8,6 +8,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -50,6 +51,7 @@ import com.mrrizaldi.finance.data.local.CategoryEntity
 import com.mrrizaldi.finance.data.local.TransactionEntity
 import com.mrrizaldi.finance.ui.components.DropdownField
 import com.mrrizaldi.finance.ui.components.MonthPicker
+import com.mrrizaldi.finance.ui.components.NavBarClearance
 import com.mrrizaldi.finance.ui.components.OfflineChip
 import com.mrrizaldi.finance.ui.components.TxRow
 import com.mrrizaldi.finance.ui.theme.LocalPalette
@@ -120,6 +122,7 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
                     item(key = "h-$key") { DayHeader(key, today, locale) }
                     items(rows, key = { it.id }) { tx -> TxRow(tx) { detail = tx } }
                 }
+                item { Spacer(Modifier.navigationBarsPadding().height(NavBarClearance)) }
             }
         }
     }

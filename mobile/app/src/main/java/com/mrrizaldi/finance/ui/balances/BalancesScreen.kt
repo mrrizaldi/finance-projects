@@ -3,7 +3,10 @@ package com.mrrizaldi.finance.ui.balances
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -23,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mrrizaldi.finance.R
 import com.mrrizaldi.finance.data.SyncError
+import com.mrrizaldi.finance.ui.components.NavBarClearance
 import com.mrrizaldi.finance.ui.components.OfflineChip
 import com.mrrizaldi.finance.ui.components.hexColor
 import com.mrrizaldi.finance.ui.theme.LocalPalette
@@ -76,6 +80,7 @@ fun BalancesScreen(vm: BalancesViewModel) {
                     }
                 )
             }
+            item { Spacer(Modifier.navigationBarsPadding().height(NavBarClearance)) }
         }
     }
 }
