@@ -15,11 +15,11 @@ val localProps = Properties().apply {
 fun prop(name: String): String = localProps.getProperty(name) ?: System.getenv(name) ?: ""
 
 android {
-    namespace = "id.aigra.finance"
+    namespace = "com.mrrizaldi.finance"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "id.aigra.finance"
+        applicationId = "com.mrrizaldi.finance"
         minSdk = 26
         targetSdk = 35
         versionCode = 1

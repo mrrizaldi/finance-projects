@@ -38,14 +38,14 @@ cd mobile
 ./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk
 adb devices                    # HP harus muncul (USB debugging aktif)
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell am start -n id.aigra.finance/.MainActivity
+adb shell am start -n com.mrrizaldi.finance/.MainActivity
 adb exec-out screencap -p > /path/screenshot.png
 adb logcat -d | grep -iE "FATAL|AndroidRuntime"   # harus kosong
 ```
 
 ## Struktur
 
-`app/src/main/java/id/aigra/finance/` — `data/remote` (SupabaseApi + DTO), `data/local` (Room), `data/Repository.kt`, `ui/<layar>` (ViewModel + Screen), `ui/theme` (palette B), `util` (Rupiah, tanggal Jakarta). DI manual di `AppContainer.kt`.
+`app/src/main/java/com/mrrizaldi/finance/` — `data/remote` (SupabaseApi + DTO), `data/local` (Room), `data/Repository.kt`, `ui/<layar>` (ViewModel + Screen), `ui/theme` (palette B), `util` (Rupiah, tanggal Jakarta). DI manual di `AppContainer.kt`.
 
 ## Catatan
 

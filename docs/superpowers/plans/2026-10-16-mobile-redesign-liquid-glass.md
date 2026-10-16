@@ -62,7 +62,7 @@ mobile/
   app/src/main/assets/licenses/inter_ofl.txt        lisensi SIL OFL 1.1 Inter
   app/src/main/res/values/strings.xml               string baru/ubah (id)
   app/src/main/res/values-en/strings.xml            string baru/ubah (en)
-  app/src/main/java/id/aigra/finance/
+  app/src/main/java/com/mrrizaldi/finance/
     MainActivity.kt                                 Root: HazeState + aurora; MainScaffold: NavHost hazeSource, FloatingNavBar + AddFab, rute add non-tab
     data/Repository.kt                              previousSummary(month) + get_summary bulan lalu di refreshHome
     util/JakartaDate.kt                             + formatTime(timestamp) "HH:mm" zona Jakarta
@@ -90,7 +90,7 @@ mobile/
     ui/more/MoreScreen.kt                           judul besar, GroupedCard versi + Keluar merah
     ui/add/AddScreen.kt                             tombol kembali kaca, latar aurora, input kapsul, GradientButton, haptik Confirm
     auth/LoginScreen.kt                             kartu kaca berisi form
-  app/src/test/java/id/aigra/finance/
+  app/src/test/java/com/mrrizaldi/finance/
     data/PreviousSummaryTest.kt                     refreshHome menyimpan ringkasan bulan lalu (kunci sendiri)
     ui/home/HomeMathTest.kt                         netChange + countUpValue
     ui/transactions/DailyTotalTest.kt               dailyTotal + formatDayTotal
@@ -103,7 +103,7 @@ $SCRATCH/kontras_png.py                             pengukur kontras WCAG dari s
 ### Task 1: Dependency Haze + font Inter
 
 **Files:**
-- Modify: `mobile/gradle/libs.versions.toml`, `mobile/app/build.gradle.kts`, `mobile/README.md`, `mobile/app/src/main/java/id/aigra/finance/ui/theme/Type.kt`
+- Modify: `mobile/gradle/libs.versions.toml`, `mobile/app/build.gradle.kts`, `mobile/README.md`, `mobile/app/src/main/java/com/mrrizaldi/finance/ui/theme/Type.kt`
 - Create: `mobile/app/src/main/res/font/inter_regular.ttf`, `inter_medium.ttf`, `inter_semibold.ttf`, `inter_bold.ttf`, `mobile/app/src/main/assets/licenses/inter_ofl.txt`
 
 - [ ] **Step 1: Unduh Inter 4.1 ke direktori kosong (bisa 2–5 menit, 33,7 MB)**
@@ -182,7 +182,7 @@ dengan
 - [ ] **Step 5: ui/theme/Type.kt (ganti seluruh isi)**
 
 ```kotlin
-package id.aigra.finance.ui.theme
+package com.mrrizaldi.finance.ui.theme
 
 import androidx.compose.material3.Typography
 import androidx.compose.ui.text.TextStyle
@@ -190,7 +190,7 @@ import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import id.aigra.finance.R
+import com.mrrizaldi.finance.R
 
 val Inter = FontFamily(
     Font(R.font.inter_regular, FontWeight.Normal),
@@ -285,8 +285,8 @@ Expected: `BUILD SUCCESSFUL`; baris dependency memuat `dev.chrisbanes.haze:haze:
 
 ```bash
 cd /home/mrrizaldi/dev/finance-project
-python3 scripts/cek_komentar.py mobile/app/src/main/java/id/aigra/finance/ui/theme/Type.kt mobile/app/build.gradle.kts; echo "exit=$?"
-git add mobile/gradle/libs.versions.toml mobile/app/build.gradle.kts mobile/README.md mobile/app/src/main/java/id/aigra/finance/ui/theme/Type.kt mobile/app/src/main/res/font mobile/app/src/main/assets/licenses/inter_ofl.txt
+python3 scripts/cek_komentar.py mobile/app/src/main/java/com/mrrizaldi/finance/ui/theme/Type.kt mobile/app/build.gradle.kts; echo "exit=$?"
+git add mobile/gradle/libs.versions.toml mobile/app/build.gradle.kts mobile/README.md mobile/app/src/main/java/com/mrrizaldi/finance/ui/theme/Type.kt mobile/app/src/main/res/font mobile/app/src/main/assets/licenses/inter_ofl.txt
 git commit -F- <<'EOF'
 feat(mobile): dependency haze 2.0.1 + font inter
 
@@ -313,12 +313,12 @@ EOF
 - Create: `ui/theme/Glass.kt`, `ui/components/AuroraBackground.kt`, `ui/components/GlassSurface.kt`, `ui/components/GroupedCard.kt`, `ui/icons/AppIcons.kt`
 - Modify: `ui/theme/Theme.kt`
 
-(Semua path di bawah `mobile/app/src/main/java/id/aigra/finance/`.)
+(Semua path di bawah `mobile/app/src/main/java/com/mrrizaldi/finance/`.)
 
 - [ ] **Step 1: ui/theme/Glass.kt**
 
 ```kotlin
-package id.aigra.finance.ui.theme
+package com.mrrizaldi.finance.ui.theme
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -409,7 +409,7 @@ dengan
 - [ ] **Step 3: ui/components/AuroraBackground.kt**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
@@ -417,7 +417,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import id.aigra.finance.ui.theme.LocalGlass
+import com.mrrizaldi.finance.ui.theme.LocalGlass
 
 @Composable
 fun AuroraBackground(modifier: Modifier = Modifier) {
@@ -439,7 +439,7 @@ fun AuroraBackground(modifier: Modifier = Modifier) {
 - [ ] **Step 4: ui/components/GlassSurface.kt**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
@@ -454,11 +454,11 @@ import dev.chrisbanes.haze.HazeInput
 import dev.chrisbanes.haze.blur.HazeBlurStyle
 import dev.chrisbanes.haze.blur.HazeColorEffect
 import dev.chrisbanes.haze.blur.hazeBlur
-import id.aigra.finance.ui.theme.CardShape
-import id.aigra.finance.ui.theme.GlassBlur
-import id.aigra.finance.ui.theme.LocalGlass
-import id.aigra.finance.ui.theme.LocalHazeState
-import id.aigra.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.ui.theme.CardShape
+import com.mrrizaldi.finance.ui.theme.GlassBlur
+import com.mrrizaldi.finance.ui.theme.LocalGlass
+import com.mrrizaldi.finance.ui.theme.LocalHazeState
+import com.mrrizaldi.finance.ui.theme.LocalPalette
 
 @Composable
 fun GlassSurface(
@@ -490,7 +490,7 @@ fun GlassSurface(
 - [ ] **Step 5: ui/components/GroupedCard.kt**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -505,10 +505,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import id.aigra.finance.ui.theme.AppType
-import id.aigra.finance.ui.theme.CardShape
-import id.aigra.finance.ui.theme.LocalGlass
-import id.aigra.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.ui.theme.AppType
+import com.mrrizaldi.finance.ui.theme.CardShape
+import com.mrrizaldi.finance.ui.theme.LocalGlass
+import com.mrrizaldi.finance.ui.theme.LocalPalette
 
 @Composable
 fun GroupedCard(modifier: Modifier = Modifier, content: @Composable ColumnScope.() -> Unit) {
@@ -555,7 +555,7 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier, trailing: String? 
 Path rumah, daftar, profil diambil dari SVG mockup `style-v3.html` (viewBox 24, stroke 1,8, ujung bulat). Dompet, plus, filter, kembali, cari, kalender: path geometris sederhana pada grid yang sama.
 
 ```kotlin
-package id.aigra.finance.ui.icons
+package com.mrrizaldi.finance.ui.icons
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -621,7 +621,7 @@ object AppIcons {
 ```bash
 cd /home/mrrizaldi/dev/finance-project/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ./gradlew test assembleDebug 2>&1 | tail -3
-cd .. && B=mobile/app/src/main/java/id/aigra/finance
+cd .. && B=mobile/app/src/main/java/com/mrrizaldi/finance
 python3 scripts/cek_komentar.py $B/ui/theme/Glass.kt $B/ui/theme/Theme.kt $B/ui/components/AuroraBackground.kt $B/ui/components/GlassSurface.kt $B/ui/components/GroupedCard.kt $B/ui/icons/AppIcons.kt; echo "exit=$?"
 ```
 Expected: `BUILD SUCCESSFUL`, 22 test lulus (perintah hitung di Task 1 Step 7), `exit=0`. Primitif belum dipakai layar mana pun, jadi tidak ada bukti HP di task ini.
@@ -630,7 +630,7 @@ Expected: `BUILD SUCCESSFUL`, 22 test lulus (perintah hitung di Task 1 Step 7), 
 
 ```bash
 cd /home/mrrizaldi/dev/finance-project
-B=mobile/app/src/main/java/id/aigra/finance
+B=mobile/app/src/main/java/com/mrrizaldi/finance
 git add $B/ui/theme/Glass.kt $B/ui/theme/Theme.kt $B/ui/components/AuroraBackground.kt $B/ui/components/GlassSurface.kt $B/ui/components/GroupedCard.kt $B/ui/icons/AppIcons.kt
 git commit -F- <<'EOF'
 feat(mobile): token kaca + primitif aurora, glass, grouped card, ikon
@@ -669,7 +669,7 @@ export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/6e5b6c4f-9eaf-4090-bef9-d91d6bdf321e/scratchpad
 APK=/home/mrrizaldi/dev/finance-project/mobile/app/build/outputs/apk/debug/app-debug.apk
 hp_cek() { adb devices | grep -q 'device$' || { echo "HP TIDAK TERHUBUNG"; return 1; }; }
-hp_pasang() { adb install -r "$APK" && adb logcat -c && adb shell am start -n id.aigra.finance/.MainActivity; }
+hp_pasang() { adb install -r "$APK" && adb logcat -c && adb shell am start -n com.mrrizaldi.finance/.MainActivity; }
 hp_dump() { adb shell uiautomator dump /sdcard/ui.xml >/dev/null && adb exec-out cat /sdcard/ui.xml; }
 hp_tap() { set -- $(hp_dump | grep -o "$1[^>]*bounds=\"[^\"]*\"" | head -1 | grep -o '\[[0-9]*,[0-9]*\]\[[0-9]*,[0-9]*\]' | tr '[],' '   '); [ -n "$4" ] && adb shell input tap $(( ($1 + $3) / 2 )) $(( ($2 + $4) / 2 )); }
 hp_foto() { sleep 2; adb exec-out screencap -p > "$SCRATCH/$1.png"; echo "$SCRATCH/$1.png"; }
@@ -686,7 +686,7 @@ Expected: tidak ada "HP TIDAK TERHUBUNG"; baris terakhir `Night mode: no` (atau 
 - [ ] **Step 2: ui/components/FloatingNavBar.kt**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -708,10 +708,10 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import id.aigra.finance.R
-import id.aigra.finance.ui.icons.AppIcons
-import id.aigra.finance.ui.theme.LocalGlass
-import id.aigra.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.ui.icons.AppIcons
+import com.mrrizaldi.finance.ui.theme.LocalGlass
+import com.mrrizaldi.finance.ui.theme.LocalPalette
 
 enum class Tab(val route: String, val label: Int, val icon: ImageVector, val activeIcon: ImageVector) {
     HOME("home", R.string.nav_home, AppIcons.Home, AppIcons.HomeActive),
@@ -775,7 +775,7 @@ fun FloatingNavBar(current: String?, onSelect: (Tab) -> Unit, modifier: Modifier
 - [ ] **Step 3: ui/components/AddFab.kt**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -792,9 +792,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import id.aigra.finance.R
-import id.aigra.finance.ui.icons.AppIcons
-import id.aigra.finance.ui.theme.LocalGlass
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.ui.icons.AppIcons
+import com.mrrizaldi.finance.ui.theme.LocalGlass
 
 @Composable
 fun AddFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
@@ -816,7 +816,7 @@ fun AddFab(onClick: () -> Unit, modifier: Modifier = Modifier) {
 - [ ] **Step 4: MainActivity.kt (ganti seluruh isi)**
 
 ```kotlin
-package id.aigra.finance
+package com.mrrizaldi.finance
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -847,23 +847,23 @@ import androidx.navigation.compose.rememberNavController
 import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
-import id.aigra.finance.auth.LoginScreen
-import id.aigra.finance.auth.LoginViewModel
-import id.aigra.finance.ui.add.AddScreen
-import id.aigra.finance.ui.add.AddViewModel
-import id.aigra.finance.ui.balances.BalancesScreen
-import id.aigra.finance.ui.balances.BalancesViewModel
-import id.aigra.finance.ui.components.AddFab
-import id.aigra.finance.ui.components.AuroraBackground
-import id.aigra.finance.ui.components.FloatingNavBar
-import id.aigra.finance.ui.components.Tab
-import id.aigra.finance.ui.home.HomeScreen
-import id.aigra.finance.ui.home.HomeViewModel
-import id.aigra.finance.ui.more.MoreScreen
-import id.aigra.finance.ui.theme.FinanceTheme
-import id.aigra.finance.ui.theme.LocalHazeState
-import id.aigra.finance.ui.transactions.TransactionsScreen
-import id.aigra.finance.ui.transactions.TransactionsViewModel
+import com.mrrizaldi.finance.auth.LoginScreen
+import com.mrrizaldi.finance.auth.LoginViewModel
+import com.mrrizaldi.finance.ui.add.AddScreen
+import com.mrrizaldi.finance.ui.add.AddViewModel
+import com.mrrizaldi.finance.ui.balances.BalancesScreen
+import com.mrrizaldi.finance.ui.balances.BalancesViewModel
+import com.mrrizaldi.finance.ui.components.AddFab
+import com.mrrizaldi.finance.ui.components.AuroraBackground
+import com.mrrizaldi.finance.ui.components.FloatingNavBar
+import com.mrrizaldi.finance.ui.components.Tab
+import com.mrrizaldi.finance.ui.home.HomeScreen
+import com.mrrizaldi.finance.ui.home.HomeViewModel
+import com.mrrizaldi.finance.ui.more.MoreScreen
+import com.mrrizaldi.finance.ui.theme.FinanceTheme
+import com.mrrizaldi.finance.ui.theme.LocalHazeState
+import com.mrrizaldi.finance.ui.transactions.TransactionsScreen
+import com.mrrizaldi.finance.ui.transactions.TransactionsViewModel
 import io.github.jan.supabase.auth.status.SessionStatus
 
 private const val ADD_ROUTE = "add"
@@ -972,7 +972,7 @@ dan tambah import:
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import id.aigra.finance.ui.components.NavBarClearance
+import com.mrrizaldi.finance.ui.components.NavBarClearance
 ```
 
 `ui/transactions/TransactionsScreen.kt`: ganti
@@ -991,7 +991,7 @@ dengan
 dan tambah import:
 ```kotlin
 import androidx.compose.foundation.layout.height
-import id.aigra.finance.ui.components.NavBarClearance
+import com.mrrizaldi.finance.ui.components.NavBarClearance
 ```
 
 `ui/balances/BalancesScreen.kt`: ganti
@@ -1020,7 +1020,7 @@ dan tambah import:
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
-import id.aigra.finance.ui.components.NavBarClearance
+import com.mrrizaldi.finance.ui.components.NavBarClearance
 ```
 
 - [ ] **Step 6: Build, test, cek komentar**
@@ -1028,7 +1028,7 @@ import id.aigra.finance.ui.components.NavBarClearance
 ```bash
 cd /home/mrrizaldi/dev/finance-project/mobile && source /tmp/claude-1000/-home-mrrizaldi-dev-finance-project/6e5b6c4f-9eaf-4090-bef9-d91d6bdf321e/scratchpad/hp.sh
 ./gradlew test assembleDebug 2>&1 | tail -3
-cd .. && B=mobile/app/src/main/java/id/aigra/finance
+cd .. && B=mobile/app/src/main/java/com/mrrizaldi/finance
 python3 scripts/cek_komentar.py $B/MainActivity.kt $B/ui/components/FloatingNavBar.kt $B/ui/components/AddFab.kt $B/ui/home/HomeScreen.kt $B/ui/transactions/TransactionsScreen.kt $B/ui/balances/BalancesScreen.kt; echo "exit=$?"
 grep -n "NavigationBar\b\|Tab.ADD\|Icons.Filled" $B/MainActivity.kt
 ```
@@ -1055,7 +1055,7 @@ Expected: `Success` dari install; buka tiap PNG (Read): bottom bar kapsul kaca d
 
 ```bash
 cd /home/mrrizaldi/dev/finance-project
-B=mobile/app/src/main/java/id/aigra/finance
+B=mobile/app/src/main/java/com/mrrizaldi/finance
 S=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/6e5b6c4f-9eaf-4090-bef9-d91d6bdf321e/scratchpad
 git add $B/MainActivity.kt $B/ui/components/FloatingNavBar.kt $B/ui/components/AddFab.kt $B/ui/home/HomeScreen.kt $B/ui/transactions/TransactionsScreen.kt $B/ui/balances/BalancesScreen.kt
 git commit -F- <<EOF
@@ -1085,15 +1085,15 @@ EOF
 
 **Files:**
 - Modify: `data/Repository.kt`, `ui/home/HomeViewModel.kt` (ganti seluruh isi), `ui/home/HomeScreen.kt` (ganti seluruh isi), `ui/components/MonthPicker.kt` (ganti seluruh isi), `res/values/strings.xml`, `res/values-en/strings.xml`
-- Test: `mobile/app/src/test/java/id/aigra/finance/data/PreviousSummaryTest.kt`, `mobile/app/src/test/java/id/aigra/finance/ui/home/HomeMathTest.kt`
+- Test: `mobile/app/src/test/java/com/mrrizaldi/finance/data/PreviousSummaryTest.kt`, `mobile/app/src/test/java/com/mrrizaldi/finance/ui/home/HomeMathTest.kt`
 
 - [ ] **Step 1: Test gagal dulu — PreviousSummaryTest.kt**
 
 ```kotlin
-package id.aigra.finance.data
+package com.mrrizaldi.finance.data
 
-import id.aigra.finance.data.remote.SummaryDto
-import id.aigra.finance.data.remote.SupabaseApi
+import com.mrrizaldi.finance.data.remote.SummaryDto
+import com.mrrizaldi.finance.data.remote.SupabaseApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
@@ -1145,9 +1145,9 @@ class PreviousSummaryTest {
 - [ ] **Step 2: Test gagal dulu — HomeMathTest.kt**
 
 ```kotlin
-package id.aigra.finance.ui.home
+package com.mrrizaldi.finance.ui.home
 
-import id.aigra.finance.data.remote.SummaryDto
+import com.mrrizaldi.finance.data.remote.SummaryDto
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -1245,15 +1245,15 @@ dengan
 - [ ] **Step 4: ui/home/HomeViewModel.kt (ganti seluruh isi)**
 
 ```kotlin
-package id.aigra.finance.ui.home
+package com.mrrizaldi.finance.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import id.aigra.finance.data.Repository
-import id.aigra.finance.data.SyncError
-import id.aigra.finance.data.local.TransactionEntity
-import id.aigra.finance.data.remote.SummaryDto
-import id.aigra.finance.util.JakartaDate
+import com.mrrizaldi.finance.data.Repository
+import com.mrrizaldi.finance.data.SyncError
+import com.mrrizaldi.finance.data.local.TransactionEntity
+import com.mrrizaldi.finance.data.remote.SummaryDto
+import com.mrrizaldi.finance.util.JakartaDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -1400,7 +1400,7 @@ dengan
 - [ ] **Step 6: ui/components/MonthPicker.kt (ganti seluruh isi, MonthPicker lama tetap)**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -1425,9 +1425,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import id.aigra.finance.R
-import id.aigra.finance.ui.icons.AppIcons
-import id.aigra.finance.util.JakartaDate
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.ui.icons.AppIcons
+import com.mrrizaldi.finance.util.JakartaDate
 import java.time.YearMonth
 
 @Composable
@@ -1480,7 +1480,7 @@ fun MonthMenuButton(month: YearMonth, onChange: (YearMonth) -> Unit) {
 - [ ] **Step 7: ui/home/HomeScreen.kt (ganti seluruh isi)**
 
 ```kotlin
-package id.aigra.finance.ui.home
+package com.mrrizaldi.finance.ui.home
 
 import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -1520,20 +1520,20 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import id.aigra.finance.R
-import id.aigra.finance.data.SyncError
-import id.aigra.finance.ui.components.GlassSurface
-import id.aigra.finance.ui.components.GroupDivider
-import id.aigra.finance.ui.components.GroupedCard
-import id.aigra.finance.ui.components.MonthMenuButton
-import id.aigra.finance.ui.components.NavBarClearance
-import id.aigra.finance.ui.components.OfflineChip
-import id.aigra.finance.ui.components.SectionLabel
-import id.aigra.finance.ui.components.TxRow
-import id.aigra.finance.ui.theme.AppType
-import id.aigra.finance.ui.theme.LocalPalette
-import id.aigra.finance.util.JakartaDate
-import id.aigra.finance.util.RupiahFormat
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.data.SyncError
+import com.mrrizaldi.finance.ui.components.GlassSurface
+import com.mrrizaldi.finance.ui.components.GroupDivider
+import com.mrrizaldi.finance.ui.components.GroupedCard
+import com.mrrizaldi.finance.ui.components.MonthMenuButton
+import com.mrrizaldi.finance.ui.components.NavBarClearance
+import com.mrrizaldi.finance.ui.components.OfflineChip
+import com.mrrizaldi.finance.ui.components.SectionLabel
+import com.mrrizaldi.finance.ui.components.TxRow
+import com.mrrizaldi.finance.ui.theme.AppType
+import com.mrrizaldi.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.util.JakartaDate
+import com.mrrizaldi.finance.util.RupiahFormat
 import java.time.YearMonth
 import kotlin.math.abs
 
@@ -1699,8 +1699,8 @@ cd /home/mrrizaldi/dev/finance-project/mobile && export ANDROID_HOME="$HOME/Andr
 ./gradlew test assembleDebug 2>&1 | tail -3
 grep -ho 'tests="[0-9]*"' app/build/test-results/testDebugUnitTest/*.xml | grep -o '[0-9]*' | awk '{s+=$1} END {print s}'
 grep -l 'failures="[1-9]\|errors="[1-9]' app/build/test-results/testDebugUnitTest/*.xml
-cd .. && git diff --stat -- mobile/app/src/test/java/id/aigra/finance/data/RepositoryTest.kt
-B=mobile/app/src/main/java/id/aigra/finance; T=mobile/app/src/test/java/id/aigra/finance
+cd .. && git diff --stat -- mobile/app/src/test/java/com/mrrizaldi/finance/data/RepositoryTest.kt
+B=mobile/app/src/main/java/com/mrrizaldi/finance; T=mobile/app/src/test/java/com/mrrizaldi/finance
 python3 scripts/cek_komentar.py $B/data/Repository.kt $B/ui/home/HomeViewModel.kt $B/ui/home/HomeScreen.kt $B/ui/components/MonthPicker.kt $T/data/PreviousSummaryTest.kt $T/ui/home/HomeMathTest.kt; echo "exit=$?"
 ```
 Expected: `BUILD SUCCESSFUL`; jumlah test `26` (22 lama + 1 + 3); grep failures kosong; `git diff --stat` RepositoryTest kosong (test lama tidak diubah); `exit=0`.
@@ -1723,7 +1723,7 @@ Expected: `t4-home.png` sesuai spec Home: label "Total balance" + ikon kalender 
 
 ```bash
 cd /home/mrrizaldi/dev/finance-project
-B=mobile/app/src/main/java/id/aigra/finance; T=mobile/app/src/test/java/id/aigra/finance
+B=mobile/app/src/main/java/com/mrrizaldi/finance; T=mobile/app/src/test/java/com/mrrizaldi/finance
 S=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/6e5b6c4f-9eaf-4090-bef9-d91d6bdf321e/scratchpad
 git add $B/data/Repository.kt $B/ui/home/HomeViewModel.kt $B/ui/home/HomeScreen.kt $B/ui/components/MonthPicker.kt mobile/app/src/main/res/values/strings.xml mobile/app/src/main/res/values-en/strings.xml $T/data/PreviousSummaryTest.kt $T/ui/home/HomeMathTest.kt
 git commit -F- <<EOF
@@ -1754,14 +1754,14 @@ EOF
 
 **Files:**
 - Modify: `ui/transactions/TransactionsScreen.kt` (ganti seluruh isi), `ui/transactions/TransactionsViewModel.kt`, `ui/components/TxRow.kt` (ganti seluruh isi), `util/JakartaDate.kt`
-- Test: `mobile/app/src/test/java/id/aigra/finance/ui/transactions/DailyTotalTest.kt`
+- Test: `mobile/app/src/test/java/com/mrrizaldi/finance/ui/transactions/DailyTotalTest.kt`
 
 - [ ] **Step 1: Test gagal dulu — DailyTotalTest.kt**
 
 ```kotlin
-package id.aigra.finance.ui.transactions
+package com.mrrizaldi.finance.ui.transactions
 
-import id.aigra.finance.data.local.TransactionEntity
+import com.mrrizaldi.finance.data.local.TransactionEntity
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -1794,7 +1794,7 @@ class DailyTotalTest {
 Run:
 ```bash
 cd /home/mrrizaldi/dev/finance-project/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
-./gradlew testDebugUnitTest --tests "id.aigra.finance.ui.transactions.*" 2>&1 | grep -E "Unresolved reference|BUILD" | head -3
+./gradlew testDebugUnitTest --tests "com.mrrizaldi.finance.ui.transactions.*" 2>&1 | grep -E "Unresolved reference|BUILD" | head -3
 ```
 Expected: `BUILD FAILED`, `Unresolved reference 'dailyTotal'`.
 
@@ -1809,7 +1809,7 @@ class TransactionsViewModel(private val repo: Repository) : ViewModel() {
 ```
 dengan
 ```kotlin
-import id.aigra.finance.util.RupiahFormat
+import com.mrrizaldi.finance.util.RupiahFormat
 import kotlinx.coroutines.launch
 import java.time.YearMonth
 
@@ -1844,7 +1844,7 @@ dengan
 - [ ] **Step 4: ui/components/TxRow.kt (ganti seluruh isi)**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -1858,12 +1858,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import id.aigra.finance.R
-import id.aigra.finance.data.local.TransactionEntity
-import id.aigra.finance.ui.theme.AppType
-import id.aigra.finance.ui.theme.LocalPalette
-import id.aigra.finance.util.JakartaDate
-import id.aigra.finance.util.RupiahFormat
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.data.local.TransactionEntity
+import com.mrrizaldi.finance.ui.theme.AppType
+import com.mrrizaldi.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.util.JakartaDate
+import com.mrrizaldi.finance.util.RupiahFormat
 
 @Composable
 fun TxRow(tx: TransactionEntity, onClick: () -> Unit) {
@@ -1914,7 +1914,7 @@ fun TxRow(tx: TransactionEntity, onClick: () -> Unit) {
 - [ ] **Step 5: ui/transactions/TransactionsScreen.kt (ganti seluruh isi)**
 
 ```kotlin
-package id.aigra.finance.ui.transactions
+package com.mrrizaldi.finance.ui.transactions
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
@@ -1965,25 +1965,25 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import id.aigra.finance.R
-import id.aigra.finance.data.SyncError
-import id.aigra.finance.data.TxFilter
-import id.aigra.finance.data.local.AccountEntity
-import id.aigra.finance.data.local.CategoryEntity
-import id.aigra.finance.data.local.TransactionEntity
-import id.aigra.finance.ui.components.DropdownField
-import id.aigra.finance.ui.components.GlassSurface
-import id.aigra.finance.ui.components.GroupedCard
-import id.aigra.finance.ui.components.MonthPicker
-import id.aigra.finance.ui.components.NavBarClearance
-import id.aigra.finance.ui.components.OfflineChip
-import id.aigra.finance.ui.components.SectionLabel
-import id.aigra.finance.ui.components.TxRow
-import id.aigra.finance.ui.icons.AppIcons
-import id.aigra.finance.ui.theme.AppType
-import id.aigra.finance.ui.theme.LocalPalette
-import id.aigra.finance.util.JakartaDate
-import id.aigra.finance.util.RupiahFormat
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.data.SyncError
+import com.mrrizaldi.finance.data.TxFilter
+import com.mrrizaldi.finance.data.local.AccountEntity
+import com.mrrizaldi.finance.data.local.CategoryEntity
+import com.mrrizaldi.finance.data.local.TransactionEntity
+import com.mrrizaldi.finance.ui.components.DropdownField
+import com.mrrizaldi.finance.ui.components.GlassSurface
+import com.mrrizaldi.finance.ui.components.GroupedCard
+import com.mrrizaldi.finance.ui.components.MonthPicker
+import com.mrrizaldi.finance.ui.components.NavBarClearance
+import com.mrrizaldi.finance.ui.components.OfflineChip
+import com.mrrizaldi.finance.ui.components.SectionLabel
+import com.mrrizaldi.finance.ui.components.TxRow
+import com.mrrizaldi.finance.ui.icons.AppIcons
+import com.mrrizaldi.finance.ui.theme.AppType
+import com.mrrizaldi.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.util.JakartaDate
+import com.mrrizaldi.finance.util.RupiahFormat
 import kotlinx.coroutines.flow.drop
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
@@ -2242,9 +2242,9 @@ private fun DetailSheet(tx: TransactionEntity, locale: Locale, onDismiss: () -> 
 cd /home/mrrizaldi/dev/finance-project/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ./gradlew test assembleDebug 2>&1 | tail -3
 grep -ho 'tests="[0-9]*"' app/build/test-results/testDebugUnitTest/*.xml | grep -o '[0-9]*' | awk '{s+=$1} END {print s}'
-cd .. && git diff --stat -- mobile/app/src/test/java/id/aigra/finance/data/RepositoryTest.kt mobile/app/src/test/java/id/aigra/finance/util
-B=mobile/app/src/main/java/id/aigra/finance
-python3 scripts/cek_komentar.py $B/ui/transactions/TransactionsScreen.kt $B/ui/transactions/TransactionsViewModel.kt $B/ui/components/TxRow.kt $B/util/JakartaDate.kt mobile/app/src/test/java/id/aigra/finance/ui/transactions/DailyTotalTest.kt; echo "exit=$?"
+cd .. && git diff --stat -- mobile/app/src/test/java/com/mrrizaldi/finance/data/RepositoryTest.kt mobile/app/src/test/java/com/mrrizaldi/finance/util
+B=mobile/app/src/main/java/com/mrrizaldi/finance
+python3 scripts/cek_komentar.py $B/ui/transactions/TransactionsScreen.kt $B/ui/transactions/TransactionsViewModel.kt $B/ui/components/TxRow.kt $B/util/JakartaDate.kt mobile/app/src/test/java/com/mrrizaldi/finance/ui/transactions/DailyTotalTest.kt; echo "exit=$?"
 ```
 Expected: `BUILD SUCCESSFUL`; jumlah test `28`; `git diff --stat` kosong; `exit=0`.
 
@@ -2268,9 +2268,9 @@ Expected: `t5-tx.png`: judul "Transactions" 30sp, kolom cari kapsul kaca + tombo
 
 ```bash
 cd /home/mrrizaldi/dev/finance-project
-B=mobile/app/src/main/java/id/aigra/finance
+B=mobile/app/src/main/java/com/mrrizaldi/finance
 S=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/6e5b6c4f-9eaf-4090-bef9-d91d6bdf321e/scratchpad
-git add $B/ui/transactions/TransactionsScreen.kt $B/ui/transactions/TransactionsViewModel.kt $B/ui/components/TxRow.kt $B/util/JakartaDate.kt mobile/app/src/test/java/id/aigra/finance/ui/transactions/DailyTotalTest.kt
+git add $B/ui/transactions/TransactionsScreen.kt $B/ui/transactions/TransactionsViewModel.kt $B/ui/components/TxRow.kt $B/util/JakartaDate.kt mobile/app/src/test/java/com/mrrizaldi/finance/ui/transactions/DailyTotalTest.kt
 git commit -F- <<EOF
 feat(mobile): transaksi liquid glass - cari kaca, chip, total harian
 
@@ -2300,7 +2300,7 @@ EOF
 - [ ] **Step 1: ui/balances/BalancesScreen.kt**
 
 ```kotlin
-package id.aigra.finance.ui.balances
+package com.mrrizaldi.finance.ui.balances
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -2326,16 +2326,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import id.aigra.finance.R
-import id.aigra.finance.data.SyncError
-import id.aigra.finance.data.local.AccountEntity
-import id.aigra.finance.ui.components.GroupedCard
-import id.aigra.finance.ui.components.NavBarClearance
-import id.aigra.finance.ui.components.OfflineChip
-import id.aigra.finance.ui.components.hexColor
-import id.aigra.finance.ui.theme.AppType
-import id.aigra.finance.ui.theme.LocalPalette
-import id.aigra.finance.util.RupiahFormat
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.data.SyncError
+import com.mrrizaldi.finance.data.local.AccountEntity
+import com.mrrizaldi.finance.ui.components.GroupedCard
+import com.mrrizaldi.finance.ui.components.NavBarClearance
+import com.mrrizaldi.finance.ui.components.OfflineChip
+import com.mrrizaldi.finance.ui.components.hexColor
+import com.mrrizaldi.finance.ui.theme.AppType
+import com.mrrizaldi.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.util.RupiahFormat
 
 @Composable
 fun BalancesScreen(vm: BalancesViewModel) {
@@ -2404,7 +2404,7 @@ private fun AccountRow(account: AccountEntity) {
 - [ ] **Step 2: ui/more/MoreScreen.kt**
 
 ```kotlin
-package id.aigra.finance.ui.more
+package com.mrrizaldi.finance.ui.more
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
@@ -2422,13 +2422,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
-import id.aigra.finance.BuildConfig
-import id.aigra.finance.R
-import id.aigra.finance.data.Repository
-import id.aigra.finance.ui.components.GroupDivider
-import id.aigra.finance.ui.components.GroupedCard
-import id.aigra.finance.ui.theme.AppType
-import id.aigra.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.BuildConfig
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.data.Repository
+import com.mrrizaldi.finance.ui.components.GroupDivider
+import com.mrrizaldi.finance.ui.components.GroupedCard
+import com.mrrizaldi.finance.ui.theme.AppType
+import com.mrrizaldi.finance.ui.theme.LocalPalette
 import kotlinx.coroutines.launch
 
 @Composable
@@ -2475,7 +2475,7 @@ fun MoreScreen(repo: Repository) {
 ```bash
 cd /home/mrrizaldi/dev/finance-project/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ./gradlew test assembleDebug 2>&1 | tail -3
-cd .. && B=mobile/app/src/main/java/id/aigra/finance
+cd .. && B=mobile/app/src/main/java/com/mrrizaldi/finance
 python3 scripts/cek_komentar.py $B/ui/balances/BalancesScreen.kt $B/ui/more/MoreScreen.kt; echo "exit=$?"
 ```
 Expected: `BUILD SUCCESSFUL`, 28 test lulus, `exit=0`.
@@ -2495,7 +2495,7 @@ Expected: `t6-balances.png` judul "Account Balances" 30sp, label "Total", angka 
 
 ```bash
 cd /home/mrrizaldi/dev/finance-project
-B=mobile/app/src/main/java/id/aigra/finance
+B=mobile/app/src/main/java/com/mrrizaldi/finance
 S=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/6e5b6c4f-9eaf-4090-bef9-d91d6bdf321e/scratchpad
 git add $B/ui/balances/BalancesScreen.kt $B/ui/more/MoreScreen.kt
 git commit -F- <<EOF
@@ -2524,7 +2524,7 @@ EOF
 - [ ] **Step 1: ui/components/CapsuleField.kt**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -2539,7 +2539,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
-import id.aigra.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.ui.theme.LocalPalette
 
 @Composable
 fun CapsuleField(
@@ -2583,7 +2583,7 @@ fun CapsuleField(
 - [ ] **Step 2: ui/components/GradientButton.kt**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -2602,7 +2602,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import id.aigra.finance.ui.theme.LocalGlass
+import com.mrrizaldi.finance.ui.theme.LocalGlass
 
 @Composable
 fun GradientButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
@@ -2727,7 +2727,7 @@ dengan
 - [ ] **Step 5: ui/add/AddScreen.kt (ganti seluruh isi)**
 
 ```kotlin
-package id.aigra.finance.ui.add
+package com.mrrizaldi.finance.ui.add
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -2778,15 +2778,15 @@ import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import id.aigra.finance.R
-import id.aigra.finance.ui.components.AmountField
-import id.aigra.finance.ui.components.CapsuleField
-import id.aigra.finance.ui.components.DropdownField
-import id.aigra.finance.ui.components.GlassSurface
-import id.aigra.finance.ui.components.GradientButton
-import id.aigra.finance.ui.icons.AppIcons
-import id.aigra.finance.ui.theme.AppType
-import id.aigra.finance.util.JakartaDate
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.ui.components.AmountField
+import com.mrrizaldi.finance.ui.components.CapsuleField
+import com.mrrizaldi.finance.ui.components.DropdownField
+import com.mrrizaldi.finance.ui.components.GlassSurface
+import com.mrrizaldi.finance.ui.components.GradientButton
+import com.mrrizaldi.finance.ui.icons.AppIcons
+import com.mrrizaldi.finance.ui.theme.AppType
+import com.mrrizaldi.finance.util.JakartaDate
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneOffset
@@ -2999,7 +2999,7 @@ dengan
 - [ ] **Step 7: auth/LoginScreen.kt (ganti seluruh isi)**
 
 ```kotlin
-package id.aigra.finance.auth
+package com.mrrizaldi.finance.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -3023,12 +3023,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import id.aigra.finance.R
-import id.aigra.finance.ui.components.CapsuleField
-import id.aigra.finance.ui.components.GlassSurface
-import id.aigra.finance.ui.components.GradientButton
-import id.aigra.finance.ui.theme.AppType
-import id.aigra.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.ui.components.CapsuleField
+import com.mrrizaldi.finance.ui.components.GlassSurface
+import com.mrrizaldi.finance.ui.components.GradientButton
+import com.mrrizaldi.finance.ui.theme.AppType
+import com.mrrizaldi.finance.ui.theme.LocalPalette
 
 private const val FORGOT_PASSWORD_URL = "https://finance-dashboard.mrrizaldi.com/forgot-password"
 
@@ -3083,7 +3083,7 @@ fun LoginScreen(vm: LoginViewModel) {
 ```bash
 cd /home/mrrizaldi/dev/finance-project/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ./gradlew test assembleDebug 2>&1 | tail -3
-cd .. && B=mobile/app/src/main/java/id/aigra/finance
+cd .. && B=mobile/app/src/main/java/com/mrrizaldi/finance
 python3 scripts/cek_komentar.py $B/ui/components/CapsuleField.kt $B/ui/components/GradientButton.kt $B/ui/components/AmountField.kt $B/ui/components/DropdownField.kt $B/ui/add/AddScreen.kt $B/auth/LoginScreen.kt $B/MainActivity.kt; echo "exit=$?"
 grep -n "HapticFeedbackType.Confirm" $B/ui/add/AddScreen.kt
 ```
@@ -3107,7 +3107,7 @@ Expected: `t7-add.png` tombol kembali bulat kaca kiri atas + judul "Add", aurora
 
 ```bash
 cd /home/mrrizaldi/dev/finance-project
-B=mobile/app/src/main/java/id/aigra/finance
+B=mobile/app/src/main/java/com/mrrizaldi/finance
 S=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/6e5b6c4f-9eaf-4090-bef9-d91d6bdf321e/scratchpad
 git add $B/ui/components/CapsuleField.kt $B/ui/components/GradientButton.kt $B/ui/components/AmountField.kt $B/ui/components/DropdownField.kt $B/ui/add/AddScreen.kt $B/auth/LoginScreen.kt $B/MainActivity.kt mobile/app/src/main/res/values/strings.xml mobile/app/src/main/res/values-en/strings.xml
 git commit -F- <<EOF
@@ -3142,7 +3142,7 @@ EOF
 - [ ] **Step 1: ui/components/PressScale.kt**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.interaction.InteractionSource
@@ -3297,7 +3297,7 @@ dengan
 ```bash
 cd /home/mrrizaldi/dev/finance-project/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ./gradlew test assembleDebug 2>&1 | tail -3
-cd .. && B=mobile/app/src/main/java/id/aigra/finance
+cd .. && B=mobile/app/src/main/java/com/mrrizaldi/finance
 python3 scripts/cek_komentar.py $B/ui/components/PressScale.kt $B/ui/components/TxRow.kt $B/ui/components/AddFab.kt $B/ui/components/FloatingNavBar.kt; echo "exit=$?"
 ```
 Expected: `BUILD SUCCESSFUL`, 28 test lulus, `exit=0`.
@@ -3325,7 +3325,7 @@ Expected: `t8-nav.mp4` ada (ukuran > 0, `ls -la "$SCRATCH/t8-nav.mp4"`); ekstrak
 
 ```bash
 cd /home/mrrizaldi/dev/finance-project
-B=mobile/app/src/main/java/id/aigra/finance
+B=mobile/app/src/main/java/com/mrrizaldi/finance
 S=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/6e5b6c4f-9eaf-4090-bef9-d91d6bdf321e/scratchpad
 git add $B/ui/components/PressScale.kt $B/ui/components/TxRow.kt $B/ui/components/AddFab.kt $B/ui/components/FloatingNavBar.kt
 git commit -F- <<EOF

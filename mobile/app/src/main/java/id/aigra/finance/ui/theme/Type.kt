@@ -1,5 +1,0 @@
-package id.aigra.finance.ui.theme
-
-import androidx.compose.material3.Typography
-
-val FinanceTypography = Typography()

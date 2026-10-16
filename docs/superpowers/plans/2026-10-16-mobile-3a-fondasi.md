@@ -4,7 +4,7 @@
 
 **Goal:** APK Android (Kotlin + Compose) yang bisa dipakai harian online: login email/password, Home, Transaksi, Tambah (entry + transfer), Saldo, dengan cache Room untuk baca offline dan job CI yang membangun APK debug.
 
-**Architecture:** Satu modul `app`, paket `id.aigra.finance`, DI manual lewat `AppContainer`. App bicara langsung ke Supabase (supabase-kt auth + postgrest) memakai tabel/view/RPC yang persis sama dengan dashboard; RLS menjaga keamanan. `Repository` membaca `Flow` dari DAO Room dan menyegarkan per lingkup (`refreshHome`, `refreshTransactions`, `refreshAccounts`); refresh gagal → `Result.failure` → UI tampilkan `OfflineChip`, cache tidak disentuh. Tulis (entry/transfer) ONLINE saja lewat RPC `record_manual_entry`/`record_manual_transfer`; outbox/offline-tulis adalah 3c (kolom `TransactionEntity.pending` sudah disiapkan).
+**Architecture:** Satu modul `app`, paket `com.mrrizaldi.finance`, DI manual lewat `AppContainer`. App bicara langsung ke Supabase (supabase-kt auth + postgrest) memakai tabel/view/RPC yang persis sama dengan dashboard; RLS menjaga keamanan. `Repository` membaca `Flow` dari DAO Room dan menyegarkan per lingkup (`refreshHome`, `refreshTransactions`, `refreshAccounts`); refresh gagal → `Result.failure` → UI tampilkan `OfflineChip`, cache tidak disentuh. Tulis (entry/transfer) ONLINE saja lewat RPC `record_manual_entry`/`record_manual_transfer`; outbox/offline-tulis adalah 3c (kolom `TransactionEntity.pending` sudah disiapkan).
 
 **Tech Stack:** Kotlin 2.4.21 (built-in Kotlin AGP 9.4.1, Gradle 9.8.1, JDK 21), Compose BOM 2026.09.00 (Material 3 1.4.0), Navigation Compose 2.10.2, Lifecycle 2.11.0, Room 2.8.5 (KSP 2.3.12), supabase-kt 3.8.0 (auth-kt, postgrest-kt, Ktor OkHttp 3.5.1), kotlinx-serialization-json 1.11.0, security-crypto 1.1.0, JUnit 4.13.2 + kotlinx-coroutines-test 1.11.0. Di katalog (belum dipakai, untuk 3b/3c): WorkManager 2.12.0, Glance 1.2.0, biometric 1.1.0, Vico 3.3.1.
 
@@ -50,7 +50,7 @@ mobile/
   app/src/main/res/values/themes.xml        Theme.Finance (NoActionBar)
   app/src/main/res/values/strings.xml       string UI Indonesia
   app/src/main/res/values-en/strings.xml    string UI Inggris
-  app/src/main/java/id/aigra/finance/
+  app/src/main/java/com/mrrizaldi/finance/
     App.kt                          Application, membuat AppContainer
     AppContainer.kt                 supabase client, SupabaseApi, Room db, Repository
     MainActivity.kt                 Root (gerbang sesi), NavHost, bottom bar
@@ -85,7 +85,7 @@ mobile/
     ui/balances/BalancesViewModel.kt  accounts + refreshAccounts()
     ui/balances/BalancesScreen.kt     daftar akun + total
     ui/more/MoreScreen.kt           Keluar + versi
-  app/src/test/java/id/aigra/finance/
+  app/src/test/java/com/mrrizaldi/finance/
     util/RupiahFormatTest.kt
     util/JakartaDateTest.kt
     data/RepositoryTest.kt          fake SupabaseApi + fake DAO
@@ -190,14 +190,14 @@ cd mobile
 ./gradlew assembleDebug        # app/build/outputs/apk/debug/app-debug.apk
 adb devices                    # HP harus muncul (USB debugging aktif)
 adb install -r app/build/outputs/apk/debug/app-debug.apk
-adb shell am start -n id.aigra.finance/.MainActivity
+adb shell am start -n com.mrrizaldi.finance/.MainActivity
 adb exec-out screencap -p > /path/screenshot.png
 adb logcat -d | grep -iE "FATAL|AndroidRuntime"   # harus kosong
 ```
 
 ## Struktur
 
-`app/src/main/java/id/aigra/finance/` — `data/remote` (SupabaseApi + DTO), `data/local` (Room), `data/Repository.kt`, `ui/<layar>` (ViewModel + Screen), `ui/theme` (palette B), `util` (Rupiah, tanggal Jakarta). DI manual di `AppContainer.kt`.
+`app/src/main/java/com/mrrizaldi/finance/` — `data/remote` (SupabaseApi + DTO), `data/local` (Room), `data/Repository.kt`, `ui/<layar>` (ViewModel + Screen), `ui/theme` (palette B), `util` (Rupiah, tanggal Jakarta). DI manual di `AppContainer.kt`.
 
 ## Catatan
 
@@ -219,7 +219,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ### Task 2: Skeleton Gradle + Hello Compose
 
 **Files:**
-- Create: `mobile/.gitignore`, `mobile/settings.gradle.kts`, `mobile/build.gradle.kts`, `mobile/gradle.properties`, `mobile/gradle/libs.versions.toml`, `mobile/app/build.gradle.kts`, `mobile/app/src/main/AndroidManifest.xml`, `mobile/app/src/main/res/values/themes.xml`, `mobile/app/src/main/res/values/strings.xml`, `mobile/app/src/main/java/id/aigra/finance/App.kt`, `mobile/app/src/main/java/id/aigra/finance/MainActivity.kt`
+- Create: `mobile/.gitignore`, `mobile/settings.gradle.kts`, `mobile/build.gradle.kts`, `mobile/gradle.properties`, `mobile/gradle/libs.versions.toml`, `mobile/app/build.gradle.kts`, `mobile/app/src/main/AndroidManifest.xml`, `mobile/app/src/main/res/values/themes.xml`, `mobile/app/src/main/res/values/strings.xml`, `mobile/app/src/main/java/com/mrrizaldi/finance/App.kt`, `mobile/app/src/main/java/com/mrrizaldi/finance/MainActivity.kt`
 - Generated: `mobile/gradlew`, `mobile/gradlew.bat`, `mobile/gradle/wrapper/*`
 
 - [ ] **Step 1: Wrapper Gradle 9.8.1 di direktori kosong (sebelum ada build file, supaya gradle 8.10.2 sdkman tidak mencoba mengonfigurasi AGP 9)**
@@ -368,11 +368,11 @@ val localProps = Properties().apply {
 fun prop(name: String): String = localProps.getProperty(name) ?: System.getenv(name) ?: ""
 
 android {
-    namespace = "id.aigra.finance"
+    namespace = "com.mrrizaldi.finance"
     compileSdk = 37
 
     defaultConfig {
-        applicationId = "id.aigra.finance"
+        applicationId = "com.mrrizaldi.finance"
         minSdk = 26
         targetSdk = 35
         versionCode = 1
@@ -476,7 +476,7 @@ Kalau blok `kotlin { compilerOptions { ... } }` ditolak oleh AGP built-in Kotlin
 
 `App.kt`:
 ```kotlin
-package id.aigra.finance
+package com.mrrizaldi.finance
 
 import android.app.Application
 
@@ -485,7 +485,7 @@ class App : Application()
 
 `MainActivity.kt`:
 ```kotlin
-package id.aigra.finance
+package com.mrrizaldi.finance
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -539,7 +539,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 ### Task 3: Tema palette B + strings id/en
 
 **Files:**
-- Create: `mobile/app/src/main/java/id/aigra/finance/ui/theme/Color.kt`, `Theme.kt`, `Type.kt`
+- Create: `mobile/app/src/main/java/com/mrrizaldi/finance/ui/theme/Color.kt`, `Theme.kt`, `Type.kt`
 - Modify: `mobile/app/src/main/res/values/strings.xml`
 - Create: `mobile/app/src/main/res/values-en/strings.xml`
 
@@ -574,7 +574,7 @@ Hex dihitung dari oklch di `docs/superpowers/specs/2026-10-16-palette-b-design.m
 - [ ] **Step 1: Color.kt**
 
 ```kotlin
-package id.aigra.finance.ui.theme
+package com.mrrizaldi.finance.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
@@ -660,7 +660,7 @@ val DarkPalette = FinancePalette(
 - [ ] **Step 2: Theme.kt**
 
 ```kotlin
-package id.aigra.finance.ui.theme
+package com.mrrizaldi.finance.ui.theme
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ColorScheme
@@ -729,7 +729,7 @@ fun FinanceTheme(content: @Composable () -> Unit) {
 - [ ] **Step 3: Type.kt**
 
 ```kotlin
-package id.aigra.finance.ui.theme
+package com.mrrizaldi.finance.ui.theme
 
 import androidx.compose.material3.Typography
 
@@ -926,7 +926,7 @@ val FinanceTypography = Typography()
 
 - [ ] **Step 6: Pakai FinanceTheme di MainActivity "Hello" dan build**
 
-Ganti `MaterialTheme {` di `MainActivity.kt` dengan `FinanceTheme {` dan import `id.aigra.finance.ui.theme.FinanceTheme` (hapus import `MaterialTheme`).
+Ganti `MaterialTheme {` di `MainActivity.kt` dengan `FinanceTheme {` dan import `com.mrrizaldi.finance.ui.theme.FinanceTheme` (hapus import `MaterialTheme`).
 
 Run: `cd /home/mrrizaldi/dev/finance-project/mobile && ./gradlew assembleDebug`
 Expected: `BUILD SUCCESSFUL`.
@@ -954,7 +954,7 @@ API supabase-kt 3.8.0 yang dipakai (dicek di source tag 3.8.0): `SessionManager 
 - [ ] **Step 1: Dto.kt (nama properti = nama kolom DB)**
 
 ```kotlin
-package id.aigra.finance.data.remote
+package com.mrrizaldi.finance.data.remote
 
 import kotlinx.serialization.Serializable
 
@@ -1026,7 +1026,7 @@ data class CategoryBreakdownDto(
 - [ ] **Step 2: SupabaseApi.kt (interface)**
 
 ```kotlin
-package id.aigra.finance.data.remote
+package com.mrrizaldi.finance.data.remote
 
 import io.github.jan.supabase.auth.status.SessionStatus
 import io.github.jan.supabase.auth.user.UserSession
@@ -1065,7 +1065,7 @@ interface SupabaseApi {
 - [ ] **Step 3: SupabaseApiImpl.kt**
 
 ```kotlin
-package id.aigra.finance.data.remote
+package com.mrrizaldi.finance.data.remote
 
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
@@ -1182,7 +1182,7 @@ class SupabaseApiImpl(private val client: SupabaseClient) : SupabaseApi {
 - [ ] **Step 4: auth/SessionStore.kt**
 
 ```kotlin
-package id.aigra.finance.auth
+package com.mrrizaldi.finance.auth
 
 import android.content.Context
 import androidx.security.crypto.EncryptedSharedPreferences
@@ -1227,12 +1227,12 @@ class SessionStore(context: Context) : SessionManager {
 
 `AppContainer.kt`:
 ```kotlin
-package id.aigra.finance
+package com.mrrizaldi.finance
 
 import android.content.Context
-import id.aigra.finance.auth.SessionStore
-import id.aigra.finance.data.remote.SupabaseApi
-import id.aigra.finance.data.remote.SupabaseApiImpl
+import com.mrrizaldi.finance.auth.SessionStore
+import com.mrrizaldi.finance.data.remote.SupabaseApi
+import com.mrrizaldi.finance.data.remote.SupabaseApiImpl
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
@@ -1258,7 +1258,7 @@ class AppContainer(context: Context) {
 
 `App.kt`:
 ```kotlin
-package id.aigra.finance
+package com.mrrizaldi.finance
 
 import android.app.Application
 
@@ -1294,13 +1294,13 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 **Files:**
 - Create: `data/local/Entities.kt`, `data/local/Daos.kt`, `data/local/FinanceDb.kt`, `data/Mappers.kt`, `data/Repository.kt`, `util/JakartaDate.kt` (versi minimal yang dibutuhkan Repository; dilengkapi dan diuji di Task 6)
-- Test: `app/src/test/java/id/aigra/finance/data/RepositoryTest.kt`
+- Test: `app/src/test/java/com/mrrizaldi/finance/data/RepositoryTest.kt`
 - Modify: `AppContainer.kt`
 
 - [ ] **Step 1: Entities.kt**
 
 ```kotlin
-package id.aigra.finance.data.local
+package com.mrrizaldi.finance.data.local
 
 import androidx.room.Entity
 import androidx.room.Index
@@ -1367,7 +1367,7 @@ data class SyncMeta(
 - [ ] **Step 2: Daos.kt**
 
 ```kotlin
-package id.aigra.finance.data.local
+package com.mrrizaldi.finance.data.local
 
 import androidx.room.Dao
 import androidx.room.Insert
@@ -1481,7 +1481,7 @@ interface SyncMetaDao {
 - [ ] **Step 3: FinanceDb.kt**
 
 ```kotlin
-package id.aigra.finance.data.local
+package com.mrrizaldi.finance.data.local
 
 import androidx.room.Database
 import androidx.room.RoomDatabase
@@ -1509,7 +1509,7 @@ abstract class FinanceDb : RoomDatabase() {
 - [ ] **Step 4: util/JakartaDate.kt (versi yang dibutuhkan Repository; test di Task 6)**
 
 ```kotlin
-package id.aigra.finance.util
+package com.mrrizaldi.finance.util
 
 import java.time.Instant
 import java.time.LocalDate
@@ -1563,15 +1563,15 @@ object JakartaDate {
 - [ ] **Step 5: data/Mappers.kt**
 
 ```kotlin
-package id.aigra.finance.data
+package com.mrrizaldi.finance.data
 
-import id.aigra.finance.data.local.AccountEntity
-import id.aigra.finance.data.local.CategoryEntity
-import id.aigra.finance.data.local.TransactionEntity
-import id.aigra.finance.data.remote.AccountDto
-import id.aigra.finance.data.remote.CategoryDto
-import id.aigra.finance.data.remote.TransactionDto
-import id.aigra.finance.util.JakartaDate
+import com.mrrizaldi.finance.data.local.AccountEntity
+import com.mrrizaldi.finance.data.local.CategoryEntity
+import com.mrrizaldi.finance.data.local.TransactionEntity
+import com.mrrizaldi.finance.data.remote.AccountDto
+import com.mrrizaldi.finance.data.remote.CategoryDto
+import com.mrrizaldi.finance.data.remote.TransactionDto
+import com.mrrizaldi.finance.util.JakartaDate
 import kotlin.math.roundToLong
 
 fun AccountDto.toEntity() = AccountEntity(
@@ -1618,24 +1618,24 @@ fun TransactionDto.toEntity() = TransactionEntity(
 - [ ] **Step 6: Tulis test RepositoryTest.kt (gagal dulu)**
 
 ```kotlin
-package id.aigra.finance.data
+package com.mrrizaldi.finance.data
 
-import id.aigra.finance.data.local.AccountDao
-import id.aigra.finance.data.local.AccountEntity
-import id.aigra.finance.data.local.CategoryDao
-import id.aigra.finance.data.local.CategoryEntity
-import id.aigra.finance.data.local.RpcSnapshot
-import id.aigra.finance.data.local.SnapshotDao
-import id.aigra.finance.data.local.SyncMeta
-import id.aigra.finance.data.local.SyncMetaDao
-import id.aigra.finance.data.local.TransactionDao
-import id.aigra.finance.data.local.TransactionEntity
-import id.aigra.finance.data.remote.AccountDto
-import id.aigra.finance.data.remote.CategoryBreakdownDto
-import id.aigra.finance.data.remote.CategoryDto
-import id.aigra.finance.data.remote.SummaryDto
-import id.aigra.finance.data.remote.SupabaseApi
-import id.aigra.finance.data.remote.TransactionDto
+import com.mrrizaldi.finance.data.local.AccountDao
+import com.mrrizaldi.finance.data.local.AccountEntity
+import com.mrrizaldi.finance.data.local.CategoryDao
+import com.mrrizaldi.finance.data.local.CategoryEntity
+import com.mrrizaldi.finance.data.local.RpcSnapshot
+import com.mrrizaldi.finance.data.local.SnapshotDao
+import com.mrrizaldi.finance.data.local.SyncMeta
+import com.mrrizaldi.finance.data.local.SyncMetaDao
+import com.mrrizaldi.finance.data.local.TransactionDao
+import com.mrrizaldi.finance.data.local.TransactionEntity
+import com.mrrizaldi.finance.data.remote.AccountDto
+import com.mrrizaldi.finance.data.remote.CategoryBreakdownDto
+import com.mrrizaldi.finance.data.remote.CategoryDto
+import com.mrrizaldi.finance.data.remote.SummaryDto
+import com.mrrizaldi.finance.data.remote.SupabaseApi
+import com.mrrizaldi.finance.data.remote.TransactionDto
 import io.github.jan.supabase.auth.status.SessionStatus
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -1871,29 +1871,29 @@ class RepositoryTest {
 
 - [ ] **Step 7: Jalankan test, pastikan gagal kompilasi**
 
-Run: `cd /home/mrrizaldi/dev/finance-project/mobile && ./gradlew testDebugUnitTest --tests "id.aigra.finance.data.RepositoryTest"`
+Run: `cd /home/mrrizaldi/dev/finance-project/mobile && ./gradlew testDebugUnitTest --tests "com.mrrizaldi.finance.data.RepositoryTest"`
 Expected: `BUILD FAILED` dengan `Unresolved reference 'Repository'` / `'TxFilter'`.
 
 - [ ] **Step 8: data/Repository.kt**
 
 ```kotlin
-package id.aigra.finance.data
+package com.mrrizaldi.finance.data
 
-import id.aigra.finance.data.local.AccountDao
-import id.aigra.finance.data.local.AccountEntity
-import id.aigra.finance.data.local.CategoryDao
-import id.aigra.finance.data.local.CategoryEntity
-import id.aigra.finance.data.local.RpcSnapshot
-import id.aigra.finance.data.local.SnapshotDao
-import id.aigra.finance.data.local.SyncMeta
-import id.aigra.finance.data.local.SyncMetaDao
-import id.aigra.finance.data.local.TransactionDao
-import id.aigra.finance.data.local.TransactionEntity
-import id.aigra.finance.data.remote.CategoryBreakdownDto
-import id.aigra.finance.data.remote.SummaryDto
-import id.aigra.finance.data.remote.SupabaseApi
-import id.aigra.finance.data.remote.TransactionDto
-import id.aigra.finance.util.JakartaDate
+import com.mrrizaldi.finance.data.local.AccountDao
+import com.mrrizaldi.finance.data.local.AccountEntity
+import com.mrrizaldi.finance.data.local.CategoryDao
+import com.mrrizaldi.finance.data.local.CategoryEntity
+import com.mrrizaldi.finance.data.local.RpcSnapshot
+import com.mrrizaldi.finance.data.local.SnapshotDao
+import com.mrrizaldi.finance.data.local.SyncMeta
+import com.mrrizaldi.finance.data.local.SyncMetaDao
+import com.mrrizaldi.finance.data.local.TransactionDao
+import com.mrrizaldi.finance.data.local.TransactionEntity
+import com.mrrizaldi.finance.data.remote.CategoryBreakdownDto
+import com.mrrizaldi.finance.data.remote.SummaryDto
+import com.mrrizaldi.finance.data.remote.SupabaseApi
+import com.mrrizaldi.finance.data.remote.TransactionDto
+import com.mrrizaldi.finance.util.JakartaDate
 import io.github.jan.supabase.exceptions.RestException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -2053,21 +2053,21 @@ Catatan perilaku: `addEntry`/`addTransfer` memanggil `refreshHome` setelah RPC s
 
 - [ ] **Step 9: Jalankan test, harus hijau**
 
-Run: `./gradlew testDebugUnitTest --tests "id.aigra.finance.data.RepositoryTest"`
+Run: `./gradlew testDebugUnitTest --tests "com.mrrizaldi.finance.data.RepositoryTest"`
 Expected: `BUILD SUCCESSFUL`, 3 tests passed (lihat `app/build/reports/tests/testDebugUnitTest/index.html`).
 
 - [ ] **Step 10: AppContainer.kt lengkap (db + repository)**
 
 ```kotlin
-package id.aigra.finance
+package com.mrrizaldi.finance
 
 import android.content.Context
 import androidx.room.Room
-import id.aigra.finance.auth.SessionStore
-import id.aigra.finance.data.Repository
-import id.aigra.finance.data.local.FinanceDb
-import id.aigra.finance.data.remote.SupabaseApi
-import id.aigra.finance.data.remote.SupabaseApiImpl
+import com.mrrizaldi.finance.auth.SessionStore
+import com.mrrizaldi.finance.data.Repository
+import com.mrrizaldi.finance.data.local.FinanceDb
+import com.mrrizaldi.finance.data.remote.SupabaseApi
+import com.mrrizaldi.finance.data.remote.SupabaseApiImpl
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
@@ -2122,12 +2122,12 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 
 **Files:**
 - Create: `util/RupiahFormat.kt`
-- Test: `app/src/test/java/id/aigra/finance/util/RupiahFormatTest.kt`, `app/src/test/java/id/aigra/finance/util/JakartaDateTest.kt`
+- Test: `app/src/test/java/com/mrrizaldi/finance/util/RupiahFormatTest.kt`, `app/src/test/java/com/mrrizaldi/finance/util/JakartaDateTest.kt`
 
 - [ ] **Step 1: RupiahFormatTest.kt**
 
 ```kotlin
-package id.aigra.finance.util
+package com.mrrizaldi.finance.util
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -2165,7 +2165,7 @@ class RupiahFormatTest {
 - [ ] **Step 2: JakartaDateTest.kt**
 
 ```kotlin
-package id.aigra.finance.util
+package com.mrrizaldi.finance.util
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -2216,13 +2216,13 @@ class JakartaDateTest {
 
 - [ ] **Step 3: Jalankan, pastikan RupiahFormat gagal (JakartaDate sudah ada dari Task 5 dan harus lulus)**
 
-Run: `cd /home/mrrizaldi/dev/finance-project/mobile && ./gradlew testDebugUnitTest --tests "id.aigra.finance.util.*"`
+Run: `cd /home/mrrizaldi/dev/finance-project/mobile && ./gradlew testDebugUnitTest --tests "com.mrrizaldi.finance.util.*"`
 Expected: `BUILD FAILED`, `Unresolved reference 'RupiahFormat'`.
 
 - [ ] **Step 4: util/RupiahFormat.kt**
 
 ```kotlin
-package id.aigra.finance.util
+package com.mrrizaldi.finance.util
 
 import kotlin.math.abs
 
@@ -2242,7 +2242,7 @@ object RupiahFormat {
 
 - [ ] **Step 5: Jalankan test**
 
-Run: `./gradlew testDebugUnitTest --tests "id.aigra.finance.util.*"`
+Run: `./gradlew testDebugUnitTest --tests "com.mrrizaldi.finance.util.*"`
 Expected: `BUILD SUCCESSFUL`, 8 tests passed.
 
 - [ ] **Step 6: Commit**
@@ -2268,12 +2268,12 @@ Verifikasi perangkat (berlaku Task 7–11): `adb devices` HARUS menampilkan satu
 - [ ] **Step 1: LoginViewModel.kt**
 
 ```kotlin
-package id.aigra.finance.auth
+package com.mrrizaldi.finance.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import id.aigra.finance.R
-import id.aigra.finance.data.remote.SupabaseApi
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.data.remote.SupabaseApi
 import io.github.jan.supabase.exceptions.RestException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -2318,7 +2318,7 @@ class LoginViewModel(private val api: SupabaseApi) : ViewModel() {
 - [ ] **Step 2: LoginScreen.kt**
 
 ```kotlin
-package id.aigra.finance.auth
+package com.mrrizaldi.finance.auth
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -2342,7 +2342,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import id.aigra.finance.R
+import com.mrrizaldi.finance.R
 
 private const val FORGOT_PASSWORD_URL = "https://finance-dashboard.mrrizaldi.com/forgot-password"
 
@@ -2397,7 +2397,7 @@ fun LoginScreen(vm: LoginViewModel) {
 `RefreshFailure` (refresh token gagal karena jaringan) TIDAK melempar ke login — cache tetap bisa dibaca; supabase-kt mengulang refresh sendiri, dan kalau refresh token benar-benar ditolak server, status jadi `NotAuthenticated`.
 
 ```kotlin
-package id.aigra.finance
+package com.mrrizaldi.finance
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -2413,9 +2413,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import id.aigra.finance.auth.LoginScreen
-import id.aigra.finance.auth.LoginViewModel
-import id.aigra.finance.ui.theme.FinanceTheme
+import com.mrrizaldi.finance.auth.LoginScreen
+import com.mrrizaldi.finance.auth.LoginViewModel
+import com.mrrizaldi.finance.ui.theme.FinanceTheme
 import io.github.jan.supabase.auth.status.SessionStatus
 
 class MainActivity : ComponentActivity() {
@@ -2452,11 +2452,11 @@ cd /home/mrrizaldi/dev/finance-project/mobile && ./gradlew assembleDebug
 adb devices
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb logcat -c
-adb shell am start -n id.aigra.finance/.MainActivity
+adb shell am start -n com.mrrizaldi.finance/.MainActivity
 sleep 3 && adb exec-out screencap -p > "$SCRATCH/login.png"
 adb logcat -d | grep -iE "FATAL|AndroidRuntime"
 ```
-Expected: `Success` dari install; `login.png` menampilkan form Masuk; grep logcat KOSONG. Lalu minta user login di HP dengan akunnya (atau `adb shell input text` untuk email/password lalu `adb shell input keyevent 66`), ambil `$SCRATCH/login-ok.png` → layar "OK". Tutup-buka app (`adb shell am force-stop id.aigra.finance` lalu `am start`) → langsung "OK" tanpa login lagi (sesi tersimpan di SessionStore).
+Expected: `Success` dari install; `login.png` menampilkan form Masuk; grep logcat KOSONG. Lalu minta user login di HP dengan akunnya (atau `adb shell input text` untuk email/password lalu `adb shell input keyevent 66`), ambil `$SCRATCH/login-ok.png` → layar "OK". Tutup-buka app (`adb shell am force-stop com.mrrizaldi.finance` lalu `am start`) → langsung "OK" tanpa login lagi (sesi tersimpan di SessionStore).
 
 - [ ] **Step 5: Commit (kutip path screenshot + baris logcat di pesan)**
 
@@ -2481,7 +2481,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - [ ] **Step 1: ui/components/HexColor.kt**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.ui.graphics.Color
 
@@ -2492,7 +2492,7 @@ fun hexColor(hex: String?, fallback: Color): Color =
 - [ ] **Step 2: ui/components/OfflineChip.kt**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -2503,9 +2503,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import id.aigra.finance.R
-import id.aigra.finance.ui.theme.LocalPalette
-import id.aigra.finance.util.JakartaDate
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.util.JakartaDate
 
 @Composable
 fun OfflineChip(lastSuccessAt: Long?) {
@@ -2529,7 +2529,7 @@ fun OfflineChip(lastSuccessAt: Long?) {
 - [ ] **Step 3: ui/components/MonthPicker.kt**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
@@ -2546,8 +2546,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
-import id.aigra.finance.R
-import id.aigra.finance.util.JakartaDate
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.util.JakartaDate
 import java.time.YearMonth
 
 @Composable
@@ -2572,7 +2572,7 @@ fun MonthPicker(month: YearMonth, onChange: (YearMonth) -> Unit) {
 - [ ] **Step 4: ui/components/TxRow.kt**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -2588,10 +2588,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import id.aigra.finance.R
-import id.aigra.finance.data.local.TransactionEntity
-import id.aigra.finance.ui.theme.LocalPalette
-import id.aigra.finance.util.RupiahFormat
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.data.local.TransactionEntity
+import com.mrrizaldi.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.util.RupiahFormat
 
 @Composable
 fun TxRow(tx: TransactionEntity, onClick: () -> Unit) {
@@ -2631,15 +2631,15 @@ fun TxRow(tx: TransactionEntity, onClick: () -> Unit) {
 - [ ] **Step 5: ui/home/HomeViewModel.kt**
 
 ```kotlin
-package id.aigra.finance.ui.home
+package com.mrrizaldi.finance.ui.home
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import id.aigra.finance.data.Repository
-import id.aigra.finance.data.local.CategoryEntity
-import id.aigra.finance.data.local.TransactionEntity
-import id.aigra.finance.data.remote.CategoryBreakdownDto
-import id.aigra.finance.util.JakartaDate
+import com.mrrizaldi.finance.data.Repository
+import com.mrrizaldi.finance.data.local.CategoryEntity
+import com.mrrizaldi.finance.data.local.TransactionEntity
+import com.mrrizaldi.finance.data.remote.CategoryBreakdownDto
+import com.mrrizaldi.finance.util.JakartaDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -2714,7 +2714,7 @@ class HomeViewModel(private val repo: Repository) : ViewModel() {
 - [ ] **Step 6: ui/home/HomeScreen.kt**
 
 ```kotlin
-package id.aigra.finance.ui.home
+package com.mrrizaldi.finance.ui.home
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -2737,12 +2737,12 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import id.aigra.finance.R
-import id.aigra.finance.ui.components.MonthPicker
-import id.aigra.finance.ui.components.OfflineChip
-import id.aigra.finance.ui.components.TxRow
-import id.aigra.finance.ui.theme.LocalPalette
-import id.aigra.finance.util.RupiahFormat
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.ui.components.MonthPicker
+import com.mrrizaldi.finance.ui.components.OfflineChip
+import com.mrrizaldi.finance.ui.components.TxRow
+import com.mrrizaldi.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.util.RupiahFormat
 
 @Composable
 fun HomeScreen(vm: HomeViewModel) {
@@ -2853,7 +2853,7 @@ private fun BudgetRow(item: BudgetItem) {
 - [ ] **Step 7: MainActivity.kt dengan NavHost + bottom bar (rute HOME dulu; rute lain ditambah di Task 9–11)**
 
 ```kotlin
-package id.aigra.finance
+package com.mrrizaldi.finance
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -2887,11 +2887,11 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import id.aigra.finance.auth.LoginScreen
-import id.aigra.finance.auth.LoginViewModel
-import id.aigra.finance.ui.home.HomeScreen
-import id.aigra.finance.ui.home.HomeViewModel
-import id.aigra.finance.ui.theme.FinanceTheme
+import com.mrrizaldi.finance.auth.LoginScreen
+import com.mrrizaldi.finance.auth.LoginViewModel
+import com.mrrizaldi.finance.ui.home.HomeScreen
+import com.mrrizaldi.finance.ui.home.HomeViewModel
+import com.mrrizaldi.finance.ui.theme.FinanceTheme
 import io.github.jan.supabase.auth.status.SessionStatus
 
 class MainActivity : ComponentActivity() {
@@ -2975,7 +2975,7 @@ Run:
 ```bash
 cd /home/mrrizaldi/dev/finance-project/mobile && ./gradlew assembleDebug && adb devices
 adb install -r app/build/outputs/apk/debug/app-debug.apk && adb logcat -c
-adb shell am start -n id.aigra.finance/.MainActivity
+adb shell am start -n com.mrrizaldi.finance/.MainActivity
 sleep 5 && adb exec-out screencap -p > "$SCRATCH/home.png"
 adb logcat -d | grep -iE "FATAL|AndroidRuntime"
 ```
@@ -3004,7 +3004,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - [ ] **Step 1: ui/components/DropdownField.kt**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.DropdownMenuItem
@@ -3057,16 +3057,16 @@ fun <T> DropdownField(
 - [ ] **Step 2: ui/transactions/TransactionsViewModel.kt**
 
 ```kotlin
-package id.aigra.finance.ui.transactions
+package com.mrrizaldi.finance.ui.transactions
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import id.aigra.finance.data.Repository
-import id.aigra.finance.data.TxFilter
-import id.aigra.finance.data.local.AccountEntity
-import id.aigra.finance.data.local.CategoryEntity
-import id.aigra.finance.data.local.TransactionEntity
-import id.aigra.finance.util.JakartaDate
+import com.mrrizaldi.finance.data.Repository
+import com.mrrizaldi.finance.data.TxFilter
+import com.mrrizaldi.finance.data.local.AccountEntity
+import com.mrrizaldi.finance.data.local.CategoryEntity
+import com.mrrizaldi.finance.data.local.TransactionEntity
+import com.mrrizaldi.finance.util.JakartaDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -3121,7 +3121,7 @@ class TransactionsViewModel(private val repo: Repository) : ViewModel() {
 - [ ] **Step 3: ui/transactions/TransactionsScreen.kt**
 
 ```kotlin
-package id.aigra.finance.ui.transactions
+package com.mrrizaldi.finance.ui.transactions
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -3159,17 +3159,17 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import id.aigra.finance.R
-import id.aigra.finance.data.TxFilter
-import id.aigra.finance.data.local.AccountEntity
-import id.aigra.finance.data.local.CategoryEntity
-import id.aigra.finance.data.local.TransactionEntity
-import id.aigra.finance.ui.components.DropdownField
-import id.aigra.finance.ui.components.MonthPicker
-import id.aigra.finance.ui.components.OfflineChip
-import id.aigra.finance.ui.components.TxRow
-import id.aigra.finance.util.JakartaDate
-import id.aigra.finance.util.RupiahFormat
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.data.TxFilter
+import com.mrrizaldi.finance.data.local.AccountEntity
+import com.mrrizaldi.finance.data.local.CategoryEntity
+import com.mrrizaldi.finance.data.local.TransactionEntity
+import com.mrrizaldi.finance.ui.components.DropdownField
+import com.mrrizaldi.finance.ui.components.MonthPicker
+import com.mrrizaldi.finance.ui.components.OfflineChip
+import com.mrrizaldi.finance.ui.components.TxRow
+import com.mrrizaldi.finance.util.JakartaDate
+import com.mrrizaldi.finance.util.RupiahFormat
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
@@ -3357,8 +3357,8 @@ private fun DetailSheet(tx: TransactionEntity, locale: Locale, onDismiss: () -> 
 
 Tambah import:
 ```kotlin
-import id.aigra.finance.ui.transactions.TransactionsScreen
-import id.aigra.finance.ui.transactions.TransactionsViewModel
+import com.mrrizaldi.finance.ui.transactions.TransactionsScreen
+import com.mrrizaldi.finance.ui.transactions.TransactionsViewModel
 ```
 Ganti baris `composable(Tab.TRANSACTIONS.route) { Placeholder(Tab.TRANSACTIONS) }` dengan:
 ```kotlin
@@ -3392,7 +3392,7 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - [ ] **Step 1: ui/components/AmountField.kt**
 
 ```kotlin
-package id.aigra.finance.ui.components
+package com.mrrizaldi.finance.ui.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
@@ -3405,7 +3405,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.OffsetMapping
 import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
-import id.aigra.finance.util.RupiahFormat
+import com.mrrizaldi.finance.util.RupiahFormat
 
 @Composable
 fun AmountField(digits: String, onChange: (String) -> Unit, label: String, modifier: Modifier = Modifier) {
@@ -3444,16 +3444,16 @@ object RupiahVisualTransformation : VisualTransformation {
 - [ ] **Step 2: ui/add/AddViewModel.kt**
 
 ```kotlin
-package id.aigra.finance.ui.add
+package com.mrrizaldi.finance.ui.add
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import id.aigra.finance.R
-import id.aigra.finance.data.Repository
-import id.aigra.finance.data.local.AccountEntity
-import id.aigra.finance.data.local.CategoryEntity
-import id.aigra.finance.util.JakartaDate
-import id.aigra.finance.util.RupiahFormat
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.data.Repository
+import com.mrrizaldi.finance.data.local.AccountEntity
+import com.mrrizaldi.finance.data.local.CategoryEntity
+import com.mrrizaldi.finance.util.JakartaDate
+import com.mrrizaldi.finance.util.RupiahFormat
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -3566,7 +3566,7 @@ class AddViewModel(private val repo: Repository) : ViewModel() {
 - [ ] **Step 3: ui/add/AddScreen.kt**
 
 ```kotlin
-package id.aigra.finance.ui.add
+package com.mrrizaldi.finance.ui.add
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -3607,10 +3607,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import id.aigra.finance.R
-import id.aigra.finance.ui.components.AmountField
-import id.aigra.finance.ui.components.DropdownField
-import id.aigra.finance.util.JakartaDate
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.ui.components.AmountField
+import com.mrrizaldi.finance.ui.components.DropdownField
+import com.mrrizaldi.finance.util.JakartaDate
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneOffset
@@ -3795,8 +3795,8 @@ fun AddScreen(vm: AddViewModel) {
 
 Tambah import:
 ```kotlin
-import id.aigra.finance.ui.add.AddScreen
-import id.aigra.finance.ui.add.AddViewModel
+import com.mrrizaldi.finance.ui.add.AddScreen
+import com.mrrizaldi.finance.ui.add.AddViewModel
 ```
 Ganti baris `composable(Tab.ADD.route) { Placeholder(Tab.ADD) }` dengan:
 ```kotlin
@@ -3830,12 +3830,12 @@ Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>"
 - [ ] **Step 1: ui/balances/BalancesViewModel.kt**
 
 ```kotlin
-package id.aigra.finance.ui.balances
+package com.mrrizaldi.finance.ui.balances
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import id.aigra.finance.data.Repository
-import id.aigra.finance.data.local.AccountEntity
+import com.mrrizaldi.finance.data.Repository
+import com.mrrizaldi.finance.data.local.AccountEntity
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -3868,7 +3868,7 @@ class BalancesViewModel(private val repo: Repository) : ViewModel() {
 - [ ] **Step 2: ui/balances/BalancesScreen.kt**
 
 ```kotlin
-package id.aigra.finance.ui.balances
+package com.mrrizaldi.finance.ui.balances
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -3890,11 +3890,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import id.aigra.finance.R
-import id.aigra.finance.ui.components.OfflineChip
-import id.aigra.finance.ui.components.hexColor
-import id.aigra.finance.ui.theme.LocalPalette
-import id.aigra.finance.util.RupiahFormat
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.ui.components.OfflineChip
+import com.mrrizaldi.finance.ui.components.hexColor
+import com.mrrizaldi.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.util.RupiahFormat
 
 @Composable
 fun BalancesScreen(vm: BalancesViewModel) {
@@ -3947,7 +3947,7 @@ fun BalancesScreen(vm: BalancesViewModel) {
 - [ ] **Step 3: ui/more/MoreScreen.kt**
 
 ```kotlin
-package id.aigra.finance.ui.more
+package com.mrrizaldi.finance.ui.more
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -3961,9 +3961,9 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import id.aigra.finance.BuildConfig
-import id.aigra.finance.R
-import id.aigra.finance.data.Repository
+import com.mrrizaldi.finance.BuildConfig
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.data.Repository
 import kotlinx.coroutines.launch
 
 @Composable
@@ -3986,13 +3986,13 @@ fun MoreScreen(repo: Repository) {
 
 Ganti seluruh berkas dengan versi Task 8 Step 7, dengan perubahan berikut: hapus fungsi `Placeholder` dan import `androidx.compose.material3.Text` tetap dipakai oleh `NavigationBarItem`; tambah import:
 ```kotlin
-import id.aigra.finance.ui.add.AddScreen
-import id.aigra.finance.ui.add.AddViewModel
-import id.aigra.finance.ui.balances.BalancesScreen
-import id.aigra.finance.ui.balances.BalancesViewModel
-import id.aigra.finance.ui.more.MoreScreen
-import id.aigra.finance.ui.transactions.TransactionsScreen
-import id.aigra.finance.ui.transactions.TransactionsViewModel
+import com.mrrizaldi.finance.ui.add.AddScreen
+import com.mrrizaldi.finance.ui.add.AddViewModel
+import com.mrrizaldi.finance.ui.balances.BalancesScreen
+import com.mrrizaldi.finance.ui.balances.BalancesViewModel
+import com.mrrizaldi.finance.ui.more.MoreScreen
+import com.mrrizaldi.finance.ui.transactions.TransactionsScreen
+import com.mrrizaldi.finance.ui.transactions.TransactionsViewModel
 ```
 dan blok `NavHost` menjadi:
 ```kotlin
@@ -4004,7 +4004,7 @@ dan blok `NavHost` menjadi:
             composable(Tab.MORE.route) { MoreScreen(container.repository) }
         }
 ```
-Pastikan `grep -n Placeholder mobile/app/src/main/java/id/aigra/finance/MainActivity.kt` kosong.
+Pastikan `grep -n Placeholder mobile/app/src/main/java/com/mrrizaldi/finance/MainActivity.kt` kosong.
 
 - [ ] **Step 5: Build, test, install, verifikasi**
 

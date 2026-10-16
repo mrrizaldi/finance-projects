@@ -2,7 +2,7 @@
 
 Palette B "hijau bank di abu sejuk" (spec `docs/superpowers/specs/2026-10-16-palette-b-design.md`).
 
-**Sumber tunggal.** Kalau token berubah: ubah tabel ini dulu, lalu `dashboard/src/globals.css` (blok `:root` dan `.dark`), lalu `mobile/app/src/main/java/id/aigra/finance/ui/theme/Color.kt`. Hex dihitung dari oklch lewat OKLab → linear sRGB (clip 0..1) → sRGB 8-bit; verifikasi ulang kontras dengan skrip scratchpad `kontras.py` (Python stdlib) sebelum commit.
+**Sumber tunggal.** Kalau token berubah: ubah tabel ini dulu, lalu `dashboard/src/globals.css` (blok `:root` dan `.dark`), lalu `mobile/app/src/main/java/com/mrrizaldi/finance/ui/theme/Color.kt`. Hex dihitung dari oklch lewat OKLab → linear sRGB (clip 0..1) → sRGB 8-bit; verifikasi ulang kontras dengan skrip scratchpad `kontras.py` (Python stdlib) sebelum commit.
 
 Nama di kolom Token = nama spec. Padanan variabel CSS yang beda nama: `primary` = `--primary` (triple) dan `--accent-hi`; `primary-soft` = `--accent-soft`; `border` = `--border`/`--input` (triple). Semua token lain memakai nama yang sama dengan awalan `--`.
 

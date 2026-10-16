@@ -26,7 +26,7 @@ mobile/
     build.gradle.kts
     src/main/AndroidManifest.xml
     src/main/res/values/strings.xml, values-en/strings.xml, values/themes.xml
-    src/main/java/id/aigra/finance/
+    src/main/java/com/mrrizaldi/finance/
       App.kt                 Application: AppContainer, WorkManager init
       AppContainer.kt        supabase client, Room db, repository (DI manual, tanpa Hilt)
       MainActivity.kt        satu activity, NavHost, bottom bar, gerbang biometrik
@@ -44,7 +44,7 @@ mobile/
     src/test/java/...        unit JVM
 ```
 
-Paket `id.aigra.finance`. minSdk 26, targetSdk 35, compileSdk 35. Kotlin 2.x, Compose BOM terbaru stabil, Material 3, Navigation Compose. Satu `AppContainer` object sebagai DI.
+Paket `com.mrrizaldi.finance`. minSdk 26, targetSdk 35, compileSdk 35. Kotlin 2.x, Compose BOM terbaru stabil, Material 3, Navigation Compose. Satu `AppContainer` object sebagai DI.
 
 ## Dependency (gate point, disetujui user 2026-10-16)
 
