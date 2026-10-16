@@ -298,6 +298,8 @@ sequenceDiagram
 
 Semua RPC operasi cuma di transaksi **non-deleted & non-adjustment**, timezone `Asia/Jakarta`, Rupiah.
 
+**Batas hari (mig 054):** semua RPC periode memakai batas hari Asia/Jakarta; parameter tanggal = tanggal kalender Jakarta `YYYY-MM-DD`, akhir inklusif. Filter jadi `transaction_date >= (p_start::timestamp AT TIME ZONE 'Asia/Jakarta') AND transaction_date < ((p_end + 1)::timestamp AT TIME ZONE 'Asia/Jakarta')`; pengelompokan hari/bulan (`get_daily_spending`, `get_expense_heatmap`, `get_monthly_trend`, `get_savings_rate_trend`) memakai `transaction_date AT TIME ZONE 'Asia/Jakarta'`, dan "bulan ini" dihitung dari `now() AT TIME ZONE 'Asia/Jakarta'`. Session DB ber-TimeZone `UTC`, jadi tanpa ini parameter `date` dibaca sebagai 00:00 UTC = 07:00 WIB. Jangan kirim ISO timestamp (`toISOString()`) ke parameter `date`: bagian jamnya dibuang dan awal bulan Jakarta (`…T17:00:00Z`) jadi tanggal hari sebelumnya. Test: `tests/integration/rpc-batas-hari.test.js`.
+
 | RPC | Output | Dipakai di |
 |---|---|---|
 | `get_summary(start,end)` | Total income/expense/net | Home, chat AI |
@@ -309,7 +311,7 @@ Semua RPC operasi cuma di transaksi **non-deleted & non-adjustment**, timezone `
 | `get_top_transactions()` | Transaksi terbesar | Insights |
 | `get_savings_rate_trend()` | Tren savings rate (mig 027) | Insights |
 
-📂 **Kode:** RPC di `supabase/migrations/003_functions_and_views.sql`, `021_analytics_rpc_spending_patterns.sql`, `022_exclude_adjustments_from_analytics.sql`, `027_savings_rate_trend_fn.sql` · UI `dashboard/src/routes/home.tsx`, `analytics.tsx`, `insights.tsx`; chart `components/charts/` (recharts).
+📂 **Kode:** RPC di `supabase/migrations/003_functions_and_views.sql`, `021_analytics_rpc_spending_patterns.sql`, `022_exclude_adjustments_from_analytics.sql`, `027_savings_rate_trend_fn.sql`, `054_rpc_batas_hari_jakarta.sql` (definisi berlaku) · UI `dashboard/src/routes/home.tsx`, `analytics.tsx`, `insights.tsx`; chart `components/charts/` (recharts).
 
 ---
 
