@@ -9,6 +9,7 @@ interface SupabaseApi {
     fun currentSession(): UserSession? = (sessionStatus.value as? SessionStatus.Authenticated)?.session
     suspend fun signIn(email: String, password: String)
     suspend fun signOut()
+    suspend fun clearLocalSession()
     suspend fun listAccounts(): List<AccountDto>
     suspend fun listCategories(): List<CategoryDto>
     suspend fun listTransactions(start: String, end: String, limit: Int, offset: Int): List<TransactionDto>

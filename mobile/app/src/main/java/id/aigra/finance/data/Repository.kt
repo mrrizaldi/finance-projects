@@ -128,13 +128,9 @@ class Repository(
         refreshHome(YearMonth.from(date))
     }
 
-    suspend fun logout() {
-        transactionDao.deleteAll()
-        accountDao.deleteAll()
-        categoryDao.deleteAll()
-        snapshotDao.deleteAll()
-        syncMetaDao.deleteAll()
-        api.signOut()
+    suspend fun logout(): Result<Unit> = write {
+        if (write { api.signOut() }.isFailure) api.clearLocalSession()
+        clearCache()
     }
 
     private suspend fun fetchMonth(start: String, end: String): List<TransactionEntity> {

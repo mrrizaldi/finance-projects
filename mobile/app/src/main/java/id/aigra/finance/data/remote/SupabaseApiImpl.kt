@@ -28,6 +28,10 @@ class SupabaseApiImpl(private val client: SupabaseClient) : SupabaseApi {
         client.auth.signOut()
     }
 
+    override suspend fun clearLocalSession() {
+        client.auth.clearSession()
+    }
+
     override suspend fun listAccounts(): List<AccountDto> =
         client.from("accounts").select(Columns.list("id", "name", "type", "balance", "color", "is_active")) {
             filter { eq("is_active", true) }

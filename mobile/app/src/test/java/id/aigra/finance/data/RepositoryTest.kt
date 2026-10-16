@@ -66,7 +66,16 @@ class FakeApi : SupabaseApi {
     }
 
     override suspend fun signIn(email: String, password: String) {}
-    override suspend fun signOut() {}
+    var signOutFailure: Exception? = null
+
+    override suspend fun signOut() {
+        signOutFailure?.let { throw it }
+        session = null
+    }
+
+    override suspend fun clearLocalSession() {
+        session = null
+    }
 
     override suspend fun listAccounts(): List<AccountDto> {
         gate()
@@ -314,5 +323,23 @@ class RepositoryTest {
         assertTrue(repo.refreshTransactions(month.plusMonths(1)).isSuccess)
 
         assertEquals(listOf("nov", "okt"), transactionDao.data.value.map { it.id }.sorted())
+    }
+
+    @Test
+    fun `logout offline tetap hapus sesi lokal dan cache`() = runTest {
+        transactionDao.insertAll(listOf(TransactionEntity("t1", "expense", 1, "2026-10-01T05:00:00+00:00", "2026-10-01")))
+        accountDao.insertAll(listOf(AccountEntity("a1", "BCA", "bank", 5_000, null, true)))
+        snapshotDao.upsert(RpcSnapshot("k", "{}", 1L))
+        syncMetaDao.upsert(SyncMeta(lastSuccessAt = 500L, ownerId = "u1"))
+        api.signOutFailure = IOException("offline")
+
+        val result = repo.logout()
+
+        assertTrue(result.isSuccess)
+        assertNull(api.currentSession())
+        assertTrue(transactionDao.data.value.isEmpty())
+        assertTrue(accountDao.data.value.isEmpty())
+        assertTrue(snapshotDao.data.value.isEmpty())
+        assertNull(syncMetaDao.data.value)
     }
 }
