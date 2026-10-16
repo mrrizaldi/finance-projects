@@ -25,6 +25,7 @@ import com.patrykandpatrick.vico.compose.cartesian.data.CartesianChartModel
 import com.patrykandpatrick.vico.compose.cartesian.data.CartesianValueFormatter
 import com.patrykandpatrick.vico.compose.cartesian.data.ColumnCartesianLayerModel
 import com.patrykandpatrick.vico.compose.cartesian.data.LineCartesianLayerModel
+import com.patrykandpatrick.vico.compose.cartesian.layer.CartesianLayerPadding
 import com.patrykandpatrick.vico.compose.cartesian.layer.ColumnCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.LineCartesianLayer
 import com.patrykandpatrick.vico.compose.cartesian.layer.rememberColumnCartesianLayer
@@ -78,7 +79,10 @@ private fun monthAxis(rows: Int, labels: List<String>, label: TextComponent) = H
     },
     tick = null,
     guideline = null,
-    itemPlacer = remember(rows) { HorizontalAxis.ItemPlacer.aligned(spacing = { (rows + 5) / 6 }) }
+    itemPlacer = remember(rows) {
+        val step = (rows + 5) / 6
+        HorizontalAxis.ItemPlacer.aligned(spacing = { step }, offset = { (rows - 1) % step })
+    }
 )
 
 @Composable
@@ -167,7 +171,8 @@ internal fun SavingsChart(rows: List<SavingsRateDto>, selected: Set<Int>, modifi
                 tick = null,
                 itemPlacer = remember { VerticalAxis.ItemPlacer.count(count = { 4 }) }
             ),
-            bottomAxis = monthAxis(rows.size, labels, label)
+            bottomAxis = monthAxis(rows.size, labels, label),
+            layerPadding = remember { { CartesianLayerPadding(unscalableEnd = 8.dp) } }
         )
         CartesianChartHost(
             chart = chart,
