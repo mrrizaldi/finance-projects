@@ -82,3 +82,4 @@ bawah.
 
 | Tanggal | Penulis | Penilai | Skor | Catatan |
 |---|---|---|---|---|
+| 2026-10-16 | sonnet | haiku | 10/10 | LULUS. Semua butir A-E 2/2. Di luar rubrik (3 catatan penilai: grep belum dijalankan, bagian dokumen tujuan belum dibaca, klaim belum ditandai) adalah akibat batasan eval (penulis dilarang baca repo/jalankan perintah), bukan ambiguitas SKILL.md. Tanpa perubahan. |
