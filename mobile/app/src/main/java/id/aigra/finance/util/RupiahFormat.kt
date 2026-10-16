@@ -10,7 +10,15 @@ object RupiahFormat {
         return if (amount < 0) "-Rp $body" else "Rp $body"
     }
 
-    fun digitsOf(raw: String): String = raw.filter { it.isDigit() }.trimStart('0')
+    private const val MAX_DIGITS = 13
 
-    fun parse(raw: String): Long = digitsOf(raw).toLongOrNull() ?: 0L
+    private fun significant(raw: String): String = raw.filter { it in '0'..'9' }.trimStart('0')
+
+    fun digitsOf(raw: String): String = significant(raw).take(MAX_DIGITS)
+
+    fun parse(raw: String): Long? {
+        if (raw.none { it in '0'..'9' }) return null
+        val digits = significant(raw)
+        return if (digits.length > MAX_DIGITS) null else digits.toLongOrNull() ?: 0L
+    }
 }

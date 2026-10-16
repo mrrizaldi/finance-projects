@@ -1,6 +1,7 @@
 package id.aigra.finance.util
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Test
 
 class RupiahFormatTest {
@@ -25,9 +26,19 @@ class RupiahFormatTest {
         assertEquals(1_500_000L, RupiahFormat.parse("1.500.000"))
         assertEquals(50_000L, RupiahFormat.parse("Rp 50.000"))
         assertEquals(7L, RupiahFormat.parse("007"))
-        assertEquals(0L, RupiahFormat.parse(""))
+        assertNull(RupiahFormat.parse(""))
+        assertNull(RupiahFormat.parse("Rp"))
         assertEquals(0L, RupiahFormat.parse("0"))
         assertEquals("", RupiahFormat.digitsOf("0"))
         assertEquals("1500", RupiahFormat.digitsOf("1.5-0a0"))
+    }
+
+    @Test
+    fun `parse nolak lebih dari 13 digit biar gak overflow`() {
+        assertEquals(9_999_999_999_999L, RupiahFormat.parse("9.999.999.999.999"))
+        assertNull(RupiahFormat.parse("12345678901234"))
+        assertNull(RupiahFormat.parse("99999999999999999999"))
+        assertEquals(1L, RupiahFormat.parse("00000000000000001"))
+        assertEquals("1234567890123", RupiahFormat.digitsOf("12345678901234"))
     }
 }

@@ -14,6 +14,7 @@ class JakartaDateTest {
         assertEquals("2026-02-01", JakartaDate.monthStart(YearMonth.of(2026, 2)))
         assertEquals("2026-02-28", JakartaDate.monthEnd(YearMonth.of(2026, 2)))
         assertEquals("2026-10-31", JakartaDate.monthEnd(YearMonth.of(2026, 10)))
+        assertEquals("2028-02-29", JakartaDate.monthEnd(YearMonth.of(2028, 2)))
     }
 
     @Test
@@ -48,6 +49,7 @@ class JakartaDateTest {
     fun `format tampilan`() {
         assertEquals("16 Oct 2026", JakartaDate.formatDay(LocalDate.of(2026, 10, 16), Locale.ENGLISH))
         assertEquals("October 2026", JakartaDate.formatMonth(YearMonth.of(2026, 10), Locale.ENGLISH))
+        assertEquals("Mei 2026", JakartaDate.formatMonth(YearMonth.of(2026, 5), Locale.forLanguageTag("id")))
         assertEquals("16 Oct 2026, 13:05", JakartaDate.formatTimestamp("2026-10-16T06:05:00+00:00", Locale.ENGLISH))
         assertEquals(LocalDate.of(2026, 10, 16), JakartaDate.parseKey("2026-10-16"))
     }
