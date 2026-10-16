@@ -11,10 +11,10 @@ Sistem otomasi keuangan pribadi (Bahasa Indonesia): parsing email transaksi bank
 | `dashboard/` — React 19 + React Router v8 SPA | repo ini | edit langsung |
 | `api/` — Fastify, 19 endpoint `/api/*` + serve SPA | repo ini | edit langsung |
 | `supabase/` — SQL migrations | repo ini | apply via Supabase MCP |
-| telegram-bot (@aldi_monman_bot) | server `~/dev/finance-project/telegram-bot` | ssh MCP |
-| monitor-bot (@monitoring_aldi23_bot) | server `~/dev/finance-project/monitor-bot` | ssh MCP |
-| n8n workflows (email parser, reporter) | instance n8n `https://n8n.mrrizaldi.my.id` | **n8n MCP** |
-| openclaw skills (finance-*) | server `~/.openclaw/skills` | ssh MCP |
+| telegram-bot (@aldi_monman_bot) | server `~/dev/finance-project/telegram-bot` | `ssh home` |
+| openclaw-monitor (@monitoring_aldi23_bot) | server `~/.openclaw/monitoring/detector` | `ssh home` |
+| n8n workflows (email parser, reporter) | instance n8n `https://n8n.mrrizaldi.com` | **n8n MCP** |
+| openclaw skills (finance-*) | server `~/.openclaw/skills` | `ssh home` |
 
 ## Butuh Ngapain? → Mulai dari Sini
 
@@ -23,7 +23,7 @@ Sistem otomasi keuangan pribadi (Bahasa Indonesia): parsing email transaksi bank
 - **Multi-bahasa (i18n ID/EN)** → `docs/I18N.md` (seed bahasa, katalog, konversi layar)
 - **Kerja di dashboard/API** → `CLAUDE.md` (konvensi, commands, arsitektur)
 - **Cek/edit n8n workflow** → n8n MCP (`n8n_list_workflows`, `n8n_get_workflow`, `n8n_update_partial_workflow`). API key di `.mcp.json`.
-- **Cek/edit bot atau openclaw di server** → ssh MCP ke `192.168.31.221`; inventori lengkap (pm2 apps, path, env, cara restart/deploy) di **`SERVER.md`**
+- **Cek/edit bot atau openclaw di server** → `ssh home` (skill `home-server`, tanpa VPN); inventori lengkap (pm2 apps, path, env, cara restart/deploy) di **`SERVER.md`**
 - **Baca setup server secara lokal** → `bash scripts/pull-server.sh` → `.server-pull/` (gitignored): kode kedua bot, openclaw finance skills, export JSON n8n finance workflows
 - **Operasi database** → Supabase MCP (project `dqvdhkpqyynvwfbuqyzu`) — jangan psql/CLI manual
 - **Histori implementasi & keputusan** → git log

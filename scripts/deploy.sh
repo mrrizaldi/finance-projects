@@ -11,7 +11,7 @@
 # Server, repo, branch bisa dioverride lewat env var kalau perlu.
 set -euo pipefail
 
-SERVER="${FINANCE_SERVER:-mrrizaldi@192.168.31.221}"
+SERVER="${FINANCE_SERVER:-home}"
 REPO="${FINANCE_REPO:-https://github.com/mrrizaldi/finance-projects.git}"
 BRANCH="${FINANCE_BRANCH:-main}"
 HEALTH_URL="${FINANCE_HEALTH_URL:-http://localhost:3701/}"

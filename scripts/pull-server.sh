@@ -2,15 +2,15 @@
 # ponytail: jembatan sementara — pull semua setup finance dari server buat dibaca lokal.
 # Hapus kalau SERVER.md sudah cukup.
 set -euo pipefail
-SERVER=mrrizaldi@192.168.31.221
+SERVER=home
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 DEST="$ROOT/.server-pull"
 mkdir -p "$DEST"
 
 # Bot code
-for app in telegram-bot monitor-bot; do
-  rsync -avz --delete --exclude=node_modules --exclude=dist --exclude=sessions \
-    "$SERVER:~/dev/finance-project/$app/" "$DEST/$app/"
+for src in dev/finance-project/telegram-bot .openclaw/monitoring/detector; do
+  rsync -avz --delete --exclude=node_modules --exclude=dist --exclude=sessions --exclude=.env \
+    "$SERVER:~/$src/" "$DEST/$(basename "$src")/"
 done
 
 # OpenClaw finance skills
@@ -19,7 +19,7 @@ rsync -avz --delete \
   "$SERVER:~/.openclaw/skills/" "$DEST/openclaw-skills/"
 
 # n8n finance workflows (via public API, key dari .mcp.json)
-N8N_URL=https://n8n.mrrizaldi.my.id
+N8N_URL=https://n8n.mrrizaldi.com
 KEY=$(python3 -c "import json;print(json.load(open('$ROOT/.mcp.json'))['mcpServers']['n8n']['env']['N8N_API_KEY'])")
 mkdir -p "$DEST/n8n-workflows"
 curl -s -H "X-N8N-API-KEY: $KEY" "$N8N_URL/api/v1/workflows?limit=100" \

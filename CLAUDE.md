@@ -15,16 +15,16 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 Personal finance automation system (Indonesian language). Sistem lengkapnya: email parsing (n8n), Telegram bot untuk input manual, web dashboard untuk analytics, dan AI categorization (OpenClaw).
 
-**Scope repo ini: hanya `dashboard/` + `api/` + `supabase/`.** Service lain (telegram-bot, monitor-bot, n8n, openclaw) hidup dan jalan di home server — kodenya TIDAK ada di repo ini. Lihat **`SERVER.md`** untuk inventori lengkap.
+**Scope repo ini: hanya `dashboard/` + `api/` + `supabase/`.** Service lain (telegram-bot, openclaw-monitor, n8n, openclaw) hidup dan jalan di home server — kodenya TIDAK ada di repo ini. Lihat **`SERVER.md`** untuk inventori lengkap.
 
 ## Service di Server — Cara Cek/Edit
 
-**WAJIB pakai MCP, jangan minta/duplikasi kode ke repo:**
+**WAJIB pakai MCP / `ssh home`, jangan minta/duplikasi kode ke repo:**
 
 - **n8n workflows** (email parsing BCA/BSI/Shopee/dll, sheets sync) → **n8n MCP** (`n8n_list_workflows`, `n8n_get_workflow`, `n8n_update_partial_workflow`, dst.)
-- **telegram-bot, monitor-bot, openclaw, pm2, log** → **ssh MCP** (`mcp__ssh-mcp__exec`) ke 192.168.31.221
+- **telegram-bot, openclaw-monitor, openclaw, pm2, log** → **`ssh home`** (skill `home-server`, tanpa VPN)
 - Detail path, pm2 apps, cara restart/deploy: `SERVER.md`
-- Butuh baca setup server secara lokal: `bash scripts/pull-server.sh` → `.server-pull/` (gitignored) — pull kode telegram-bot & monitor-bot, openclaw finance skills, dan export JSON semua n8n finance workflows
+- Butuh baca setup server secara lokal: `bash scripts/pull-server.sh` → `.server-pull/` (gitignored) — pull kode telegram-bot & openclaw-monitor, openclaw finance skills, dan export JSON semua n8n finance workflows
 
 ## Tech Stack (repo ini)
 
