@@ -60,6 +60,7 @@ class Repository(
     private val snapshotDao: SnapshotDao,
     private val syncMetaDao: SyncMetaDao,
     private val outboxDao: OutboxDao,
+    private val onRefreshed: suspend () -> Unit = {},
     private val scheduleFlush: () -> Unit = {},
     private val newId: () -> String = { UUID.randomUUID().toString() },
     private val clock: () -> Long = System::currentTimeMillis
@@ -338,7 +339,7 @@ class Repository(
 
     private suspend fun guard(block: suspend () -> Unit): Result<Unit> {
         val owner = api.awaitSession()?.user?.id ?: return Result.failure(SyncError.Unauthorized)
-        return write {
+        val result = write {
             val meta = syncMetaDao.observe().first()
             if (meta?.ownerId != owner) {
                 clearCache()
@@ -347,6 +348,8 @@ class Repository(
             block()
             syncMetaDao.upsert(SyncMeta(lastSuccessAt = clock(), ownerId = owner))
         }
+        if (result.isSuccess) onRefreshed()
+        return result
     }
 
     private suspend fun write(block: suspend () -> Unit): Result<Unit> = try {

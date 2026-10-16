@@ -126,4 +126,10 @@
     <string name="common_ok">OK</string>
     <string name="common_cancel">Cancel</string>
     <string name="common_back">Back</string>
+
+    <string name="widget_name">Balance</string>
+    <string name="widget_description">Total balance, spending this month, and last sync time</string>
+    <string name="widget_expense">Spent this month %1$s</string>
+    <string name="widget_synced">Synced %1$s</string>
+    <string name="widget_never">Not synced yet</string>
 </resources>

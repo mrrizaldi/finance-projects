@@ -474,6 +474,22 @@ class RepositoryTest {
     }
 
     @Test
+    fun `cuma refresh sukses yang nyegerin widget`() = runTest {
+        var updates = 0
+        val withWidget = Repository(
+            api, accountDao, categoryDao, transactionDao, snapshotDao, syncMetaDao, FakeOutboxDao(),
+            onRefreshed = { updates++ }
+        ) { 1_000L }
+
+        assertTrue(withWidget.refreshHome(month).isSuccess)
+        assertEquals(1, updates)
+
+        api.failFrom = api.calls + 1
+        assertTrue(withWidget.refreshHome(month).isFailure)
+        assertEquals(1, updates)
+    }
+
+    @Test
     fun `escapeLike bikin persen garis bawah backslash jadi literal`() {
         assertEquals("50\\% off\\_x\\\\y", escapeLike("50% off_x\\y"))
         assertEquals("indomaret", escapeLike("indomaret"))

@@ -73,6 +73,7 @@ dependencies {
     implementation(libs.haze.blur)
     implementation(libs.vico.compose.m3)
     implementation(libs.work.runtime.ktx)
+    implementation(libs.glance.appwidget)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }

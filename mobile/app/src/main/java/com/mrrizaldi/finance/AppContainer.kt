@@ -1,6 +1,7 @@
 package com.mrrizaldi.finance
 
 import android.content.Context
+import androidx.glance.appwidget.updateAll
 import androidx.room.Room
 import com.mrrizaldi.finance.auth.SessionStore
 import com.mrrizaldi.finance.data.Repository
@@ -8,6 +9,7 @@ import com.mrrizaldi.finance.data.local.FinanceDb
 import com.mrrizaldi.finance.data.remote.SupabaseApi
 import com.mrrizaldi.finance.data.remote.SupabaseApiImpl
 import com.mrrizaldi.finance.sync.Sync
+import com.mrrizaldi.finance.widget.BalanceWidget
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
@@ -52,6 +54,7 @@ class AppContainer(context: Context) {
             snapshotDao = db.snapshotDao(),
             syncMetaDao = db.syncMetaDao(),
             outboxDao = db.outboxDao(),
+            onRefreshed = { BalanceWidget().updateAll(appContext) },
             scheduleFlush = { Sync.flush(appContext) }
         )
     }

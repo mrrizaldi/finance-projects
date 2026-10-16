@@ -126,4 +126,10 @@
     <string name="common_ok">OK</string>
     <string name="common_cancel">Batal</string>
     <string name="common_back">Kembali</string>
+
+    <string name="widget_name">Saldo</string>
+    <string name="widget_description">Total saldo, pengeluaran bulan ini, dan waktu sinkron</string>
+    <string name="widget_expense">Keluar bulan ini %1$s</string>
+    <string name="widget_synced">Sinkron %1$s</string>
+    <string name="widget_never">Belum sinkron</string>
 </resources>
