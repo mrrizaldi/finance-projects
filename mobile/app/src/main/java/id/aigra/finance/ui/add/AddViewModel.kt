@@ -40,6 +40,13 @@ data class AddForm(
     val saving: Boolean = false
 )
 
+internal fun defaultAccounts(accounts: List<AccountEntity>): Pair<String?, String?> {
+    val (spend, invest) = accounts.partition { it.type != "investment" }
+    val ordered = spend + invest
+    val from = ordered.firstOrNull()
+    return from?.id to ordered.firstOrNull { it.id != from?.id }?.id
+}
+
 class AddViewModel(private val repo: Repository) : ViewModel() {
     private val shared = SharingStarted.WhileSubscribed(5_000)
     val accounts: StateFlow<List<AccountEntity>> = repo.accounts().stateIn(viewModelScope, shared, emptyList())

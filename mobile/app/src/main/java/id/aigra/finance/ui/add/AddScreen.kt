@@ -63,13 +63,8 @@ fun AddScreen(vm: AddViewModel) {
 
     LaunchedEffect(accounts) {
         if (accounts.isNotEmpty() && form.accountId == null) {
-            vm.edit {
-                copy(
-                    accountId = accounts.first().id,
-                    fromAccountId = accounts.first().id,
-                    toAccountId = accounts.getOrNull(1)?.id
-                )
-            }
+            val (from, to) = defaultAccounts(accounts)
+            vm.edit { copy(accountId = from, fromAccountId = from, toAccountId = to) }
         }
     }
     LaunchedEffect(message) {
