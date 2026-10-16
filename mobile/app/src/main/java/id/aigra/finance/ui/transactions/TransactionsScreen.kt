@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
@@ -26,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -71,6 +73,8 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
     val locale = LocalConfiguration.current.locales[0]
     val today = JakartaDate.today()
     val filterActive = filter.type != null || filter.accountId != null || filter.categoryId != null
+    val listState = rememberLazyListState()
+    LaunchedEffect(filter) { listState.scrollToItem(0) }
 
     Column(Modifier.fillMaxSize()) {
         Row(
@@ -102,7 +106,7 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
             }
         }
         PullToRefreshBox(isRefreshing = refreshing, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
-            LazyColumn(Modifier.fillMaxSize()) {
+            LazyColumn(Modifier.fillMaxSize(), state = listState) {
                 if (items.isEmpty()) {
                     item {
                         Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
