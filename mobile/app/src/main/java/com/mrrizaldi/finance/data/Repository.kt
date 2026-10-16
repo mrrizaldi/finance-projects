@@ -73,6 +73,9 @@ class Repository(
             row?.let { json.decodeFromString<List<CategoryBreakdownDto>>(it.json) } ?: emptyList()
         }
 
+    fun previousSummary(month: YearMonth): Flow<SummaryDto?> =
+        snapshotDao.observe(previousSummaryKey(month)).map { row -> row?.let { json.decodeFromString<SummaryDto>(it.json) } }
+
     fun lastSuccessAt(): Flow<Long?> = syncMetaDao.observe().map { it?.lastSuccessAt }
 
     suspend fun refreshHome(month: YearMonth): Result<Unit> = guard {
@@ -81,11 +84,14 @@ class Repository(
         val accounts = api.listAccounts()
         val categories = api.listCategories()
         val summary = api.getSummary(start, end)
+        val previousMonth = month.minusMonths(1)
+        val previous = api.getSummary(JakartaDate.monthStart(previousMonth), JakartaDate.monthEnd(previousMonth))
         val breakdown = api.getCategoryBreakdown(start, end, "expense")
         val rows = fetchMonth(start, end)
         accountDao.replaceAll(accounts.map { it.toEntity() })
         categoryDao.replaceAll(categories.map { it.toEntity() })
         snapshotDao.upsert(RpcSnapshot(summaryKey(month), json.encodeToString(summary), clock()))
+        snapshotDao.upsert(RpcSnapshot(previousSummaryKey(month), json.encodeToString(previous), clock()))
         snapshotDao.upsert(RpcSnapshot(breakdownKey(month), json.encodeToString(breakdown), clock()))
         transactionDao.replaceRange(start, end, rows)
     }
@@ -183,6 +189,9 @@ class Repository(
     }
 
     private fun summaryKey(month: YearMonth) = "get_summary:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}"
+
+    private fun previousSummaryKey(month: YearMonth) =
+        "get_summary_prev:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}"
 
     private fun breakdownKey(month: YearMonth) =
         "get_category_breakdown:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}:expense"

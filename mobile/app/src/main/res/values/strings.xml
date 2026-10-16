@@ -16,18 +16,22 @@
     <string name="nav_balances">Saldo</string>
     <string name="nav_more">Lainnya</string>
 
-    <string name="home_total_balance">Total Saldo</string>
+    <string name="home_total_balance">Total saldo</string>
     <string name="home_income">Masuk</string>
     <string name="home_expense">Keluar</string>
-    <string name="home_budget_title">Budget Bulan Ini</string>
+    <string name="home_budget_title">Budget</string>
     <string name="home_no_budget">Belum ada budget</string>
-    <string name="home_recent_title">Transaksi Terakhir</string>
+    <string name="home_recent_title">Terbaru</string>
+    <string name="home_delta">arus kas vs bulan lalu · %1$s</string>
+    <string name="home_budget_left">sisa %1$s</string>
+    <string name="home_budget_over">lewat %1$s</string>
 
     <string name="offline_chip">Offline · data %1$s</string>
     <string name="offline_never">Offline · belum ada data</string>
     <string name="load_error">Gagal memuat data</string>
     <string name="month_prev">Bulan sebelumnya</string>
     <string name="month_next">Bulan berikutnya</string>
+    <string name="month_pick">Pilih bulan</string>
 
     <string name="tx_search_hint">Cari deskripsi atau merchant</string>
     <string name="tx_filter">Filter</string>

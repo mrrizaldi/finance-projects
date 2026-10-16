@@ -4,9 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mrrizaldi.finance.data.Repository
 import com.mrrizaldi.finance.data.SyncError
-import com.mrrizaldi.finance.data.local.CategoryEntity
 import com.mrrizaldi.finance.data.local.TransactionEntity
-import com.mrrizaldi.finance.data.remote.CategoryBreakdownDto
+import com.mrrizaldi.finance.data.remote.SummaryDto
 import com.mrrizaldi.finance.util.JakartaDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -18,17 +17,23 @@ import kotlinx.coroutines.launch
 import java.time.YearMonth
 import kotlin.math.roundToLong
 
-data class BudgetItem(val name: String, val color: String?, val spent: Long, val limit: Long)
-
 data class HomeUiState(
     val month: YearMonth,
     val totalBalance: Long = 0,
     val income: Long = 0,
     val expense: Long = 0,
-    val budget: List<BudgetItem> = emptyList(),
+    val netChange: Long? = null,
+    val budgetSpent: Long = 0,
+    val budgetLimit: Long = 0,
     val recent: List<TransactionEntity> = emptyList(),
     val lastSuccessAt: Long? = null
 )
+
+internal fun netChange(current: SummaryDto?, previous: SummaryDto?): Long? =
+    if (current == null || previous == null) null else (current.net_cashflow - previous.net_cashflow).roundToLong()
+
+internal fun countUpValue(from: Long, to: Long, progress: Float): Long =
+    from + ((to - from) * progress.toDouble()).roundToLong()
 
 class HomeViewModel(private val repo: Repository) : ViewModel() {
     private val month = MutableStateFlow(JakartaDate.currentMonth())
@@ -39,15 +44,21 @@ class HomeViewModel(private val repo: Repository) : ViewModel() {
 
     val uiState: StateFlow<HomeUiState> = month.flatMapLatest { m ->
         combine(
-            combine(repo.accounts(), repo.summary(m), repo.breakdown(m)) { a, s, b -> Triple(a, s, b) },
-            combine(repo.categories(), repo.recent(5), repo.lastSuccessAt()) { c, r, t -> Triple(c, r, t) }
-        ) { (accounts, summary, breakdown), (categories, recent, last) ->
+            combine(repo.accounts(), repo.summary(m), repo.previousSummary(m)) { a, s, ps -> Triple(a, s, ps) },
+            combine(repo.categories(), repo.breakdown(m), repo.recent(5)) { c, b, r -> Triple(c, b, r) },
+            repo.lastSuccessAt()
+        ) { (accounts, summary, previous), (categories, breakdown, recent), last ->
+            val budgeted = categories.filter { (it.budgetMonthly ?: 0L) > 0L }
             HomeUiState(
                 month = m,
                 totalBalance = accounts.sumOf { it.balance },
                 income = summary?.total_income?.roundToLong() ?: 0L,
                 expense = summary?.total_expense?.roundToLong() ?: 0L,
-                budget = budgetItems(categories, breakdown),
+                netChange = netChange(summary, previous),
+                budgetSpent = budgeted.sumOf { c ->
+                    breakdown.firstOrNull { it.category_id == c.id }?.total_amount?.roundToLong() ?: 0L
+                },
+                budgetLimit = budgeted.sumOf { it.budgetMonthly ?: 0L },
                 recent = recent,
                 lastSuccessAt = last
             )
@@ -72,10 +83,4 @@ class HomeViewModel(private val repo: Repository) : ViewModel() {
         month.value = value
         refresh()
     }
-
-    private fun budgetItems(categories: List<CategoryEntity>, breakdown: List<CategoryBreakdownDto>): List<BudgetItem> =
-        categories.filter { (it.budgetMonthly ?: 0L) > 0L }.map { c ->
-            val spent = breakdown.firstOrNull { it.category_id == c.id }?.total_amount?.roundToLong() ?: 0L
-            BudgetItem(c.name, c.color, spent, c.budgetMonthly ?: 1L)
-        }.sortedByDescending { it.spent.toDouble() / it.limit }.take(3)
 }

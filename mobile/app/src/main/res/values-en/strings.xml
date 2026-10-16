@@ -16,18 +16,22 @@
     <string name="nav_balances">Balances</string>
     <string name="nav_more">More</string>
 
-    <string name="home_total_balance">Total Balance</string>
+    <string name="home_total_balance">Total balance</string>
     <string name="home_income">In</string>
     <string name="home_expense">Out</string>
-    <string name="home_budget_title">Budget This Month</string>
+    <string name="home_budget_title">Budget</string>
     <string name="home_no_budget">No budget set</string>
-    <string name="home_recent_title">Recent Transactions</string>
+    <string name="home_recent_title">Recent</string>
+    <string name="home_delta">cash flow vs last month · %1$s</string>
+    <string name="home_budget_left">%1$s left</string>
+    <string name="home_budget_over">%1$s over</string>
 
     <string name="offline_chip">Offline · data %1$s</string>
     <string name="offline_never">Offline · no data yet</string>
     <string name="load_error">Couldn\'t load data</string>
     <string name="month_prev">Previous month</string>
     <string name="month_next">Next month</string>
+    <string name="month_pick">Pick month</string>
 
     <string name="tx_search_hint">Search description or merchant</string>
     <string name="tx_filter">Filter</string>
