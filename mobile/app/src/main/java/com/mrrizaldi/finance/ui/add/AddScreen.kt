@@ -16,16 +16,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SegmentedButton
-import androidx.compose.material3.SegmentedButtonDefaults
-import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
@@ -51,8 +46,11 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mrrizaldi.finance.R
 import com.mrrizaldi.finance.ui.components.AmountField
+import com.mrrizaldi.finance.ui.components.CapsuleButton
 import com.mrrizaldi.finance.ui.components.CapsuleField
+import com.mrrizaldi.finance.ui.components.CheckRow
 import com.mrrizaldi.finance.ui.components.DropdownField
+import com.mrrizaldi.finance.ui.components.GlassSegmented
 import com.mrrizaldi.finance.ui.components.GlassSurface
 import com.mrrizaldi.finance.ui.components.GradientButton
 import com.mrrizaldi.finance.ui.icons.AppIcons
@@ -117,29 +115,21 @@ fun AddScreen(vm: AddViewModel, onBack: () -> Unit) {
                 )
             }
 
-            SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                AddTab.entries.forEachIndexed { i, tab ->
-                    SegmentedButton(
-                        selected = form.tab == tab,
-                        onClick = { vm.edit { copy(tab = tab) } },
-                        shape = SegmentedButtonDefaults.itemShape(i, AddTab.entries.size)
-                    ) {
-                        Text(stringResource(if (tab == AddTab.ENTRY) R.string.add_tab_entry else R.string.add_tab_transfer))
-                    }
-                }
-            }
+            GlassSegmented(
+                options = AddTab.entries.map {
+                    stringResource(if (it == AddTab.ENTRY) R.string.add_tab_entry else R.string.add_tab_transfer)
+                },
+                selected = form.tab.ordinal,
+                onSelect = { i -> vm.edit { copy(tab = AddTab.entries[i]) } }
+            )
 
             if (form.tab == AddTab.ENTRY) {
                 val types = listOf("expense" to R.string.tx_type_expense, "income" to R.string.tx_type_income)
-                SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
-                    types.forEachIndexed { i, (value, label) ->
-                        SegmentedButton(
-                            selected = form.type == value,
-                            onClick = { vm.edit { copy(type = value, categoryId = null) } },
-                            shape = SegmentedButtonDefaults.itemShape(i, types.size)
-                        ) { Text(stringResource(label)) }
-                    }
-                }
+                GlassSegmented(
+                    options = types.map { stringResource(it.second) },
+                    selected = types.indexOfFirst { it.first == form.type },
+                    onSelect = { i -> vm.edit { copy(type = types[i].first, categoryId = null) } }
+                )
                 AmountField(form.amount, { v -> vm.edit { copy(amount = v) } }, stringResource(R.string.add_amount))
                 DropdownField(
                     label = stringResource(R.string.add_account),
@@ -168,10 +158,11 @@ fun AddScreen(vm: AddViewModel, onBack: () -> Unit) {
                 )
             } else {
                 AmountField(form.amount, { v -> vm.edit { copy(amount = v) } }, stringResource(R.string.add_amount))
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Checkbox(checked = form.sameAmount, onCheckedChange = { v -> vm.edit { copy(sameAmount = v) } })
-                    Text(stringResource(R.string.add_same_amount))
-                }
+                CheckRow(
+                    text = stringResource(R.string.add_same_amount),
+                    checked = form.sameAmount,
+                    onCheckedChange = { v -> vm.edit { copy(sameAmount = v) } }
+                )
                 if (!form.sameAmount) {
                     AmountField(form.toAmount, { v -> vm.edit { copy(toAmount = v) } }, stringResource(R.string.add_amount_to))
                 }
@@ -198,12 +189,8 @@ fun AddScreen(vm: AddViewModel, onBack: () -> Unit) {
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedButton(onClick = { showDate = true }, modifier = Modifier.weight(1f)) {
-                    Text(JakartaDate.formatDay(form.date, locale))
-                }
-                OutlinedButton(onClick = { showTime = true }, modifier = Modifier.weight(1f)) {
-                    Text(form.time.format(DateTimeFormatter.ofPattern("HH:mm")))
-                }
+                CapsuleButton(JakartaDate.formatDay(form.date, locale), { showDate = true }, Modifier.weight(1f))
+                CapsuleButton(form.time.format(DateTimeFormatter.ofPattern("HH:mm")), { showTime = true }, Modifier.weight(1f))
             }
 
             GradientButton(

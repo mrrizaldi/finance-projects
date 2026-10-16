@@ -50,6 +50,8 @@ object AppIcons {
     val Plus = icon("plus", BOLD, listOf("M12 5v14M5 12h14"))
     val Filter = icon("filter", THIN, listOf("M4 7h16M7 12h10M10 17h4"))
     val Back = icon("back", BOLD, listOf("M15 5l-7 7 7 7"))
+    val ChevronDown = icon("chevron-down", THIN, listOf("M6 9l6 6 6-6"))
+    val Check = icon("check", BOLD, listOf("M5 12.5l4.5 4.5L19 7"))
     val Search = icon("search", THIN, listOf("M16.5 10.5a6 6 0 1 1-12 0a6 6 0 1 1 12 0", "M15 15l5 5"))
     val Calendar = icon(
         "calendar",

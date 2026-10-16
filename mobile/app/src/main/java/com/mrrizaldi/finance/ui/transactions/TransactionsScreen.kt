@@ -1,7 +1,10 @@
 package com.mrrizaldi.finance.ui.transactions
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,13 +17,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.Button
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -57,6 +61,7 @@ import com.mrrizaldi.finance.data.local.CategoryEntity
 import com.mrrizaldi.finance.data.local.TransactionEntity
 import com.mrrizaldi.finance.ui.components.DropdownField
 import com.mrrizaldi.finance.ui.components.GlassSurface
+import com.mrrizaldi.finance.ui.components.GradientButton
 import com.mrrizaldi.finance.ui.components.GroupedCard
 import com.mrrizaldi.finance.ui.components.MonthPicker
 import com.mrrizaldi.finance.ui.components.NavBarClearance
@@ -90,6 +95,8 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
     val p = LocalPalette.current
     val sheetFilterActive = filter.accountId != null || filter.categoryId != null
     val listState = rememberLazyListState()
+    val searchInteraction = remember { MutableInteractionSource() }
+    val searchFocused by searchInteraction.collectIsFocusedAsState()
     LaunchedEffect(Unit) { snapshotFlow { filter }.drop(1).collect { listState.scrollToItem(0) } }
     val types = listOf<Pair<String?, Int>>(
         null to R.string.tx_type_all,
@@ -106,7 +113,13 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
                 modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)
             )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                GlassSurface(Modifier.weight(1f).height(44.dp), shape = CircleShape) {
+                GlassSurface(
+                    Modifier
+                        .weight(1f)
+                        .height(44.dp)
+                        .then(if (searchFocused) Modifier.border(1.dp, p.primary, CircleShape) else Modifier),
+                    shape = CircleShape
+                ) {
                     Row(
                         Modifier.fillMaxSize().padding(horizontal = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
@@ -119,6 +132,7 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
                                 vm.setSearch(it)
                             },
                             singleLine = true,
+                            interactionSource = searchInteraction,
                             textStyle = AppType.rowTitle.copy(color = p.textHi),
                             cursorBrush = SolidColor(p.primary),
                             modifier = Modifier.weight(1f).padding(start = 8.dp),
@@ -210,6 +224,8 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
     detail?.let { DetailSheet(it, locale) { detail = null } }
 }
 
+private val SheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
+
 @Composable
 private fun TypeChip(label: String, selected: Boolean, onClick: () -> Unit) {
     val p = LocalPalette.current
@@ -248,7 +264,7 @@ private fun FilterSheet(
 ) {
     var account by remember { mutableStateOf(accounts.firstOrNull { it.id == filter.accountId }) }
     var category by remember { mutableStateOf(categories.firstOrNull { it.id == filter.categoryId }) }
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(onDismissRequest = onDismiss, shape = SheetShape, containerColor = LocalPalette.current.bg) {
         Column(
             Modifier.padding(16.dp).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -267,12 +283,14 @@ private fun FilterSheet(
                 optionLabel = { it.name },
                 onSelect = { category = it }
             )
-            Row(Modifier.fillMaxWidth()) {
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                 TextButton(onClick = onReset) { Text(stringResource(R.string.tx_filter_reset)) }
-                Spacer(Modifier.weight(1f))
-                Button(onClick = { onApply(account?.id, category?.id) }) {
-                    Text(stringResource(R.string.tx_filter_apply))
-                }
+                Spacer(Modifier.width(12.dp))
+                GradientButton(
+                    text = stringResource(R.string.tx_filter_apply),
+                    onClick = { onApply(account?.id, category?.id) },
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
@@ -298,7 +316,7 @@ private fun DetailSheet(tx: TransactionEntity, locale: Locale, onDismiss: () -> 
         R.string.tx_detail_source to tx.source,
         R.string.tx_detail_balance_after to tx.balanceAfter?.let { RupiahFormat.format(it) }
     )
-    ModalBottomSheet(onDismissRequest = onDismiss) {
+    ModalBottomSheet(onDismissRequest = onDismiss, shape = SheetShape, containerColor = LocalPalette.current.bg) {
         Column(Modifier.padding(16.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(stringResource(R.string.tx_detail_title), style = MaterialTheme.typography.titleLarge)
             HorizontalDivider()

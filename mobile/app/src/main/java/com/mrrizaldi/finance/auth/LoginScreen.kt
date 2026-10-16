@@ -64,13 +64,11 @@ fun LoginScreen(vm: LoginViewModel) {
                     value = state.password,
                     onValueChange = vm::setPassword,
                     label = stringResource(R.string.login_password),
+                    error = state.errorRes?.let { stringResource(it) },
                     visualTransformation = PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(onDone = { vm.submit() })
                 )
-                state.errorRes?.let {
-                    Text(stringResource(it), color = MaterialTheme.colorScheme.error, style = MaterialTheme.typography.bodySmall)
-                }
                 GradientButton(
                     text = stringResource(R.string.login_submit),
                     onClick = vm::submit,
