@@ -38,6 +38,13 @@ class JakartaDateTest {
     }
 
     @Test
+    fun `batas atas eksklusif awal hari berikutnya`() {
+        assertEquals("2026-11-01T00:00:00+07:00", JakartaDate.nextDayStart("2026-10-31"))
+        assertEquals("2027-01-01T00:00:00+07:00", JakartaDate.nextDayStart("2026-12-31"))
+        assertEquals("2028-03-01T00:00:00+07:00", JakartaDate.nextDayStart("2028-02-29"))
+    }
+
+    @Test
     fun `format tampilan`() {
         assertEquals("16 Oct 2026", JakartaDate.formatDay(LocalDate.of(2026, 10, 16), Locale.ENGLISH))
         assertEquals("October 2026", JakartaDate.formatMonth(YearMonth.of(2026, 10), Locale.ENGLISH))

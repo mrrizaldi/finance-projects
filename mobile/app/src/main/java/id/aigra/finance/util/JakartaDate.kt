@@ -33,6 +33,8 @@ object JakartaDate {
     fun toTimestamp(date: LocalDate, time: LocalTime): String =
         date.atTime(time).atZone(zone).toOffsetDateTime().format(isoOffset)
 
+    fun nextDayStart(key: String): String = toTimestamp(parseKey(key).plusDays(1), LocalTime.MIDNIGHT)
+
     fun formatDay(date: LocalDate, locale: Locale): String =
         date.format(DateTimeFormatter.ofPattern("d MMM yyyy", locale))
 

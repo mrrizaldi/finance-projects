@@ -137,10 +137,10 @@ class Repository(
         val rows = mutableListOf<TransactionDto>()
         var offset = 0
         while (true) {
-            val page = api.listTransactions(start, end, PAGE, offset)
+            val page = api.listTransactions(start, end, PAGE_SIZE, offset)
             rows += page
-            if (page.size < PAGE) break
-            offset += PAGE
+            if (page.size < PAGE_SIZE) break
+            offset += PAGE_SIZE
         }
         return rows.map { it.toEntity() }
     }
@@ -185,6 +185,6 @@ class Repository(
         "get_category_breakdown:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}:expense"
 
     private companion object {
-        const val PAGE = 50
+        const val PAGE_SIZE = 1000
     }
 }

@@ -1,5 +1,6 @@
 package id.aigra.finance.data.remote
 
+import id.aigra.finance.util.JakartaDate
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
@@ -50,9 +51,10 @@ class SupabaseApiImpl(private val client: SupabaseClient) : SupabaseApi {
         client.from("v_transactions").select(TX_COLUMNS) {
             filter {
                 gte("transaction_date", "${start}T00:00:00+07:00")
-                lte("transaction_date", "${end}T23:59:59+07:00")
+                lt("transaction_date", JakartaDate.nextDayStart(end))
             }
             order("transaction_date", Order.DESCENDING)
+            order("id", Order.DESCENDING)
             range(offset.toLong(), (offset + limit - 1).toLong())
         }.decodeList()
 

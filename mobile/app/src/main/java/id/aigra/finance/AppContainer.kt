@@ -11,7 +11,9 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.ktor.client.engine.okhttp.OkHttp
+import kotlinx.serialization.json.Json
 
 class AppContainer(context: Context) {
 
@@ -25,6 +27,7 @@ class AppContainer(context: Context) {
             supabaseKey = BuildConfig.SUPABASE_ANON_KEY
         ) {
             httpEngine = OkHttp.create()
+            defaultSerializer = KotlinXSerializer(Json { ignoreUnknownKeys = true; coerceInputValues = true })
             install(Auth) {
                 sessionManager = sessionStore
             }
