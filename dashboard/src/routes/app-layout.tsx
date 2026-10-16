@@ -16,20 +16,14 @@ export async function clientLoader() {
   if (!session) throw redirect('/login');
   if (isRecovery()) throw redirect('/reset-password');
 
-  // Seed bahasa dari profiles.locale HANYA sekali (device baru / localStorage kosong).
-  // Loader ini revalidate tiap navigasi — kalau fetch tiap kali, locale ke-apply ulang
-  // lewat network round-trip -> UI delay id→en tiap ganti halaman. localStorage (dibaca
-  // sinkron di i18n init) = source of truth untuk UI; toggle di Settings yang update DB.
   if (!hasStoredLocale()) {
     try {
       const { data: profile } = await supabase.from('profiles').select('locale').single();
       if (profile?.locale) setLocale(profile.locale as 'id' | 'en');
     } catch {
-      // ignore — pakai fallback locale
     }
   }
 
-  // ponytail: telegram status is a nudge, not a gate — never block the layout on it
   let telegramStatus: 'none' | 'pending' | 'approved' = 'approved';
   try {
     const res = await fetch('/api/telegram/status');
@@ -38,15 +32,11 @@ export async function clientLoader() {
       telegramStatus = data.status ?? 'approved';
     }
   } catch {
-    // network error → treat as approved, don't show banner
   }
 
   return { telegramStatus };
 }
 
-// Data layout ini (telegramStatus + seed locale) = session-level, bukan per-halaman.
-// Tanpa ini React Router revalidate loader tiap navigasi → fetch /api/telegram/status
-// (+ dulu profiles.locale) tiap pindah halaman = latency. Jalan sekali per mount aja.
 export function shouldRevalidate() {
   return false;
 }
