@@ -263,7 +263,8 @@
       "google": "Masuk dengan Google",
       "noAccount": "Belum punya akun?",
       "registerLink": "Daftar",
-      "invalidCredentials": "Email atau password salah"
+      "invalidCredentials": "Email atau password salah",
+      "passwordUpdated": "Password berhasil diganti. Silakan masuk lagi."
     },
     "register": {
       "title": "Buat Akun",

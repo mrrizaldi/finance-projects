@@ -263,7 +263,8 @@
       "google": "Sign in with Google",
       "noAccount": "Don't have an account?",
       "registerLink": "Sign up",
-      "invalidCredentials": "Wrong email or password"
+      "invalidCredentials": "Wrong email or password",
+      "passwordUpdated": "Password updated. Please sign in again."
     },
     "register": {
       "title": "Create Account",

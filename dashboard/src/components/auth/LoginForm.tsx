@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate, Link } from 'react-router';
+import { useNavigate, useSearchParams, Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { getBrowserClient } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 export function LoginForm() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const passwordUpdated = searchParams.get('message') === 'password_updated';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -51,6 +53,7 @@ export function LoginForm() {
         <CardDescription>{t('auth.login.subtitle')}</CardDescription>
       </CardHeader>
       <CardContent>
+        {passwordUpdated && <p className="mb-4 text-sm text-primary">{t('auth.login.passwordUpdated')}</p>}
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">{t('auth.login.email')}</Label>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { getBrowserClient } from '@/lib/supabase';
+import { clearRecovery } from '@/lib/recovery';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -38,6 +39,7 @@ export function ResetPasswordForm() {
       return;
     }
 
+    clearRecovery();
     await supabase.auth.signOut();
     navigate('/login?message=password_updated');
   }
