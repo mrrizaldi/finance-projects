@@ -119,3 +119,18 @@ All timestamps use `Asia/Jakarta` timezone for display. Currency is Indonesian R
 - Transaction sources are tracked via `source` field enum for auditability
 - Email-parsed transactions start as `verified: false`, manual ones as `verified: true`
 - Account balances are updated atomically on each transaction insert/delete
+
+## Aturan keras
+
+Ditetapkan user 16 Okt 2026, diadopsi dari repo `../projek-akhir`. Berlaku buat semua kode di repo ini, gak ada pengecualian tanpa izin user.
+
+- **Verifikasi sendiri.** Build, typecheck, test, jalanin app, install APK, buka layarnya, baca log — Claude yang ngerjain. User bukan verifikator.
+- **Setiap commit bawa bukti** di pesan commit: keluaran test, baris log, path screenshot. Gak ada bukti = gak di-commit.
+- **Gak bisa diverifikasi → berhenti dan bilang** persis apa yang belum terbukti dan cara user ngeceknya. Tebakan yang keliatan selesai itu hal terburuk yang bisa diserahkan.
+- **Buka berkas sebelum ngedit.** Jangan nulis dari ingatan isi berkas.
+- **Satu fitur per commit.**
+- **Tanpa komentar kode** (`//`, `/* */`, `#`, `--`, docstring, TODO) di `.ts .tsx .js .mjs .cjs .kt .kts .sql .sh .py`. Penjelasan → dokumen (`docs/*.md`, README) atau pesan commit. Termasuk `// ponytail:`: catatan simplifikasi ditulis di pesan commit, bukan di kode. Pengecualian fungsional: shebang, `/// <reference`, `// @ts-expect-error`, `// @ts-ignore`. Pemeriksa: `python3 scripts/cek_komentar.py <berkas>`. Pre-commit hook (`.githooks/pre-commit`, aktifkan sekali: `git config core.hooksPath .githooks`) dan CI job `cek` cuma meriksa berkas yang berubah, jadi komentar lama gak ngeblok, tapi berkas yang disentuh wajib bersih. Skill: `.claude/skills/tanpa-komentar-kode/SKILL.md`.
+- **Tanpa `useEffect` di kode React baru**: turunin nilainya saat render atau tangani di event/`clientLoader`. 27 `useEffect` lama dibiarkan; diganti pas berkasnya disentuh karena alasan lain.
+- **Cek hijau → commit langsung**, user meninjau setelahnya. Push cuma kalau diminta eksplisit.
+- **Dependency baru = gate point**, tanya dulu.
+- **Kegagalan yang ditangkap user → skill hari itu juga** di `.claude/skills/<nama>/SKILL.md` + `eval.md`, dinilai model berbeda, target 10/10, maksimal 3 putaran; belum lulus → catat skor terbaik, commit, tanya user. Prosedur di `.claude/skills/README.md`.
