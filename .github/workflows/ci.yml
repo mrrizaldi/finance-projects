@@ -63,3 +63,22 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm build
       - run: pnpm test
+
+  cek:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - env:
+          EVENT: ${{ github.event_name }}
+          BASE_PR: ${{ github.event.pull_request.base.sha }}
+          BASE_PUSH: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT" = pull_request ]; then dasar=$BASE_PR; else dasar=$BASE_PUSH; fi
+          case "$dasar" in ""|0000000000000000000000000000000000000000) dasar=HEAD~1 ;; esac
+          git cat-file -e "$dasar" 2>/dev/null || dasar=HEAD~1
+          berkas=$(git diff --name-only --diff-filter=ACMR "$dasar" HEAD)
+          [ -z "$berkas" ] && exit 0
+          python3 scripts/cek_komentar.py $berkas
