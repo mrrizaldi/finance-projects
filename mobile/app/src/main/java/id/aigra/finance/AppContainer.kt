@@ -15,29 +15,37 @@ import io.ktor.client.engine.okhttp.OkHttp
 
 class AppContainer(context: Context) {
 
-    val supabase: SupabaseClient = createSupabaseClient(
-        supabaseUrl = BuildConfig.SUPABASE_URL,
-        supabaseKey = BuildConfig.SUPABASE_ANON_KEY
-    ) {
-        httpEngine = OkHttp.create()
-        install(Auth) {
-            sessionManager = SessionStore(context)
+    private val appContext = context.applicationContext
+
+    private val sessionStore by lazy { SessionStore(appContext) }
+
+    val supabase: SupabaseClient by lazy {
+        createSupabaseClient(
+            supabaseUrl = BuildConfig.SUPABASE_URL,
+            supabaseKey = BuildConfig.SUPABASE_ANON_KEY
+        ) {
+            httpEngine = OkHttp.create()
+            install(Auth) {
+                sessionManager = sessionStore
+            }
+            install(Postgrest)
         }
-        install(Postgrest)
     }
 
-    val api: SupabaseApi = SupabaseApiImpl(supabase)
+    val api: SupabaseApi by lazy { SupabaseApiImpl(supabase) }
 
-    val db: FinanceDb = Room.databaseBuilder(context, FinanceDb::class.java, "finance.db")
+    val db: FinanceDb = Room.databaseBuilder(appContext, FinanceDb::class.java, "finance.db")
         .fallbackToDestructiveMigration(true)
         .build()
 
-    val repository = Repository(
-        api = api,
-        accountDao = db.accountDao(),
-        categoryDao = db.categoryDao(),
-        transactionDao = db.transactionDao(),
-        snapshotDao = db.snapshotDao(),
-        syncMetaDao = db.syncMetaDao()
-    )
+    val repository by lazy {
+        Repository(
+            api = api,
+            accountDao = db.accountDao(),
+            categoryDao = db.categoryDao(),
+            transactionDao = db.transactionDao(),
+            snapshotDao = db.snapshotDao(),
+            syncMetaDao = db.syncMetaDao()
+        )
+    }
 }

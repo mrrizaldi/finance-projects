@@ -8,6 +8,8 @@
         android:label="@string/app_name"
         android:theme="@style/Theme.Finance"
         android:allowBackup="false"
+        android:dataExtractionRules="@xml/data_extraction_rules"
+        android:fullBackupContent="@xml/backup_rules"
         android:supportsRtl="true">
         <activity
             android:name=".MainActivity"
