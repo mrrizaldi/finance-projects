@@ -51,6 +51,12 @@ cd dashboard && pnpm install && pnpm dev  # :3000, proxy /api → :3001
 
 Production: `pnpm build` di keduanya → pm2 `finance-api` di server serve SPA + API di port 3701 (port 3000 dipakai app lain). Node.js >= 22.
 
+Sekali setelah clone, aktifkan pre-commit hook pemeriksa komentar kode (aturan di `CLAUDE.md` §Aturan keras; pemeriksa `python3 scripts/cek_komentar.py <berkas>`):
+
+```bash
+git config core.hooksPath .githooks
+```
+
 ## Environment
 
 - Dashboard: `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY` (`dashboard/.env.local`)
