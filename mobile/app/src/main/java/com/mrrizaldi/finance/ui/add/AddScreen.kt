@@ -12,19 +12,14 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerColors
 import androidx.compose.material3.DatePickerDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerColors
 import androidx.compose.material3.TimePickerDefaults
@@ -55,10 +50,8 @@ import com.mrrizaldi.finance.ui.components.CheckRow
 import com.mrrizaldi.finance.ui.components.DropdownField
 import com.mrrizaldi.finance.ui.components.GlassDialog
 import com.mrrizaldi.finance.ui.components.GlassSegmented
-import com.mrrizaldi.finance.ui.components.GlassSurface
 import com.mrrizaldi.finance.ui.components.GradientButton
-import com.mrrizaldi.finance.ui.icons.AppIcons
-import com.mrrizaldi.finance.ui.theme.AppType
+import com.mrrizaldi.finance.ui.components.ScreenTopBar
 import com.mrrizaldi.finance.ui.theme.LocalGlass
 import com.mrrizaldi.finance.ui.theme.LocalPalette
 import com.mrrizaldi.finance.util.JakartaDate
@@ -99,108 +92,98 @@ fun AddScreen(vm: AddViewModel, onBack: () -> Unit) {
         snackbarHost = { SnackbarHost(snackbar, Modifier.navigationBarsPadding().imePadding()) },
         contentWindowInsets = WindowInsets(0)
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .imePadding()
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                GlassSurface(Modifier.size(44.dp), shape = CircleShape) {
-                    IconButton(onClick = onBack, modifier = Modifier.fillMaxSize()) {
-                        Icon(AppIcons.Back, stringResource(R.string.common_back))
+        Column(Modifier.fillMaxSize().padding(padding).imePadding()) {
+            ScreenTopBar(stringResource(R.string.add_title), onBack, Modifier.padding(horizontal = 16.dp))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp)
+                    .padding(top = 8.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                GlassSegmented(
+                    options = listOf(
+                        stringResource(R.string.tx_type_expense),
+                        stringResource(R.string.tx_type_income),
+                        stringResource(R.string.tx_type_transfer)
+                    ),
+                    selected = form.kind.ordinal,
+                    onSelect = { i -> vm.edit { withKind(AddKind.entries[i], categories) } }
+                )
+
+                if (form.kind != AddKind.TRANSFER) {
+                    AmountField(form.amount, { v -> vm.edit { copy(amount = v) } }, stringResource(R.string.add_amount))
+                    DropdownField(
+                        label = stringResource(R.string.add_account),
+                        options = accounts,
+                        selected = accounts.firstOrNull { it.id == form.accountId },
+                        optionLabel = { it.name },
+                        onSelect = { a -> vm.edit { copy(accountId = a.id) } }
+                    )
+                    val visibleCategories = categories.filter { it.type == form.kind.type || it.type == "both" }
+                    DropdownField(
+                        label = stringResource(R.string.add_category),
+                        options = visibleCategories,
+                        selected = visibleCategories.firstOrNull { it.id == form.categoryId },
+                        optionLabel = { it.name },
+                        onSelect = { c -> vm.edit { copy(categoryId = c.id) } }
+                    )
+                    CapsuleField(
+                        value = form.description,
+                        onValueChange = { v -> vm.edit { copy(description = v) } },
+                        label = stringResource(R.string.add_description)
+                    )
+                    CapsuleField(
+                        value = form.merchant,
+                        onValueChange = { v -> vm.edit { copy(merchant = v) } },
+                        label = stringResource(R.string.add_merchant)
+                    )
+                } else {
+                    AmountField(form.amount, { v -> vm.edit { copy(amount = v) } }, stringResource(R.string.add_amount))
+                    CheckRow(
+                        text = stringResource(R.string.add_same_amount),
+                        checked = form.sameAmount,
+                        onCheckedChange = { v -> vm.edit { copy(sameAmount = v) } }
+                    )
+                    if (!form.sameAmount) {
+                        AmountField(form.toAmount, { v -> vm.edit { copy(toAmount = v) } }, stringResource(R.string.add_amount_to))
                     }
+                    DropdownField(
+                        label = stringResource(R.string.add_from_account),
+                        options = accounts,
+                        selected = accounts.firstOrNull { it.id == form.fromAccountId },
+                        optionLabel = { it.name },
+                        onSelect = { a -> vm.edit { copy(fromAccountId = a.id) } }
+                    )
+                    val targets = accounts.filter { it.id != form.fromAccountId }
+                    DropdownField(
+                        label = stringResource(R.string.add_to_account),
+                        options = targets,
+                        selected = targets.firstOrNull { it.id == form.toAccountId },
+                        optionLabel = { it.name },
+                        onSelect = { a -> vm.edit { copy(toAccountId = a.id) } }
+                    )
+                    CapsuleField(
+                        value = form.description,
+                        onValueChange = { v -> vm.edit { copy(description = v) } },
+                        label = stringResource(R.string.add_description)
+                    )
                 }
-                Text(
-                    stringResource(R.string.nav_add),
-                    style = AppType.screenTitle,
-                    modifier = Modifier.padding(start = 12.dp)
-                )
-            }
 
-            GlassSegmented(
-                options = listOf(
-                    stringResource(R.string.tx_type_expense),
-                    stringResource(R.string.tx_type_income),
-                    stringResource(R.string.tx_type_transfer)
-                ),
-                selected = form.kind.ordinal,
-                onSelect = { i -> vm.edit { withKind(AddKind.entries[i], categories) } }
-            )
-
-            if (form.kind != AddKind.TRANSFER) {
-                AmountField(form.amount, { v -> vm.edit { copy(amount = v) } }, stringResource(R.string.add_amount))
-                DropdownField(
-                    label = stringResource(R.string.add_account),
-                    options = accounts,
-                    selected = accounts.firstOrNull { it.id == form.accountId },
-                    optionLabel = { it.name },
-                    onSelect = { a -> vm.edit { copy(accountId = a.id) } }
-                )
-                val visibleCategories = categories.filter { it.type == form.kind.type || it.type == "both" }
-                DropdownField(
-                    label = stringResource(R.string.add_category),
-                    options = visibleCategories,
-                    selected = visibleCategories.firstOrNull { it.id == form.categoryId },
-                    optionLabel = { it.name },
-                    onSelect = { c -> vm.edit { copy(categoryId = c.id) } }
-                )
-                CapsuleField(
-                    value = form.description,
-                    onValueChange = { v -> vm.edit { copy(description = v) } },
-                    label = stringResource(R.string.add_description)
-                )
-                CapsuleField(
-                    value = form.merchant,
-                    onValueChange = { v -> vm.edit { copy(merchant = v) } },
-                    label = stringResource(R.string.add_merchant)
-                )
-            } else {
-                AmountField(form.amount, { v -> vm.edit { copy(amount = v) } }, stringResource(R.string.add_amount))
-                CheckRow(
-                    text = stringResource(R.string.add_same_amount),
-                    checked = form.sameAmount,
-                    onCheckedChange = { v -> vm.edit { copy(sameAmount = v) } }
-                )
-                if (!form.sameAmount) {
-                    AmountField(form.toAmount, { v -> vm.edit { copy(toAmount = v) } }, stringResource(R.string.add_amount_to))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CapsuleButton(JakartaDate.formatDay(form.date, locale), { showDate = true }, Modifier.weight(1f))
+                    CapsuleButton(form.time.format(DateTimeFormatter.ofPattern("HH:mm")), { showTime = true }, Modifier.weight(1f))
                 }
-                DropdownField(
-                    label = stringResource(R.string.add_from_account),
-                    options = accounts,
-                    selected = accounts.firstOrNull { it.id == form.fromAccountId },
-                    optionLabel = { it.name },
-                    onSelect = { a -> vm.edit { copy(fromAccountId = a.id) } }
-                )
-                val targets = accounts.filter { it.id != form.fromAccountId }
-                DropdownField(
-                    label = stringResource(R.string.add_to_account),
-                    options = targets,
-                    selected = targets.firstOrNull { it.id == form.toAccountId },
-                    optionLabel = { it.name },
-                    onSelect = { a -> vm.edit { copy(toAccountId = a.id) } }
-                )
-                CapsuleField(
-                    value = form.description,
-                    onValueChange = { v -> vm.edit { copy(description = v) } },
-                    label = stringResource(R.string.add_description)
-                )
-            }
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                CapsuleButton(JakartaDate.formatDay(form.date, locale), { showDate = true }, Modifier.weight(1f))
-                CapsuleButton(form.time.format(DateTimeFormatter.ofPattern("HH:mm")), { showTime = true }, Modifier.weight(1f))
+                GradientButton(
+                    text = stringResource(if (form.saving) R.string.add_saving else R.string.add_save),
+                    onClick = vm::save,
+                    enabled = !form.saving
+                )
+                Spacer(Modifier.navigationBarsPadding().height(8.dp))
             }
-
-            GradientButton(
-                text = stringResource(if (form.saving) R.string.add_saving else R.string.add_save),
-                onClick = vm::save,
-                enabled = !form.saving
-            )
-            Spacer(Modifier.navigationBarsPadding().height(8.dp))
         }
     }
 
