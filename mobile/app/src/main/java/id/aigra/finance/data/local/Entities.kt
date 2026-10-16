@@ -58,5 +58,6 @@ data class RpcSnapshot(
 @Entity(tableName = "sync_meta")
 data class SyncMeta(
     @PrimaryKey val id: Int = 1,
-    val lastSuccessAt: Long
+    val lastSuccessAt: Long? = null,
+    val ownerId: String? = null
 )

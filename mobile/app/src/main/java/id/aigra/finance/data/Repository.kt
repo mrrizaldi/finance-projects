@@ -16,8 +16,11 @@ import id.aigra.finance.data.remote.SupabaseApi
 import id.aigra.finance.data.remote.TransactionDto
 import id.aigra.finance.util.JakartaDate
 import io.github.jan.supabase.exceptions.RestException
+import io.github.jan.supabase.exceptions.UnauthorizedRestException
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
 import java.io.IOException
@@ -72,17 +75,22 @@ class Repository(
     suspend fun refreshHome(month: YearMonth): Result<Unit> = guard {
         val start = JakartaDate.monthStart(month)
         val end = JakartaDate.monthEnd(month)
+        val accounts = api.listAccounts()
+        val categories = api.listCategories()
         val summary = api.getSummary(start, end)
         val breakdown = api.getCategoryBreakdown(start, end, "expense")
-        accountDao.replaceAll(api.listAccounts().map { it.toEntity() })
-        categoryDao.replaceAll(api.listCategories().map { it.toEntity() })
+        val rows = fetchMonth(start, end)
+        accountDao.replaceAll(accounts.map { it.toEntity() })
+        categoryDao.replaceAll(categories.map { it.toEntity() })
         snapshotDao.upsert(RpcSnapshot(summaryKey(month), json.encodeToString(summary), clock()))
         snapshotDao.upsert(RpcSnapshot(breakdownKey(month), json.encodeToString(breakdown), clock()))
-        fetchMonth(start, end)
+        transactionDao.replaceRange(start, end, rows)
     }
 
     suspend fun refreshTransactions(month: YearMonth): Result<Unit> = guard {
-        fetchMonth(JakartaDate.monthStart(month), JakartaDate.monthEnd(month))
+        val start = JakartaDate.monthStart(month)
+        val end = JakartaDate.monthEnd(month)
+        transactionDao.replaceRange(start, end, fetchMonth(start, end))
     }
 
     suspend fun refreshAccounts(): Result<Unit> = guard {
@@ -129,7 +137,7 @@ class Repository(
         api.signOut()
     }
 
-    private suspend fun fetchMonth(start: String, end: String) {
+    private suspend fun fetchMonth(start: String, end: String): List<TransactionEntity> {
         val rows = mutableListOf<TransactionDto>()
         var offset = 0
         while (true) {
@@ -138,26 +146,41 @@ class Repository(
             if (page.size < PAGE) break
             offset += PAGE
         }
-        transactionDao.replaceRange(start, end, rows.map { it.toEntity() })
+        return rows.map { it.toEntity() }
     }
 
-    private suspend fun guard(block: suspend () -> Unit): Result<Unit> = try {
-        block()
-        syncMetaDao.upsert(SyncMeta(lastSuccessAt = clock()))
-        Result.success(Unit)
-    } catch (e: IOException) {
-        Result.failure(e)
-    } catch (e: RestException) {
-        Result.failure(e)
+    private suspend fun clearCache() {
+        transactionDao.deleteAll()
+        accountDao.deleteAll()
+        categoryDao.deleteAll()
+        snapshotDao.deleteAll()
+        syncMetaDao.deleteAll()
+    }
+
+    private suspend fun guard(block: suspend () -> Unit): Result<Unit> {
+        val owner = api.currentSession()?.user?.id ?: return Result.failure(SyncError.Unauthorized)
+        return write {
+            val meta = syncMetaDao.observe().first()
+            if (meta?.ownerId != owner) {
+                clearCache()
+                syncMetaDao.upsert(SyncMeta(ownerId = owner))
+            }
+            block()
+            syncMetaDao.upsert(SyncMeta(lastSuccessAt = clock(), ownerId = owner))
+        }
     }
 
     private suspend fun write(block: suspend () -> Unit): Result<Unit> = try {
         block()
         Result.success(Unit)
     } catch (e: IOException) {
-        Result.failure(e)
+        Result.failure(SyncError.Offline)
+    } catch (e: UnauthorizedRestException) {
+        Result.failure(SyncError.Unauthorized)
     } catch (e: RestException) {
-        Result.failure(e)
+        Result.failure(if (e.statusCode == 401) SyncError.Unauthorized else SyncError.Server(e))
+    } catch (e: SerializationException) {
+        Result.failure(SyncError.Server(e))
     }
 
     private fun summaryKey(month: YearMonth) = "get_summary:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}"

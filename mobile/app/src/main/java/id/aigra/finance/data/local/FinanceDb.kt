@@ -11,7 +11,7 @@ import androidx.room.RoomDatabase
         RpcSnapshot::class,
         SyncMeta::class
     ],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class FinanceDb : RoomDatabase() {

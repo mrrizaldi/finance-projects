@@ -16,14 +16,19 @@ import id.aigra.finance.data.remote.CategoryDto
 import id.aigra.finance.data.remote.SummaryDto
 import id.aigra.finance.data.remote.SupabaseApi
 import id.aigra.finance.data.remote.TransactionDto
+import id.aigra.finance.util.JakartaDate
 import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.auth.user.UserInfo
+import io.github.jan.supabase.auth.user.UserSession
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.SerializationException
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -32,8 +37,19 @@ import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
 
+fun sessionFor(userId: String) = UserSession(
+    accessToken = "token-$userId",
+    refreshToken = "refresh-$userId",
+    expiresIn = 3600,
+    tokenType = "bearer",
+    user = UserInfo(aud = "authenticated", id = userId)
+)
+
 class FakeApi : SupabaseApi {
-    var failWithIo = false
+    var session: UserSession? = sessionFor("u1")
+    var failFrom = 0
+    var failure: Exception = IOException("offline")
+    var calls = 0
     var accounts = listOf(AccountDto("a1", "BCA", "bank", 1000.0, "#000000", true))
     var categories = listOf(CategoryDto("c1", "Makan", "expense", "#ff0000", 500000.0, 0, true))
     val transactions = mutableListOf<TransactionDto>()
@@ -42,8 +58,11 @@ class FakeApi : SupabaseApi {
 
     override val sessionStatus = MutableStateFlow<SessionStatus>(SessionStatus.NotAuthenticated())
 
+    override fun currentSession(): UserSession? = session
+
     private fun gate() {
-        if (failWithIo) throw IOException("offline")
+        calls++
+        if (failFrom in 1..calls) throw failure
     }
 
     override suspend fun signIn(email: String, password: String) {}
@@ -62,7 +81,7 @@ class FakeApi : SupabaseApi {
 
     override suspend fun listTransactions(start: String, end: String, limit: Int, offset: Int): List<TransactionDto> {
         gate()
-        return transactions.drop(offset).take(limit)
+        return transactions.filter { JakartaDate.dateKey(it.transaction_date) in start..end }.drop(offset).take(limit)
     }
 
     override suspend fun getSummary(start: String, end: String): SummaryDto {
@@ -201,11 +220,12 @@ class RepositoryTest {
         )
         transactionDao.insertAll(listOf(cached))
         accountDao.insertAll(listOf(AccountEntity("a1", "BCA", "bank", 5_000, null, true)))
-        api.failWithIo = true
+        syncMetaDao.upsert(SyncMeta(lastSuccessAt = null, ownerId = "u1"))
+        api.failFrom = 1
 
         val result = repo.refreshHome(month)
 
-        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull() is SyncError.Offline)
         assertEquals(listOf(cached), repo.transactions(TxFilter(month)).first())
         assertEquals(5_000L, repo.accounts().first().single().balance)
         assertNull(repo.lastSuccessAt().first())
@@ -236,14 +256,63 @@ class RepositoryTest {
     }
 
     @Test
-    fun `pencarian dan filter tipe jalan di cache`() = runTest {
+    fun `tanpa sesi refresh ditolak dan cache utuh`() = runTest {
+        val cached = TransactionEntity("old", "expense", 10_000, "2026-10-02T05:00:00+00:00", "2026-10-02")
+        transactionDao.insertAll(listOf(cached))
+        accountDao.insertAll(listOf(AccountEntity("a1", "BCA", "bank", 5_000, null, true)))
+        syncMetaDao.upsert(SyncMeta(lastSuccessAt = 500L, ownerId = "u1"))
+        api.session = null
+
+        val result = repo.refreshHome(month)
+
+        assertTrue(result.exceptionOrNull() is SyncError.Unauthorized)
+        assertEquals(0, api.calls)
+        assertEquals(listOf(cached), transactionDao.data.value)
+        assertEquals(5_000L, accountDao.data.value.single().balance)
+        assertEquals(500L, repo.lastSuccessAt().first())
+    }
+
+    @Test
+    fun `gagal di tengah refresh gak geser lastSuccessAt`() = runTest {
+        accountDao.insertAll(listOf(AccountEntity("a1", "BCA", "bank", 5_000, null, true)))
+        syncMetaDao.upsert(SyncMeta(lastSuccessAt = 500L, ownerId = "u1"))
+        api.failFrom = 2
+        api.failure = SerializationException("json rusak")
+
+        val result = repo.refreshHome(month)
+
+        assertTrue(result.exceptionOrNull() is SyncError.Server)
+        assertEquals(5_000L, accountDao.data.value.single().balance)
+        assertEquals(500L, repo.lastSuccessAt().first())
+    }
+
+    @Test
+    fun `ganti user mengosongkan cache sebelum nulis`() = runTest {
         transactionDao.insertAll(
-            listOf(
-                TransactionEntity("t1", "expense", 1, "2026-10-01T05:00:00+00:00", "2026-10-01", description = "Kopi pagi"),
-                TransactionEntity("t2", "income", 1, "2026-10-01T06:00:00+00:00", "2026-10-01", merchant = "Kantor")
-            )
+            listOf(TransactionEntity("punya-lama", "expense", 1, "2026-09-02T05:00:00+00:00", "2026-09-02"))
         )
-        assertEquals(listOf("t1"), repo.transactions(TxFilter(month, search = "kopi")).first().map { it.id })
-        assertEquals(listOf("t2"), repo.transactions(TxFilter(month, type = "income")).first().map { it.id })
+        accountDao.insertAll(listOf(AccountEntity("a-lama", "Lama", "bank", 9, null, true)))
+        snapshotDao.upsert(RpcSnapshot("get_summary:2026-09-01:2026-09-30", "{}", 1L))
+        syncMetaDao.upsert(SyncMeta(lastSuccessAt = 500L, ownerId = "u-lama"))
+
+        val result = repo.refreshHome(month)
+
+        assertTrue(result.isSuccess)
+        assertTrue(transactionDao.data.value.none { it.id == "punya-lama" })
+        assertEquals(listOf("a1"), accountDao.data.value.map { it.id })
+        assertFalse(snapshotDao.data.value.containsKey("get_summary:2026-09-01:2026-09-30"))
+        assertEquals("u1", syncMetaDao.data.value?.ownerId)
+        assertEquals(1_000L, repo.lastSuccessAt().first())
+    }
+
+    @Test
+    fun `refresh bulan lain gak buang cache bulan pertama`() = runTest {
+        api.transactions += TransactionDto("okt", "expense", 1.0, "2026-10-10T05:00:00+00:00")
+        api.transactions += TransactionDto("nov", "expense", 1.0, "2026-11-10T05:00:00+00:00")
+
+        assertTrue(repo.refreshTransactions(month).isSuccess)
+        assertTrue(repo.refreshTransactions(month.plusMonths(1)).isSuccess)
+
+        assertEquals(listOf("nov", "okt"), transactionDao.data.value.map { it.id }.sorted())
     }
 }
