@@ -13,8 +13,13 @@ import com.mrrizaldi.finance.data.local.TransactionEntity
 import com.mrrizaldi.finance.data.remote.AccountDto
 import com.mrrizaldi.finance.data.remote.CategoryBreakdownDto
 import com.mrrizaldi.finance.data.remote.CategoryDto
+import com.mrrizaldi.finance.data.remote.DailySpendingDto
+import com.mrrizaldi.finance.data.remote.MonthlyTrendDto
+import com.mrrizaldi.finance.data.remote.PeriodComparisonDto
+import com.mrrizaldi.finance.data.remote.SavingsRateDto
 import com.mrrizaldi.finance.data.remote.SummaryDto
 import com.mrrizaldi.finance.data.remote.SupabaseApi
+import com.mrrizaldi.finance.data.remote.TopTransactionDto
 import com.mrrizaldi.finance.data.remote.TransactionDto
 import com.mrrizaldi.finance.util.JakartaDate
 import io.github.jan.supabase.auth.status.SessionStatus
@@ -101,6 +106,69 @@ class FakeApi : SupabaseApi {
     override suspend fun getCategoryBreakdown(start: String, end: String, type: String): List<CategoryBreakdownDto> {
         gate()
         return emptyList()
+    }
+
+    val analyticsCalls = mutableListOf<String>()
+
+    override suspend fun getPeriodComparison(
+        start: String,
+        end: String,
+        prevStart: String,
+        prevEnd: String
+    ): PeriodComparisonDto {
+        gate()
+        analyticsCalls += "get_period_comparison:$start:$end:$prevStart:$prevEnd"
+        return PeriodComparisonDto(
+            curr_income = 4_000_000.0,
+            curr_expense = 1_500_000.0,
+            curr_net = 2_500_000.0,
+            curr_tx_count = 20,
+            curr_avg_daily = 48_387.0,
+            prev_income = 3_000_000.0,
+            prev_expense = 2_000_000.0,
+            prev_net = 1_000_000.0,
+            prev_tx_count = 25,
+            prev_avg_daily = 66_667.0
+        )
+    }
+
+    private fun window(months: Int): List<YearMonth> =
+        (months - 1 downTo 0).map { YearMonth.of(2026, 10).minusMonths(it.toLong()) }
+
+    override suspend fun getMonthlyTrend(months: Int): List<MonthlyTrendDto> {
+        gate()
+        analyticsCalls += "get_monthly_trend:$months"
+        return window(months).map { MonthlyTrendDto(it.toString(), "$it-01", 1_000_000.0, 800_000.0, 200_000.0) }
+    }
+
+    override suspend fun getSavingsRateTrend(months: Int): List<SavingsRateDto> {
+        gate()
+        analyticsCalls += "get_savings_rate_trend:$months"
+        return window(months).map { SavingsRateDto(it.toString(), "$it-01", 1_000_000.0, 800_000.0, 20.0, 0.0, 0.0) }
+    }
+
+    override suspend fun getDailySpending(start: String, end: String): List<DailySpendingDto> {
+        gate()
+        analyticsCalls += "get_daily_spending:$start:$end"
+        val last = LocalDate.parse(end)
+        return generateSequence(LocalDate.parse(start)) { it.plusDays(1) }
+            .takeWhile { it <= last }
+            .map { DailySpendingDto(it.toString(), 0.0, 0.0) }
+            .toList()
+    }
+
+    override suspend fun getTopTransactions(start: String, end: String, limit: Int): List<TopTransactionDto> {
+        gate()
+        analyticsCalls += "get_top_transactions:$start:$end:$limit"
+        return listOf(
+            TopTransactionDto(
+                id = "top1",
+                amount = 250_000.0,
+                transaction_date = "2026-10-13T05:00:00+00:00",
+                description = "Sepatu",
+                category_name = "Belanja"
+            )
+        ).take(limit)
     }
 
     override suspend fun recordManualEntry(
@@ -197,6 +265,7 @@ class FakeSnapshotDao : SnapshotDao {
     val data = MutableStateFlow<Map<String, RpcSnapshot>>(emptyMap())
     override fun observe(key: String): Flow<RpcSnapshot?> = data.map { it[key] }
     override suspend fun upsert(row: RpcSnapshot) { data.update { it + (row.key to row) } }
+    override suspend fun upsertAll(rows: List<RpcSnapshot>) { data.update { it + rows.associateBy { r -> r.key } } }
     override suspend fun deleteAll() { data.value = emptyMap() }
 }
 

@@ -71,6 +71,42 @@ class SupabaseApiImpl(private val client: SupabaseClient) : SupabaseApi {
             put("p_type", type)
         }).decodeList()
 
+    override suspend fun getPeriodComparison(
+        start: String,
+        end: String,
+        prevStart: String,
+        prevEnd: String
+    ): PeriodComparisonDto =
+        client.postgrest.rpc("get_period_comparison", buildJsonObject {
+            put("p_start", start)
+            put("p_end", end)
+            put("p_prev_start", prevStart)
+            put("p_prev_end", prevEnd)
+        }).decodeSingle()
+
+    override suspend fun getMonthlyTrend(months: Int): List<MonthlyTrendDto> =
+        client.postgrest.rpc("get_monthly_trend", buildJsonObject {
+            put("p_months", months)
+        }).decodeList()
+
+    override suspend fun getSavingsRateTrend(months: Int): List<SavingsRateDto> =
+        client.postgrest.rpc("get_savings_rate_trend", buildJsonObject {
+            put("p_months", months)
+        }).decodeList()
+
+    override suspend fun getDailySpending(start: String, end: String): List<DailySpendingDto> =
+        client.postgrest.rpc("get_daily_spending", buildJsonObject {
+            put("p_start", start)
+            put("p_end", end)
+        }).decodeList()
+
+    override suspend fun getTopTransactions(start: String, end: String, limit: Int): List<TopTransactionDto> =
+        client.postgrest.rpc("get_top_transactions", buildJsonObject {
+            put("p_start", start)
+            put("p_end", end)
+            put("p_limit", limit)
+        }).decodeList()
+
     override suspend fun recordManualEntry(
         account: String,
         type: String,

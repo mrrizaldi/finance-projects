@@ -5,6 +5,7 @@ import com.mrrizaldi.finance.data.local.CategoryEntity
 import com.mrrizaldi.finance.data.local.TransactionEntity
 import com.mrrizaldi.finance.data.remote.AccountDto
 import com.mrrizaldi.finance.data.remote.CategoryDto
+import com.mrrizaldi.finance.data.remote.TopTransactionDto
 import com.mrrizaldi.finance.data.remote.TransactionDto
 import com.mrrizaldi.finance.util.JakartaDate
 import kotlin.math.roundToLong
@@ -47,4 +48,16 @@ fun TransactionDto.toEntity() = TransactionEntity(
     categoryColor = category_color,
     accountName = account_name,
     toAccountName = to_account_name
+)
+
+fun TopTransactionDto.toEntity() = TransactionEntity(
+    id = id,
+    type = "expense",
+    amount = amount.roundToLong(),
+    transactionDate = transaction_date,
+    dateKey = JakartaDate.dateKey(transaction_date),
+    description = description,
+    merchant = merchant,
+    categoryName = category_name,
+    categoryColor = category_color
 )

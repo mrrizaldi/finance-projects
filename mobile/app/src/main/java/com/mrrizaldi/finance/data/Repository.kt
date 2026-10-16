@@ -11,8 +11,13 @@ import com.mrrizaldi.finance.data.local.SyncMetaDao
 import com.mrrizaldi.finance.data.local.TransactionDao
 import com.mrrizaldi.finance.data.local.TransactionEntity
 import com.mrrizaldi.finance.data.remote.CategoryBreakdownDto
+import com.mrrizaldi.finance.data.remote.DailySpendingDto
+import com.mrrizaldi.finance.data.remote.MonthlyTrendDto
+import com.mrrizaldi.finance.data.remote.PeriodComparisonDto
+import com.mrrizaldi.finance.data.remote.SavingsRateDto
 import com.mrrizaldi.finance.data.remote.SummaryDto
 import com.mrrizaldi.finance.data.remote.SupabaseApi
+import com.mrrizaldi.finance.data.remote.TopTransactionDto
 import com.mrrizaldi.finance.data.remote.TransactionDto
 import com.mrrizaldi.finance.util.JakartaDate
 import io.github.jan.supabase.exceptions.RestException
@@ -76,7 +81,23 @@ class Repository(
     fun previousSummary(month: YearMonth): Flow<SummaryDto?> =
         snapshotDao.observe(previousSummaryKey(month)).map { row -> row?.let { json.decodeFromString<SummaryDto>(it.json) } }
 
+    fun periodComparison(month: YearMonth): Flow<PeriodComparisonDto?> = cached<PeriodComparisonDto>(comparisonKey(month))
+
+    fun monthlyTrend(): Flow<List<MonthlyTrendDto>> = cached<List<MonthlyTrendDto>>(TREND_KEY).map { it.orEmpty() }
+
+    fun savingsRateTrend(): Flow<List<SavingsRateDto>> =
+        cached<List<SavingsRateDto>>(SAVINGS_KEY).map { it.orEmpty() }
+
+    fun dailySpending(month: YearMonth): Flow<List<DailySpendingDto>> =
+        cached<List<DailySpendingDto>>(dailyKey(month)).map { it.orEmpty() }
+
+    fun topTransactions(month: YearMonth): Flow<List<TopTransactionDto>> =
+        cached<List<TopTransactionDto>>(topKey(month)).map { it.orEmpty() }
+
     fun lastSuccessAt(): Flow<Long?> = syncMetaDao.observe().map { it?.lastSuccessAt }
+
+    private inline fun <reified T> cached(key: String): Flow<T?> =
+        snapshotDao.observe(key).map { row -> row?.let { json.decodeFromString<T>(it.json) } }
 
     suspend fun refreshHome(month: YearMonth): Result<Unit> = guard {
         val start = JakartaDate.monthStart(month)
@@ -94,6 +115,36 @@ class Repository(
         snapshotDao.upsert(RpcSnapshot(previousSummaryKey(month), json.encodeToString(previous), clock()))
         snapshotDao.upsert(RpcSnapshot(breakdownKey(month), json.encodeToString(breakdown), clock()))
         transactionDao.replaceRange(start, end, rows)
+    }
+
+    suspend fun refreshAnalytics(month: YearMonth): Result<Unit> = guard {
+        val start = JakartaDate.monthStart(month)
+        val end = JakartaDate.monthEnd(month)
+        val previous = month.minusMonths(1)
+        val categories = api.listCategories()
+        val comparison = api.getPeriodComparison(
+            start,
+            end,
+            JakartaDate.monthStart(previous),
+            JakartaDate.monthEnd(previous)
+        )
+        val trend = api.getMonthlyTrend(TREND_MONTHS)
+        val savings = api.getSavingsRateTrend(TREND_MONTHS)
+        val breakdown = api.getCategoryBreakdown(start, end, "expense")
+        val daily = api.getDailySpending(start, end)
+        val top = api.getTopTransactions(start, end, TOP_LIMIT)
+        val now = clock()
+        categoryDao.replaceAll(categories.map { it.toEntity() })
+        snapshotDao.upsertAll(
+            listOf(
+                RpcSnapshot(comparisonKey(month), json.encodeToString(comparison), now),
+                RpcSnapshot(TREND_KEY, json.encodeToString(trend), now),
+                RpcSnapshot(SAVINGS_KEY, json.encodeToString(savings), now),
+                RpcSnapshot(breakdownKey(month), json.encodeToString(breakdown), now),
+                RpcSnapshot(dailyKey(month), json.encodeToString(daily), now),
+                RpcSnapshot(topKey(month), json.encodeToString(top), now)
+            )
+        )
     }
 
     suspend fun refreshTransactions(month: YearMonth): Result<Unit> = guard {
@@ -196,7 +247,20 @@ class Repository(
     private fun breakdownKey(month: YearMonth) =
         "get_category_breakdown:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}:expense"
 
+    private fun comparisonKey(month: YearMonth) =
+        "get_period_comparison:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}"
+
+    private fun dailyKey(month: YearMonth) =
+        "get_daily_spending:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}"
+
+    private fun topKey(month: YearMonth) =
+        "get_top_transactions:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}:$TOP_LIMIT"
+
     private companion object {
         const val PAGE_SIZE = 1000
+        const val TREND_MONTHS = 12
+        const val TOP_LIMIT = 5
+        const val TREND_KEY = "get_monthly_trend:$TREND_MONTHS"
+        const val SAVINGS_KEY = "get_savings_rate_trend:$TREND_MONTHS"
     }
 }

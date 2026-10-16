@@ -92,6 +92,9 @@ interface SnapshotDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun upsert(row: RpcSnapshot)
 
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertAll(rows: List<RpcSnapshot>)
+
     @Query("DELETE FROM rpc_snapshots")
     suspend fun deleteAll()
 }

@@ -15,6 +15,11 @@ interface SupabaseApi {
     suspend fun listTransactions(start: String, end: String, limit: Int, offset: Int): List<TransactionDto>
     suspend fun getSummary(start: String, end: String): SummaryDto
     suspend fun getCategoryBreakdown(start: String, end: String, type: String): List<CategoryBreakdownDto>
+    suspend fun getPeriodComparison(start: String, end: String, prevStart: String, prevEnd: String): PeriodComparisonDto
+    suspend fun getMonthlyTrend(months: Int): List<MonthlyTrendDto>
+    suspend fun getSavingsRateTrend(months: Int): List<SavingsRateDto>
+    suspend fun getDailySpending(start: String, end: String): List<DailySpendingDto>
+    suspend fun getTopTransactions(start: String, end: String, limit: Int): List<TopTransactionDto>
     suspend fun recordManualEntry(
         account: String,
         type: String,

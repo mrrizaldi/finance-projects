@@ -65,3 +65,55 @@ data class CategoryBreakdownDto(
     val transaction_count: Long,
     val percentage: Double
 )
+
+@Serializable
+data class PeriodComparisonDto(
+    val curr_income: Double,
+    val curr_expense: Double,
+    val curr_net: Double,
+    val curr_tx_count: Long,
+    val curr_avg_daily: Double,
+    val prev_income: Double,
+    val prev_expense: Double,
+    val prev_net: Double,
+    val prev_tx_count: Long,
+    val prev_avg_daily: Double
+)
+
+@Serializable
+data class MonthlyTrendDto(
+    val month: String,
+    val month_date: String,
+    val income: Double,
+    val expense: Double,
+    val net: Double
+)
+
+@Serializable
+data class SavingsRateDto(
+    val month: String,
+    val month_date: String,
+    val income: Double,
+    val expense: Double,
+    val cashflow_rate: Double,
+    val investment_contributed: Double,
+    val investment_rate: Double
+)
+
+@Serializable
+data class DailySpendingDto(
+    val day: String,
+    val daily_expense: Double,
+    val cumulative_expense: Double
+)
+
+@Serializable
+data class TopTransactionDto(
+    val id: String,
+    val amount: Double,
+    val transaction_date: String,
+    val description: String? = null,
+    val merchant: String? = null,
+    val category_name: String? = null,
+    val category_color: String? = null
+)
