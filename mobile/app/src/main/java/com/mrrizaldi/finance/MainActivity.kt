@@ -98,7 +98,9 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState) {
             composable(Tab.TRANSACTIONS.route) { TransactionsScreen(viewModel { TransactionsViewModel(container.repository) }) }
             composable(Tab.BALANCES.route) { BalancesScreen(viewModel { BalancesViewModel(container.repository) }) }
             composable(Tab.MORE.route) { MoreScreen(container.repository) }
-            composable(ADD_ROUTE) { AddScreen(viewModel { AddViewModel(container.repository) }) }
+            composable(ADD_ROUTE) {
+                AddScreen(viewModel { AddViewModel(container.repository) }, onBack = { nav.popBackStack() })
+            }
         }
         if (current != ADD_ROUTE) {
             FloatingNavBar(

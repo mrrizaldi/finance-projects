@@ -1,8 +1,6 @@
 package com.mrrizaldi.finance.ui.components
 
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -15,15 +13,14 @@ import com.mrrizaldi.finance.util.RupiahFormat
 
 @Composable
 fun AmountField(digits: String, onChange: (String) -> Unit, label: String, modifier: Modifier = Modifier) {
-    OutlinedTextField(
+    CapsuleField(
         value = digits,
         onValueChange = { onChange(RupiahFormat.digitsOf(it)) },
-        label = { Text(label) },
+        label = label,
         prefix = { Text("Rp ") },
         visualTransformation = RupiahVisualTransformation,
         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-        singleLine = true,
-        modifier = modifier.fillMaxWidth()
+        modifier = modifier
     )
 }
 

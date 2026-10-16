@@ -3,19 +3,25 @@ package com.mrrizaldi.finance.ui.add
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
@@ -35,14 +41,22 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mrrizaldi.finance.R
 import com.mrrizaldi.finance.ui.components.AmountField
+import com.mrrizaldi.finance.ui.components.CapsuleField
 import com.mrrizaldi.finance.ui.components.DropdownField
+import com.mrrizaldi.finance.ui.components.GlassSurface
+import com.mrrizaldi.finance.ui.components.GradientButton
+import com.mrrizaldi.finance.ui.icons.AppIcons
+import com.mrrizaldi.finance.ui.theme.AppType
 import com.mrrizaldi.finance.util.JakartaDate
 import java.time.Instant
 import java.time.LocalTime
@@ -50,13 +64,14 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun AddScreen(vm: AddViewModel) {
+fun AddScreen(vm: AddViewModel, onBack: () -> Unit) {
     val form by vm.form.collectAsStateWithLifecycle()
     val accounts by vm.accounts.collectAsStateWithLifecycle()
     val categories by vm.categories.collectAsStateWithLifecycle()
     val message by vm.message.collectAsStateWithLifecycle()
     val snackbar = remember { SnackbarHostState() }
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
     val locale = LocalConfiguration.current.locales[0]
     var showDate by remember { mutableStateOf(false) }
     var showTime by remember { mutableStateOf(false) }
@@ -69,16 +84,39 @@ fun AddScreen(vm: AddViewModel) {
     }
     LaunchedEffect(message) {
         message?.let {
+            if (it.res == R.string.add_saved) haptic.performHapticFeedback(HapticFeedbackType.Confirm)
             snackbar.showSnackbar(context.getString(it.res, it.arg))
             vm.consumeMessage()
         }
     }
 
-    Scaffold(snackbarHost = { SnackbarHost(snackbar) }, contentWindowInsets = WindowInsets(0)) { padding ->
+    Scaffold(
+        containerColor = Color.Transparent,
+        snackbarHost = { SnackbarHost(snackbar, Modifier.navigationBarsPadding().imePadding()) },
+        contentWindowInsets = WindowInsets(0)
+    ) { padding ->
         Column(
-            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()).padding(16.dp),
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .imePadding()
+                .verticalScroll(rememberScrollState())
+                .padding(horizontal = 16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
+            Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+                GlassSurface(Modifier.size(44.dp), shape = CircleShape) {
+                    IconButton(onClick = onBack, modifier = Modifier.fillMaxSize()) {
+                        Icon(AppIcons.Back, stringResource(R.string.common_back))
+                    }
+                }
+                Text(
+                    stringResource(R.string.nav_add),
+                    style = AppType.screenTitle,
+                    modifier = Modifier.padding(start = 12.dp)
+                )
+            }
+
             SingleChoiceSegmentedButtonRow(Modifier.fillMaxWidth()) {
                 AddTab.entries.forEachIndexed { i, tab ->
                     SegmentedButton(
@@ -118,19 +156,15 @@ fun AddScreen(vm: AddViewModel) {
                     optionLabel = { it.name },
                     onSelect = { c -> vm.edit { copy(categoryId = c.id) } }
                 )
-                OutlinedTextField(
+                CapsuleField(
                     value = form.description,
                     onValueChange = { v -> vm.edit { copy(description = v) } },
-                    label = { Text(stringResource(R.string.add_description)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    label = stringResource(R.string.add_description)
                 )
-                OutlinedTextField(
+                CapsuleField(
                     value = form.merchant,
                     onValueChange = { v -> vm.edit { copy(merchant = v) } },
-                    label = { Text(stringResource(R.string.add_merchant)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    label = stringResource(R.string.add_merchant)
                 )
             } else {
                 AmountField(form.amount, { v -> vm.edit { copy(amount = v) } }, stringResource(R.string.add_amount))
@@ -156,12 +190,10 @@ fun AddScreen(vm: AddViewModel) {
                     optionLabel = { it.name },
                     onSelect = { a -> vm.edit { copy(toAccountId = a.id) } }
                 )
-                OutlinedTextField(
+                CapsuleField(
                     value = form.description,
                     onValueChange = { v -> vm.edit { copy(description = v) } },
-                    label = { Text(stringResource(R.string.add_description)) },
-                    singleLine = true,
-                    modifier = Modifier.fillMaxWidth()
+                    label = stringResource(R.string.add_description)
                 )
             }
 
@@ -174,9 +206,12 @@ fun AddScreen(vm: AddViewModel) {
                 }
             }
 
-            Button(onClick = vm::save, enabled = !form.saving, modifier = Modifier.fillMaxWidth()) {
-                Text(stringResource(if (form.saving) R.string.add_saving else R.string.add_save))
-            }
+            GradientButton(
+                text = stringResource(if (form.saving) R.string.add_saving else R.string.add_save),
+                onClick = vm::save,
+                enabled = !form.saving
+            )
+            Spacer(Modifier.navigationBarsPadding().height(8.dp))
         }
     }
 
