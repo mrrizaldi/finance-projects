@@ -53,3 +53,29 @@ adb logcat -d | grep -iE "FATAL|AndroidRuntime"   # harus kosong
 - Tanggal ke server: `yyyy-MM-dd` (DATE) dan `yyyy-MM-ddTHH:mm:ss+07:00` (timestamptz), zona Asia/Jakarta.
 - Font Inter 4.1 (rilis resmi `rsms/inter`, SIL OFL 1.1) di `app/src/main/res/font/`, lisensinya ikut di APK: `app/src/main/assets/licenses/inter_ofl.txt`.
 - Blur kaca: Haze 2.0.1 (`haze` + `haze-blur`). Blur asli hanya Android 12+, di bawahnya tint semi-transparan.
+
+## Native (3c)
+
+- **Tambah transaksi** (`ui/add`): satu segmented 3 segmen Pengeluaran / Pemasukan / Transfer (`AddKind`). Ganti segmen mempertahankan nominal, deskripsi, tanggal, jam; kategori tetap kalau tipenya cocok (atau "both"), selain itu direset.
+- **Outbox tulis offline** (`data/Outbox.kt`, `Repository.flushOutbox`). Simpan Entry/Transfer = baris Room `outbox` (`clientId`, `ownerId`, `kind`, `payloadJson`, `createdAt`, `attempts`, `lastError`) + baris `transactions` `pending = 1` (id = clientId), lalu langsung dicoba kirim di bawah `Mutex` yang sama dengan worker. Aturan kirim ulang:
+  - `IOException`, HTTP 401/408/429/5xx → baris tetap tanpa `lastError`, WorkManager `flush-outbox` (KEEP, CONNECTED, backoff eksponensial 30 dtk). Snackbar "Disimpan offline, dikirim saat online".
+  - Error lain (400/404/409/422, serialisasi, dll.) saat replay → `lastError` = `RestException.error` (bukan `message`, yang membawa header `Authorization`). Baris itu dilewati flush berikutnya; Transaksi menampilkannya dengan "Coba lagi" (hapus `lastError` lalu flush) / "Hapus" (buang dari HP). Baris lain tetap dikirim.
+  - Ditolak saat simpan online → baris dibuang, "Gagal menyimpan: …", form tidak dikosongkan.
+  - Flush mengambil ulang baris kirimable tertua milik sesi aktif sampai habis, jadi baris yang masuk saat worker jalan ikut terkirim. Terkirim → baris outbox dihapus, baris pending ditandai `pending = 0` sampai refresh bulan itu menggantinya.
+  - Home menampilkan chip jumlah transaksi tertunda (saldo belum termasuk baris itu).
+- **Migrasi `055_transactions_client_id.sql`**: kolom `transactions.client_id uuid` + unique index parsial; `record_manual_entry`/`record_manual_transfer` di-`DROP` + `CREATE` ulang dengan param terakhir `p_client_id uuid DEFAULT NULL` (tanpa overload). client_id sama + user sama → id lama dikembalikan tanpa insert dan tanpa ubah saldo (dikunci `pg_advisory_xact_lock` per client_id; baris soft-deleted tetap dianggap ada). Tanpa `p_client_id` perilaku sama dengan sebelumnya (dashboard tidak diubah). Test: `tests/integration/client-id-idempotent.test.js`. SQL rollback ada di `docs/superpowers/plans/2026-10-16-mobile-3c-native.md`, Task 1 "Rollback 055"; setelah rollback app dapat 404 `PGRST202` → baris outbox kena `lastError`, data tetap di HP.
+- **Logout tidak membuang outbox** (`TransactionDao.deleteSynced`, manual maupun otomatis karena 401). Baris tertunda dikirim lagi setelah masuk dengan akun yang sama (`ownerId`); worker tidak pernah mengirim baris milik akun lain. Batas: di HP yang dipakai dua akun, baris pending akun A terlihat di akun B sampai terkirim.
+- **Widget** `BalanceWidget` (Glance, `widget/`): total saldo akun aktif, pengeluaran bulan ini, jam sinkron; dari Room saja (Flow dikoleksi di dalam `provideContent`), tap membuka `MainActivity`. Diperbarui setiap refresh sukses (`Repository.onRefreshed` → `updateAll`) dan `RefreshWorker` periodik 1 jam (`refresh-home`, CONNECTED). Menaruh widget harus manual dari launcher. Tepat setelah reinstall widget bisa sebentar menampilkan "Rp 0 / Belum sinkron" sampai refresh pertama.
+- **Kunci biometrik** (`lock/AppLock.kt`, `lock/LockScreen.kt`): `AppLock` mengamati `ProcessLifecycleOwner` (ganti mode gelap tidak mengunci ulang). Cold start atau > 60 detik di background → `lockedAt` diisi timestamp baru, dan setiap nilai baru memicu `BiometricPrompt` `BIOMETRIC_STRONG or DEVICE_CREDENTIAL`. Jadi prompt yang dibatalkan lalu background > 60 dtk tetap memunculkan prompt lagi; background ≤ 60 dtk saat masih terkunci hanya overlay, tanpa prompt. Overlay menutup konten penuh (NavHost tetap hidup, form Tambah tidak hilang), memakan semua sentuhan, tombol "Buka" memanggil prompt lagi; konten di belakangnya di-`clearAndSetSemantics` selama terkunci (tidak terbaca TalkBack/dump UI). Dilewati kalau toggle "Kunci sidik jari" (sheet ⚙ Home, default ON) mati, `canAuthenticate` bukan SUCCESS, atau API < 30.
+- **Room DB versi 3** (`MIGRATION_2_3` menambah `outbox`); destruktif hanya dari versi 1. Versi berikutnya wajib menambah `Migration`, kalau tidak app crash (sengaja, supaya outbox tidak terhapus diam-diam).
+
+Cek di HP (build debug):
+
+```bash
+adb exec-out run-as com.mrrizaldi.finance cat databases/finance.db > /tmp/f/finance.db   # salin juga -wal/-shm kalau ada
+python3 -I -c 'import sqlite3,sys; print(sqlite3.connect(sys.argv[1]).execute("select clientId, attempts, lastError from outbox").fetchall())' /tmp/f/finance.db
+adb shell am broadcast -a androidx.work.diagnostics.REQUEST_DIAGNOSTICS -p com.mrrizaldi.finance
+adb logcat -d -s WM-DiagnosticsWrkr          # status flush-outbox / refresh-home
+adb shell cmd connectivity airplane-mode enable|disable   # uji offline
+adb shell dumpsys appwidget | grep -A3 com.mrrizaldi.finance   # widget terpasang
+```
