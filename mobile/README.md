@@ -51,3 +51,5 @@ adb logcat -d | grep -iE "FATAL|AndroidRuntime"   # harus kosong
 
 - Saldo TIDAK pernah dihitung di app; hanya RPC `record_manual_entry`/`record_manual_transfer` yang mengubah `accounts.balance` (lihat `docs/RECONCILE.md`).
 - Tanggal ke server: `yyyy-MM-dd` (DATE) dan `yyyy-MM-ddTHH:mm:ss+07:00` (timestamptz), zona Asia/Jakarta.
+- Font Inter 4.1 (rilis resmi `rsms/inter`, SIL OFL 1.1) di `app/src/main/res/font/`, lisensinya ikut di APK: `app/src/main/assets/licenses/inter_ofl.txt`.
+- Blur kaca: Haze 2.0.1 (`haze` + `haze-blur`). Blur asli hanya Android 12+, di bawahnya tint semi-transparan.

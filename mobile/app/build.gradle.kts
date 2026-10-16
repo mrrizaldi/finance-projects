@@ -69,6 +69,8 @@ dependencies {
     implementation(libs.ktor.client.okhttp)
     implementation(libs.kotlinx.serialization.json)
     implementation(libs.security.crypto)
+    implementation(libs.haze)
+    implementation(libs.haze.blur)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }
