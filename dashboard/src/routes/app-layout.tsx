@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, Outlet, redirect, useLoaderData } from 'react-router';
 import { getBrowserClient } from '@/lib/supabase';
+import { isRecovery } from '@/lib/recovery';
 import { setLocale, hasStoredLocale } from '@/i18n';
 import AppSidebar from '@/components/layout/Sidebar';
 import { BottomNav } from '@/components/layout/BottomNav';
@@ -13,6 +14,7 @@ export async function clientLoader() {
   const supabase = getBrowserClient();
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) throw redirect('/login');
+  if (isRecovery()) throw redirect('/reset-password');
 
   // Seed bahasa dari profiles.locale HANYA sekali (device baru / localStorage kosong).
   // Loader ini revalidate tiap navigasi — kalau fetch tiap kali, locale ke-apply ulang
