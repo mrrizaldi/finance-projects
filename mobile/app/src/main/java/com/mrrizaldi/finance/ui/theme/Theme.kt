@@ -53,7 +53,7 @@ private fun schemeOf(p: FinancePalette, dark: Boolean): ColorScheme {
 fun FinanceTheme(content: @Composable () -> Unit) {
     val dark = isSystemInDarkTheme()
     val palette = if (dark) DarkPalette else LightPalette
-    CompositionLocalProvider(LocalPalette provides palette) {
+    CompositionLocalProvider(LocalPalette provides palette, LocalGlass provides if (dark) DarkGlass else LightGlass) {
         MaterialTheme(
             colorScheme = schemeOf(palette, dark),
             typography = FinanceTypography,
