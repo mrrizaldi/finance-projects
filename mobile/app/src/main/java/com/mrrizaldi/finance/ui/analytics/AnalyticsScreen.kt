@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mrrizaldi.finance.R
 import com.mrrizaldi.finance.data.SyncError
-import com.mrrizaldi.finance.ui.components.MonthPicker
 import com.mrrizaldi.finance.ui.components.NavBarClearance
 import com.mrrizaldi.finance.ui.components.OfflineChip
 import com.mrrizaldi.finance.ui.theme.AppType
@@ -39,7 +38,6 @@ fun AnalyticsScreen(vm: AnalyticsViewModel) {
                 style = AppType.screenTitle,
                 modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
             )
-            MonthPicker(state.month, vm::setMonth)
             when (error) {
                 SyncError.Offline -> Box(Modifier.padding(top = 8.dp)) { OfflineChip(state.lastSuccessAt) }
                 is SyncError.Server -> Text(

@@ -20,6 +20,7 @@ import com.mrrizaldi.finance.data.remote.SupabaseApi
 import com.mrrizaldi.finance.data.remote.TopTransactionDto
 import com.mrrizaldi.finance.data.remote.TransactionDto
 import com.mrrizaldi.finance.util.JakartaDate
+import com.mrrizaldi.finance.util.PeriodBounds
 import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.exceptions.UnauthorizedRestException
 import kotlinx.coroutines.flow.Flow
@@ -81,18 +82,23 @@ class Repository(
     fun previousSummary(month: YearMonth): Flow<SummaryDto?> =
         snapshotDao.observe(previousSummaryKey(month)).map { row -> row?.let { json.decodeFromString<SummaryDto>(it.json) } }
 
-    fun periodComparison(month: YearMonth): Flow<PeriodComparisonDto?> = cached<PeriodComparisonDto>(comparisonKey(month))
+    fun periodComparison(bounds: PeriodBounds): Flow<PeriodComparisonDto?> =
+        cached<PeriodComparisonDto>(analyticsKey("get_period_comparison", bounds))
 
-    fun monthlyTrend(): Flow<List<MonthlyTrendDto>> = cached<List<MonthlyTrendDto>>(TREND_KEY).map { it.orEmpty() }
+    fun monthlyTrend(months: Int): Flow<List<MonthlyTrendDto>> =
+        cached<List<MonthlyTrendDto>>(trendKey(months)).map { it.orEmpty() }
 
-    fun savingsRateTrend(): Flow<List<SavingsRateDto>> =
-        cached<List<SavingsRateDto>>(SAVINGS_KEY).map { it.orEmpty() }
+    fun savingsRateTrend(months: Int): Flow<List<SavingsRateDto>> =
+        cached<List<SavingsRateDto>>(savingsKey(months)).map { it.orEmpty() }
 
-    fun dailySpending(month: YearMonth): Flow<List<DailySpendingDto>> =
-        cached<List<DailySpendingDto>>(dailyKey(month)).map { it.orEmpty() }
+    fun breakdown(bounds: PeriodBounds): Flow<List<CategoryBreakdownDto>> =
+        cached<List<CategoryBreakdownDto>>(analyticsKey("get_category_breakdown", bounds)).map { it.orEmpty() }
 
-    fun topTransactions(month: YearMonth): Flow<List<TopTransactionDto>> =
-        cached<List<TopTransactionDto>>(topKey(month)).map { it.orEmpty() }
+    fun dailySpending(bounds: PeriodBounds): Flow<List<DailySpendingDto>> =
+        cached<List<DailySpendingDto>>(analyticsKey("get_daily_spending", bounds)).map { it.orEmpty() }
+
+    fun topTransactions(bounds: PeriodBounds): Flow<List<TopTransactionDto>> =
+        cached<List<TopTransactionDto>>(analyticsKey("get_top_transactions", bounds)).map { it.orEmpty() }
 
     fun lastSuccessAt(): Flow<Long?> = syncMetaDao.observe().map { it?.lastSuccessAt }
 
@@ -117,19 +123,14 @@ class Repository(
         transactionDao.replaceRange(start, end, rows)
     }
 
-    suspend fun refreshAnalytics(month: YearMonth): Result<Unit> = guard {
-        val start = JakartaDate.monthStart(month)
-        val end = JakartaDate.monthEnd(month)
-        val previous = month.minusMonths(1)
+    suspend fun refreshAnalytics(bounds: PeriodBounds): Result<Unit> = guard {
+        val start = bounds.start.toString()
+        val end = bounds.end.toString()
+        val months = bounds.period.trendMonths
         val categories = api.listCategories()
-        val comparison = api.getPeriodComparison(
-            start,
-            end,
-            JakartaDate.monthStart(previous),
-            JakartaDate.monthEnd(previous)
-        )
-        val trend = api.getMonthlyTrend(TREND_MONTHS)
-        val savings = api.getSavingsRateTrend(TREND_MONTHS)
+        val comparison = api.getPeriodComparison(start, end, bounds.prevStart.toString(), bounds.prevEnd.toString())
+        val trend = api.getMonthlyTrend(months)
+        val savings = api.getSavingsRateTrend(months)
         val breakdown = api.getCategoryBreakdown(start, end, "expense")
         val daily = api.getDailySpending(start, end)
         val top = api.getTopTransactions(start, end, TOP_LIMIT)
@@ -137,12 +138,12 @@ class Repository(
         categoryDao.replaceAll(categories.map { it.toEntity() })
         snapshotDao.upsertAll(
             listOf(
-                RpcSnapshot(comparisonKey(month), json.encodeToString(comparison), now),
-                RpcSnapshot(TREND_KEY, json.encodeToString(trend), now),
-                RpcSnapshot(SAVINGS_KEY, json.encodeToString(savings), now),
-                RpcSnapshot(breakdownKey(month), json.encodeToString(breakdown), now),
-                RpcSnapshot(dailyKey(month), json.encodeToString(daily), now),
-                RpcSnapshot(topKey(month), json.encodeToString(top), now)
+                RpcSnapshot(analyticsKey("get_period_comparison", bounds), json.encodeToString(comparison), now),
+                RpcSnapshot(trendKey(months), json.encodeToString(trend), now),
+                RpcSnapshot(savingsKey(months), json.encodeToString(savings), now),
+                RpcSnapshot(analyticsKey("get_category_breakdown", bounds), json.encodeToString(breakdown), now),
+                RpcSnapshot(analyticsKey("get_daily_spending", bounds), json.encodeToString(daily), now),
+                RpcSnapshot(analyticsKey("get_top_transactions", bounds), json.encodeToString(top), now)
             )
         )
     }
@@ -247,20 +248,15 @@ class Repository(
     private fun breakdownKey(month: YearMonth) =
         "get_category_breakdown:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}:expense"
 
-    private fun comparisonKey(month: YearMonth) =
-        "get_period_comparison:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}"
+    private fun analyticsKey(rpc: String, bounds: PeriodBounds) =
+        "$rpc:${bounds.period.name.lowercase()}:${bounds.start}:${bounds.end}"
 
-    private fun dailyKey(month: YearMonth) =
-        "get_daily_spending:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}"
+    private fun trendKey(months: Int) = "get_monthly_trend:$months"
 
-    private fun topKey(month: YearMonth) =
-        "get_top_transactions:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}:$TOP_LIMIT"
+    private fun savingsKey(months: Int) = "get_savings_rate_trend:$months"
 
     private companion object {
         const val PAGE_SIZE = 1000
-        const val TREND_MONTHS = 12
         const val TOP_LIMIT = 5
-        const val TREND_KEY = "get_monthly_trend:$TREND_MONTHS"
-        const val SAVINGS_KEY = "get_savings_rate_trend:$TREND_MONTHS"
     }
 }
