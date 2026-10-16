@@ -209,7 +209,7 @@ Tipe: `income`, `expense`, `transfer` (+ `investment_gain`/`investment_loss` int
 
 **Baca:** `GET /api/transactions` lewat view **`v_transactions`** (join nama kategori/akun, filter `is_deleted=false`).
 
-**Tulis (create):** RPC atomik `record_manual_entry` (income/expense) & `record_manual_transfer` (transfer) — update saldo + insert dalam satu operasi (mig 039). Bot & n8n insert langsung ke tabel.
+**Tulis (create):** RPC atomik `record_manual_entry` (income/expense) & `record_manual_transfer` (transfer) — update saldo + insert dalam satu operasi (mig 039). Param opsional terakhir `p_client_id uuid` (mig 055, `055_transactions_client_id.sql`): kalau baris milik user yang sama dengan `client_id` itu sudah ada, id lama dikembalikan tanpa insert dan tanpa ubah saldo (dipakai outbox app Android, kirim ulang aman). Dashboard tidak mengirim `p_client_id`. Bot & n8n insert langsung ke tabel.
 
 **Edit/Hapus:** `PATCH`/`DELETE /api/transactions/:id` (`api/src/routes/transactions-id.ts`):
 1. Hitung diff efek saldo (`balance-math.ts`), apply ke akun (atomik, dengan rollback kalau gagal).
