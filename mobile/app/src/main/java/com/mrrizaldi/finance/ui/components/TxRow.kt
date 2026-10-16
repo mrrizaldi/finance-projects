@@ -37,6 +37,7 @@ fun TxRow(tx: TransactionEntity, onClick: () -> Unit) {
         else -> tx.categoryName ?: stringResource(R.string.tx_uncategorized)
     }
     val subtitle = listOfNotNull(
+        if (tx.pending) stringResource(R.string.tx_pending) else null,
         category,
         tx.accountName,
         tx.toAccountName?.let { "→ $it" },
@@ -57,7 +58,7 @@ fun TxRow(tx: TransactionEntity, onClick: () -> Unit) {
             Text(
                 subtitle,
                 style = AppType.rowMeta,
-                color = p.textMute,
+                color = if (tx.pending) p.warn else p.textMute,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.padding(top = 2.dp)

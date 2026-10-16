@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import java.time.YearMonth
@@ -41,6 +42,8 @@ class HomeViewModel(private val repo: Repository) : ViewModel() {
     val error: StateFlow<SyncError?> = _error
     private val _refreshing = MutableStateFlow(false)
     val refreshing: StateFlow<Boolean> = _refreshing
+    val pendingCount: StateFlow<Int> =
+        repo.outbox().map { it.size }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0)
 
     val uiState: StateFlow<HomeUiState> = month.flatMapLatest { m ->
         combine(

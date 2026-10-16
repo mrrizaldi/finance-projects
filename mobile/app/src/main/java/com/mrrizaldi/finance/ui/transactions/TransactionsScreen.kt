@@ -67,7 +67,10 @@ import com.mrrizaldi.finance.data.TxFilter
 import com.mrrizaldi.finance.data.local.AccountEntity
 import com.mrrizaldi.finance.data.local.CategoryEntity
 import com.mrrizaldi.finance.data.local.TransactionEntity
+import com.mrrizaldi.finance.ui.components.CancelButton
 import com.mrrizaldi.finance.ui.components.ColorDot
+import com.mrrizaldi.finance.ui.components.DangerButton
+import com.mrrizaldi.finance.ui.components.GlassDialog
 import com.mrrizaldi.finance.ui.components.GlassSurface
 import com.mrrizaldi.finance.ui.components.GradientButton
 import com.mrrizaldi.finance.ui.components.GroupedCard
@@ -96,6 +99,9 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
     val error by vm.error.collectAsStateWithLifecycle()
     val refreshing by vm.refreshing.collectAsStateWithLifecycle()
     val lastSuccessAt by vm.lastSuccessAt.collectAsStateWithLifecycle()
+    val outbox by vm.outbox.collectAsStateWithLifecycle()
+    var pending by remember { mutableStateOf<TransactionEntity?>(null) }
+    var confirmDelete by remember { mutableStateOf<TransactionEntity?>(null) }
     var search by rememberSaveable { mutableStateOf("") }
     var showFilter by remember { mutableStateOf(false) }
     var detail by remember { mutableStateOf<TransactionEntity?>(null) }
@@ -223,7 +229,7 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
                     item {
                         Column {
                             SectionLabel(dayLabel(key, today, locale), trailing = formatDayTotal(dailyTotal(rows)))
-                            GroupedCard(rows) { tx -> TxRow(tx) { detail = tx } }
+                            GroupedCard(rows) { tx -> TxRow(tx) { if (tx.pending) pending = tx else detail = tx } }
                         }
                     }
                 }
@@ -249,6 +255,50 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
         )
     }
     detail?.let { DetailSheet(it, locale) { detail = null } }
+    pending?.let { tx ->
+        val error = outbox[tx.id]?.lastError
+        GlassDialog(
+            onDismiss = { pending = null },
+            title = stringResource(R.string.pending_title),
+            body = if (error != null) stringResource(R.string.pending_error, error) else stringResource(R.string.pending_waiting),
+            actions = {
+                DangerButton(
+                    stringResource(R.string.pending_delete),
+                    {
+                        pending = null
+                        confirmDelete = tx
+                    },
+                    Modifier.weight(1f)
+                )
+                GradientButton(
+                    text = stringResource(R.string.pending_retry),
+                    onClick = {
+                        pending = null
+                        vm.retry(tx.id)
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        )
+    }
+    confirmDelete?.let { tx ->
+        GlassDialog(
+            onDismiss = { confirmDelete = null },
+            title = stringResource(R.string.pending_delete_title),
+            body = stringResource(R.string.pending_delete_body),
+            actions = {
+                CancelButton(stringResource(R.string.common_cancel), { confirmDelete = null }, Modifier.weight(1f))
+                DangerButton(
+                    stringResource(R.string.pending_delete),
+                    {
+                        confirmDelete = null
+                        vm.discard(tx.id)
+                    },
+                    Modifier.weight(1f)
+                )
+            }
+        )
+    }
 }
 
 private val SheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)

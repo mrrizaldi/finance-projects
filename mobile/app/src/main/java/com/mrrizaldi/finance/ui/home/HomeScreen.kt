@@ -48,6 +48,7 @@ import com.mrrizaldi.finance.ui.components.GroupedCard
 import com.mrrizaldi.finance.ui.components.MonthMenuButton
 import com.mrrizaldi.finance.ui.components.NavBarClearance
 import com.mrrizaldi.finance.ui.components.OfflineChip
+import com.mrrizaldi.finance.ui.components.PendingChip
 import com.mrrizaldi.finance.ui.components.SectionLabel
 import com.mrrizaldi.finance.ui.components.TxRow
 import com.mrrizaldi.finance.ui.components.signedAmount
@@ -64,6 +65,7 @@ fun HomeScreen(vm: HomeViewModel) {
     val state by vm.uiState.collectAsStateWithLifecycle()
     val error by vm.error.collectAsStateWithLifecycle()
     val refreshing by vm.refreshing.collectAsStateWithLifecycle()
+    val pendingCount by vm.pendingCount.collectAsStateWithLifecycle()
     val p = LocalPalette.current
     val locale = LocalConfiguration.current.locales[0]
     var showSettings by remember { mutableStateOf(false) }
@@ -93,6 +95,7 @@ fun HomeScreen(vm: HomeViewModel) {
                 )
                 else -> Unit
             }
+            if (pendingCount > 0) Box(Modifier.padding(top = 12.dp)) { PendingChip(pendingCount) }
             GlassSurface(Modifier.fillMaxWidth().padding(top = 16.dp)) {
                 Column {
                     SummaryRow(R.string.home_income, state.income, p.positive)
@@ -113,7 +116,7 @@ fun HomeScreen(vm: HomeViewModel) {
             Spacer(Modifier.navigationBarsPadding().height(NavBarClearance))
         }
     }
-    if (showSettings) SettingsSheet(onLogout = vm::logout, onDismiss = { showSettings = false })
+    if (showSettings) SettingsSheet(pendingCount, onLogout = vm::logout, onDismiss = { showSettings = false })
 }
 
 @Composable

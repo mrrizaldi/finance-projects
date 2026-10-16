@@ -7,12 +7,14 @@ import com.mrrizaldi.finance.data.SyncError
 import com.mrrizaldi.finance.data.TxFilter
 import com.mrrizaldi.finance.data.local.AccountEntity
 import com.mrrizaldi.finance.data.local.CategoryEntity
+import com.mrrizaldi.finance.data.local.Outbox
 import com.mrrizaldi.finance.data.local.TransactionEntity
 import com.mrrizaldi.finance.util.JakartaDate
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import com.mrrizaldi.finance.util.RupiahFormat
@@ -51,6 +53,16 @@ class TransactionsViewModel(private val repo: Repository) : ViewModel() {
     val accounts: StateFlow<List<AccountEntity>> = repo.accounts().stateIn(viewModelScope, shared, emptyList())
     val categories: StateFlow<List<CategoryEntity>> = repo.categories().stateIn(viewModelScope, shared, emptyList())
     val lastSuccessAt: StateFlow<Long?> = repo.lastSuccessAt().stateIn(viewModelScope, shared, null)
+    val outbox: StateFlow<Map<String, Outbox>> =
+        repo.outbox().map { rows -> rows.associateBy { it.clientId } }.stateIn(viewModelScope, shared, emptyMap())
+
+    fun retry(clientId: String) {
+        viewModelScope.launch { repo.retry(clientId) }
+    }
+
+    fun discard(clientId: String) {
+        viewModelScope.launch { repo.discard(clientId) }
+    }
 
     init {
         refresh()

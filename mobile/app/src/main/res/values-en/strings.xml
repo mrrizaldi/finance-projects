@@ -25,6 +25,7 @@
     <string name="home_delta">cash flow vs last month · %1$s</string>
     <string name="home_budget_left">%1$s left</string>
     <string name="home_budget_over">%1$s over</string>
+    <string name="home_pending">Not including %1$d pending transaction(s)</string>
 
     <string name="offline_chip">Offline · data %1$s</string>
     <string name="offline_never">Offline · no data yet</string>
@@ -60,6 +61,14 @@
     <string name="tx_detail_balance_after">Balance After</string>
     <string name="tx_uncategorized">Uncategorized</string>
     <string name="tx_adjustment">Adjustment</string>
+    <string name="tx_pending">Pending</string>
+    <string name="pending_title">Pending transaction</string>
+    <string name="pending_waiting">Not sent yet. It goes out automatically once you are online.</string>
+    <string name="pending_error">Rejected by server: %1$s</string>
+    <string name="pending_retry">Retry</string>
+    <string name="pending_delete">Delete</string>
+    <string name="pending_delete_title">Delete pending transaction?</string>
+    <string name="pending_delete_body">This transaction has not reached the server and will be removed from this phone.</string>
 
     <string name="add_tab_entry">Entry</string>
     <string name="add_tab_transfer">Transfer</string>
@@ -92,6 +101,7 @@
     <string name="settings_logout">Sign out</string>
     <string name="settings_logout_confirm_title">Sign out?</string>
     <string name="settings_logout_confirm_body">Data stored on this phone will be cleared. Your data on the server stays safe.</string>
+    <string name="settings_logout_pending">%1$d pending transaction(s) stay on this phone and will be sent after you sign in again with the same account.</string>
 
     <string name="analytics_title">Analytics</string>
     <string name="analytics_week">Weekly</string>

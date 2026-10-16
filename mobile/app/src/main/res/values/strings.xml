@@ -25,6 +25,7 @@
     <string name="home_delta">arus kas vs bulan lalu · %1$s</string>
     <string name="home_budget_left">sisa %1$s</string>
     <string name="home_budget_over">lewat %1$s</string>
+    <string name="home_pending">Belum termasuk %1$d transaksi tertunda</string>
 
     <string name="offline_chip">Offline · data %1$s</string>
     <string name="offline_never">Offline · belum ada data</string>
@@ -60,6 +61,14 @@
     <string name="tx_detail_balance_after">Saldo Sesudah</string>
     <string name="tx_uncategorized">Tanpa Kategori</string>
     <string name="tx_adjustment">Adjustment</string>
+    <string name="tx_pending">Tertunda</string>
+    <string name="pending_title">Transaksi tertunda</string>
+    <string name="pending_waiting">Belum terkirim. Dikirim otomatis begitu online.</string>
+    <string name="pending_error">Ditolak server: %1$s</string>
+    <string name="pending_retry">Coba lagi</string>
+    <string name="pending_delete">Hapus</string>
+    <string name="pending_delete_title">Hapus transaksi tertunda?</string>
+    <string name="pending_delete_body">Transaksi ini belum sampai ke server dan akan hilang dari HP ini.</string>
 
     <string name="add_tab_entry">Transaksi</string>
     <string name="add_tab_transfer">Transfer</string>
@@ -92,6 +101,7 @@
     <string name="settings_logout">Keluar</string>
     <string name="settings_logout_confirm_title">Keluar dari akun?</string>
     <string name="settings_logout_confirm_body">Data yang tersimpan di HP ini akan dihapus. Data di server tetap aman.</string>
+    <string name="settings_logout_pending">%1$d transaksi tertunda tetap disimpan di HP ini dan dikirim setelah kamu masuk lagi dengan akun yang sama.</string>
 
     <string name="analytics_title">Analytics</string>
     <string name="analytics_week">Mingguan</string>

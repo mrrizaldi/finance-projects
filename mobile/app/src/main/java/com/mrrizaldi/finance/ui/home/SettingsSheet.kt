@@ -29,7 +29,7 @@ import com.mrrizaldi.finance.ui.theme.AppType
 import com.mrrizaldi.finance.ui.theme.LocalPalette
 
 @Composable
-fun SettingsSheet(onLogout: () -> Unit, onDismiss: () -> Unit) {
+fun SettingsSheet(pendingCount: Int, onLogout: () -> Unit, onDismiss: () -> Unit) {
     val p = LocalPalette.current
     var confirm by remember { mutableStateOf(false) }
     ModalBottomSheet(
@@ -67,7 +67,10 @@ fun SettingsSheet(onLogout: () -> Unit, onDismiss: () -> Unit) {
         GlassDialog(
             onDismiss = { confirm = false },
             title = stringResource(R.string.settings_logout_confirm_title),
-            body = stringResource(R.string.settings_logout_confirm_body),
+            body = listOfNotNull(
+                stringResource(R.string.settings_logout_confirm_body),
+                if (pendingCount > 0) stringResource(R.string.settings_logout_pending, pendingCount) else null
+            ).joinToString("\n\n"),
             actions = {
                 CancelButton(stringResource(R.string.common_cancel), { confirm = false }, Modifier.weight(1f))
                 DangerButton(
