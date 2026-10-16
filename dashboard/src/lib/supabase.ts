@@ -1,10 +1,10 @@
-import { createClient } from '@supabase/supabase-js';
+import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import { createBrowserClient as createSSRBrowserClient } from '@supabase/ssr';
+import { clearRecovery, isRecovery, markRecovery } from '@/lib/recovery';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL as string;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string;
 
-// Service role client — for API routes, bypasses RLS
 export function createServiceClient() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!key) throw new Error('SUPABASE_SERVICE_ROLE_KEY is not set');
@@ -13,12 +13,17 @@ export function createServiceClient() {
   });
 }
 
-// Browser client — auth-aware, respects RLS
-export function createBrowserClient() {
-  return createSSRBrowserClient(supabaseUrl, supabaseAnonKey);
-}
+let browserClient: SupabaseClient | undefined;
 
-// Alias for convenience — creates a new client each call (stateless, safe)
 export function getBrowserClient() {
-  return createBrowserClient();
+  if (!browserClient) {
+    browserClient = createSSRBrowserClient(supabaseUrl, supabaseAnonKey);
+    browserClient.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_OUT') clearRecovery();
+      if (event !== 'PASSWORD_RECOVERY' || isRecovery()) return;
+      markRecovery();
+      window.location.assign('/reset-password');
+    });
+  }
+  return browserClient;
 }
