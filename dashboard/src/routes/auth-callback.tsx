@@ -16,7 +16,11 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
 
   const supabase = getBrowserClient();
   if (tokenHash && type === 'recovery') {
-    await supabase.auth.verifyOtp({ type: 'recovery', token_hash: tokenHash });
+    const { error } = await supabase.auth.verifyOtp({ type: 'recovery', token_hash: tokenHash });
+    if (error) {
+      clearRecovery();
+      return redirect('/login?error=auth_failed');
+    }
   }
   const { data: { session } } = await supabase.auth.getSession();
   if (!session) {

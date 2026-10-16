@@ -54,6 +54,14 @@ describe('auth-callback clientLoader', () => {
     expect(location(res)).toBe('/reset-password');
   });
 
+  it('token_hash kedaluwarsa → /login?error=auth_failed walau sesi lama ada', async () => {
+    verifyOtp.mockResolvedValue({ data: {}, error: { message: 'expired' } });
+    const res = await run('http://x/auth/callback?token_hash=h1&type=recovery');
+    expect(clearRecovery).toHaveBeenCalled();
+    expect(location(res)).toBe('/login?error=auth_failed');
+    expect(getSession).not.toHaveBeenCalled();
+  });
+
   it('tanpa sesi → /login?error=auth_failed, tanda dibersihkan', async () => {
     getSession.mockResolvedValue({ data: { session: null } });
     const res = await run('http://x/auth/callback?code=abc&type=recovery');
