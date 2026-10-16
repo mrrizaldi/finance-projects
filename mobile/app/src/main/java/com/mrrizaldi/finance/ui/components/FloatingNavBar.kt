@@ -1,5 +1,8 @@
 package com.mrrizaldi.finance.ui.components
 
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -14,6 +17,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -45,7 +49,11 @@ fun FloatingNavBar(current: String?, onSelect: (Tab) -> Unit, modifier: Modifier
     GlassSurface(modifier.height(56.dp), shape = CircleShape) {
         BoxWithConstraints(Modifier.fillMaxSize().padding(horizontal = 4.dp)) {
             val slot = maxWidth / Tab.entries.size
-            val pillX = slot * index.coerceAtLeast(0) + (slot - PillWidth) / 2
+            val pillX by animateDpAsState(
+                targetValue = slot * index.coerceAtLeast(0) + (slot - PillWidth) / 2,
+                animationSpec = spring(dampingRatio = 0.75f, stiffness = Spring.StiffnessMediumLow),
+                label = "navPill"
+            )
             if (index >= 0) {
                 Box(
                     Modifier
