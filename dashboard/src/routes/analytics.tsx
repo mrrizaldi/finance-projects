@@ -20,77 +20,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AnalyticsPeriodSwitcher from '@/components/analytics/AnalyticsPeriodSwitcher';
 import CategoryListClient from '@/components/analytics/CategoryListClient';
 import dayjs from 'dayjs';
-import quarterOfYear from 'dayjs/plugin/quarterOfYear';
-import 'dayjs/locale/id';
-
-dayjs.extend(quarterOfYear);
-dayjs.locale('id');
-
-type Period = 'week' | 'month' | 'quarter' | 'year';
-
-function getPeriodBounds(
-  period: Period,
-  anchor: string
-): {
-  start: string;
-  end: string;
-  prevStart: string;
-  prevEnd: string;
-  label: string;
-  trendMonths: number;
-} {
-  const d = dayjs(anchor);
-  switch (period) {
-    case 'week': {
-      const start = d.startOf('week');
-      const end = d.endOf('week');
-      return {
-        start: start.format('YYYY-MM-DD'),
-        end: end.format('YYYY-MM-DD'),
-        prevStart: start.subtract(1, 'week').format('YYYY-MM-DD'),
-        prevEnd: end.subtract(1, 'week').format('YYYY-MM-DD'),
-        label: `${start.format('D MMM')} – ${end.format('D MMM YYYY')}`,
-        trendMonths: 8,
-      };
-    }
-    case 'quarter': {
-      const start = d.startOf('quarter');
-      const end = d.endOf('quarter');
-      return {
-        start: start.format('YYYY-MM-DD'),
-        end: end.format('YYYY-MM-DD'),
-        prevStart: start.subtract(1, 'quarter').format('YYYY-MM-DD'),
-        prevEnd: end.subtract(1, 'quarter').format('YYYY-MM-DD'),
-        label: `Q${d.quarter()} ${d.year()}`,
-        trendMonths: 12,
-      };
-    }
-    case 'year': {
-      const start = d.startOf('year');
-      const end = d.endOf('year');
-      return {
-        start: start.format('YYYY-MM-DD'),
-        end: end.format('YYYY-MM-DD'),
-        prevStart: start.subtract(1, 'year').format('YYYY-MM-DD'),
-        prevEnd: end.subtract(1, 'year').format('YYYY-MM-DD'),
-        label: `${d.year()}`,
-        trendMonths: 24,
-      };
-    }
-    default: {
-      const start = d.startOf('month');
-      const end = d.endOf('month');
-      return {
-        start: start.format('YYYY-MM-DD'),
-        end: end.format('YYYY-MM-DD'),
-        prevStart: start.subtract(1, 'month').format('YYYY-MM-DD'),
-        prevEnd: end.subtract(1, 'month').format('YYYY-MM-DD'),
-        label: start.format('MMMM YYYY'),
-        trendMonths: 12,
-      };
-    }
-  }
-}
+import { getPeriodBounds, type Period } from '@/lib/period-bounds';
 
 export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
   const url = new URL(request.url);
@@ -154,7 +84,6 @@ export default function AnalyticsPage() {
   const totalExpense = expCategories.reduce((s, c) => s + Number(c.total_amount), 0);
   const totalIncome = incCategories.reduce((s, c) => s + Number(c.total_amount), 0);
 
-  // Re-derive start/end for CategoryListClient (needed for drill-down links)
   const { start, end } = getPeriodBounds(period, anchor);
 
   return (
