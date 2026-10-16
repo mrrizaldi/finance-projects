@@ -2,9 +2,11 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** App Android dapat tab ke-4 **Analytics** (menggantikan Lainnya): perbandingan bulan, tren masuk/keluar 6/12 bulan (Vico), savings rate, pengeluaran per kategori (6 + Lainnya), kalender pengeluaran harian, budget per kategori, dan 5 transaksi terbesar. Versi app + Keluar pindah ke sheet pengaturan dari ikon di header Home, Keluar sekarang pakai dialog konfirmasi.
+**Goal:** App Android dapat tab ke-4 **Analytics** (menggantikan Lainnya) dengan pemilih periode seperti dashboard (Mingguan/Bulanan/Kuartal/Tahunan + geser ‹ ›): perbandingan vs periode lalu, tren masuk/keluar `trendMonths` bulan (Vico), savings rate, pengeluaran per kategori (6 + Lainnya), pengeluaran harian (kalender untuk minggu/bulan, grid kontribusi untuk kuartal/tahun), budget per kategori (hanya Bulanan), dan 5 transaksi terbesar. Versi app + Keluar pindah ke sheet pengaturan dari ikon di header Home; semua dialog (Keluar, tanggal, jam) memakai `GlassDialog` bergaya kaca.
 
-**Architecture:** Lima RPC baru di `SupabaseApi` (DTO persis kolom hasil live). `Repository.refreshAnalytics(month)` mengambil kategori + 6 RPC dulu, baru menulis sekali (`categoryDao.replaceAll` + `snapshotDao.upsertAll`), dibungkus `guard` yang sama dengan Home (ganti user = cache dikosongkan, gagal = cache utuh, `SyncError` sama). Layar membaca flow dari `RpcSnapshot`. Logika murni di `ui/analytics/AnalyticsMath.kt` (tanpa Android), dites JVM. Chart memakai Vico 3.3.1 lewat overload `CartesianChartHost(chart, model, ...)` dengan `CartesianChartModel` yang di-`remember` dari data (tanpa `LaunchedEffect`), warna dari `LocalPalette`, tema sumbu dari `rememberM3VicoTheme`. Kategori, kalender, budget = Compose biasa.
+**Architecture:** Lima RPC baru di `SupabaseApi` (DTO persis kolom hasil live). Batas periode dari fungsi murni `periodBounds(period, anchor)` di `util/AnalyticsPeriod.kt` (meniru `getPeriodBounds` dashboard, minggu mulai Senin, tanggal Jakarta). `Repository.refreshAnalytics(bounds)` mengambil kategori + 6 RPC dulu, baru menulis sekali (`categoryDao.replaceAll` + `snapshotDao.upsertAll`), dibungkus `guard` yang sama dengan Home (ganti user = cache dikosongkan, gagal = cache utuh, `SyncError` sama); kunci snapshot `<rpc>:<periode>:<start>:<end>` dan `<rpc>:<trendMonths>`. Layar membaca flow dari `RpcSnapshot`. Logika murni di `util/AnalyticsPeriod.kt` dan `ui/analytics/AnalyticsMath.kt` (tanpa Android), dites JVM. Chart memakai Vico 3.3.1 lewat overload `CartesianChartHost(chart, model, ...)` dengan `CartesianChartModel` yang di-`remember` dari data (tanpa `LaunchedEffect`), warna dari `LocalPalette`, tema sumbu dari `rememberM3VicoTheme`. Kategori, kalender, grid kontribusi, budget, dialog = Compose biasa.
+
+**Status (16 Okt 2026 sore):** Task 1 (`a74bf1d`), Task 2 (`fc19a86`) dan Task 3 (`69fa2fc`) selesai di branch `analytics`; Task 3a, 3b, 4, 5, 6 belum mulai (teks `old` di Task 3a/3b sudah dicocokkan ke `69fa2fc`). Task 3a/3b ditambahkan dan Task 4-6 ditulis ulang setelah permintaan user 16 Okt 2026 ("filter periode waktu analytics nya bisa disamakan kaya yang di dashboard", "dialog dialognya jg benerin, masih basic banget jomplang"); spec sudah diperbarui (seksi "Perubahan 16 Okt 2026"). Urutan eksekusi: 3 → 3a → 3b → 4 → 5 → 6. Teks Task 1-3 dibiarkan apa adanya sebagai catatan kode yang sudah/sedang di-commit; Task 3a mengubah API repository dari Task 1 dan ViewModel dari Task 3.
 
 **Tech Stack:** Kotlin 2.4.21, AGP 9.4.1, Compose BOM 2026.09.00 (ui 1.12.1, material3 1.4.0), Vico 3.3.1 (`com.patrykandpatrick.vico:compose-m3`, sudah di katalog, disetujui spec mobile awal; resolve ke `compose-m3-android` + `compose-android` 3.3.1, butuh ui/foundation 1.12.0 dan `androidx.compose.material3:material3` 1.4.0, jadi tidak menaikkan BOM), supabase-kt 3.8.0 postgrest `rpc`, Room 2.8.5, JUnit 4.13.2 + kotlinx-coroutines-test 1.11.0.
 
@@ -50,9 +52,9 @@ Paket Vico 3 = `com.patrykandpatrick.vico.compose.*` (tidak ada lagi `vico.core`
 
 ## Keputusan yang menyimpang dari spec (dibaca dulu)
 
-1. **`refreshAnalytics(month)` tanpa parameter `months`.** Tren dan savings selalu diambil 12 bulan (satu kunci cache), toggle 6/12 hanya memotong `takeLast(6)` di layar. Toggle jadi instan dan tetap jalan offline; payload 12 baris kecil.
-2. **Tren dan savings berlabuh di bulan berjalan**, bukan bulan terpilih: RPC `get_monthly_trend`/`get_savings_rate_trend` hanya menerima `p_months` dan selalu berakhir di bulan ini (WIB). Bulan terpilih hanya menebalkan titik savings kalau bulan itu ada di jendela; di luar jendela tidak ada titik tebal.
-3. **Pemilih bulan** = `MonthPicker` (‹ bulan ›) yang sama dengan layar Transaksi, sesuai "komponen yang sama dengan Transaksi". Bentuknya baris, bukan kapsul; kalau Transaksi diganti kapsul di branch redesign, Analytics ikut otomatis.
+1. **`refreshAnalytics(bounds: PeriodBounds)`** (Task 3a, menggantikan `refreshAnalytics(month)` dari Task 1): tren dan savings diambil `bounds.period.trendMonths` bulan (8/12/12/24, kunci `<rpc>:<n>` sehingga Bulanan dan Kuartal berbagi cache 12). Toggle 6/12 dibuang sesuai permintaan user (samakan dengan dashboard).
+2. **Tren dan savings berlabuh di bulan berjalan**, bukan periode terpilih: RPC `get_monthly_trend`/`get_savings_rate_trend` hanya menerima `p_months` dan selalu berakhir di bulan ini (WIB), sama dengan dashboard. Titik savings bulan yang beririsan dengan periode (`PeriodBounds.covers`) ditebalkan; periode di luar jendela tidak punya titik tebal.
+3. **Pemilih periode** = `GlassSegmented` 4 opsi + baris `‹ label ›` yang dibangun di `AnalyticsScreen.kt` (pola baris sama dengan `MonthPicker`, ikon panah Material yang sudah dipakai `MonthPicker`). `MonthPicker` tidak dipakai Analytics lagi (Task 3a membuangnya dari kerangka).
 4. **Chart memakai overload `CartesianChartHost(chart, model)`**, bukan `CartesianChartModelProducer` + `runTransaction`: producer butuh `LaunchedEffect` untuk mendorong data, sedangkan model bisa di-`remember(rows)` langsung saat render. Konsekuensi: tidak ada animasi transisi antar data.
 5. **"Lainnya" dihitung ulang dari nominal**, bukan menjumlah `percentage` RPC yang sudah dibulatkan 1 desimal. Kalau kategori ≤ 6, tidak ada baris Lainnya. Bar tipis = porsi terhadap total pengeluaran bulan itu.
 6. **Baris "Transaksi terbesar"** pakai `TxRow` apa adanya. RPC tidak mengembalikan akun, jadi baris kecilnya "kategori · jam" (tanpa tanggal, tanpa akun); baris tidak membuka detail.
@@ -60,18 +62,26 @@ Paket Vico 3 = `com.patrykandpatrick.vico.compose.*` (tidak ada lagi `vico.core`
 8. **Warna kalender** tiga titik: `positive` → `warn` → `negative` (lerp dua-dua-nya hijau langsung ke merah lewat sRGB jadi coklat keruh), alpha 0,35–1 di atas `surface`. Angka tanggal hitam atau putih dipilih dari luminans latar (ambang 0,179 = titik kontras sama).
 9. **`SnapshotDao.upsertAll`** ditambah supaya enam snapshot ditulis dalam satu transaksi Room (satu invalidasi, layar tidak berkedip enam kali). Tidak ada perubahan skema → versi DB tetap 2.
 10. **Ringkasan bulan lalu di Home tidak disentuh**; Analytics punya `get_period_comparison` sendiri.
+11. **`prevEnd = start − 1 hari`**, bukan `end − 1 periode` seperti dayjs di dashboard: dayjs memotong satu hari untuk bulan 30 hari dan Q2 (`2026-06-30 − 1 kuartal = 2026-03-30`). Semua yang lain (minggu Senin, start/end, trendMonths, label, geser, reset saat ganti periode) sama dengan dashboard.
+12. **Label bulan pendek dari locale JVM/Android**, bukan dayjs: id `Agu` (dayjs `Agt`); en mengikuti `values-en`.
+13. **Kunci cache menyertakan nama periode** (`get_daily_spending:week:2026-09-28:2026-10-04`) walau start/end sudah unik, sesuai permintaan user; `get_category_breakdown` Analytics punya kunci sendiri (tidak berbagi dengan kunci Home `get_category_breakdown:<start>:<end>:expense`, duplikat satu baris untuk bulan yang sama, sengaja supaya kode Home tidak disentuh).
+14. **Budget dihitung di VM untuk semua periode tapi hanya digambar saat Bulanan** (satu pengecekan di layar), karena `budget_monthly` per bulan.
+15. **Sel harian punya content description = teks detail** ("Tue, 13 Oct · Rp 27.000"): aksesibilitas, dan dump uiautomator bisa dicocokkan ke database tanpa mengetuk kotak grid 14dp.
+16. **`GlassDialog` tanpa blur Haze**: `Dialog` adalah window terpisah dari sumber Haze; wadah = `surface` + `LocalGlass.tint` + tepi `LocalGlass.edge`, scrim window dialog meredupkan latar. Tombol destruktif `DangerButton` memakai `negativeSoft` + teks `negative` (merah penuh + teks putih kontrasnya kurang di mode gelap, `#FF645F`).
+17. **Grid kontribusi mulai tergulir ke kanan** (`rememberScrollState(Int.MAX_VALUE)`, dipotong ke `maxValue` oleh foundation 1.12.1) supaya minggu terbaru langsung terlihat; tanpa label hari di kiri.
+18. **Top 5 tetap `TxRow` apa adanya** (kategori · jam, tanpa tanggal) juga untuk Kuartal/Tahunan; tanggal bisa dibaca dari grid harian. Tambah tanggal = ubah `TxRow` bersama, di luar lingkup.
 
 ## Aturan eksekusi (berlaku semua task)
 
-- **Tempat kerja:** worktree `/home/mrrizaldi/dev/finance-project/.worktrees/redesign`, branch `redesign`, **setelah** plan redesign liquid glass selesai (Task 8 gerak + Task 9 verifikasi + upgrade filter sudah di-commit). Mulai Task 1 hanya kalau `git -C /home/mrrizaldi/dev/finance-project/.worktrees/redesign status --short` kosong. Tidak kosong → ada agen lain yang masih jalan: tunggu, jangan sentuh.
-- **Baca ulang berkas sebelum mengedit.** Isi berkas di plan ini diambil 16 Okt 2026 saat Task 8 dan upgrade filter masih di-commit agen lain. Kalau teks `old` pada langkah Edit tidak cocok persis, buka berkasnya, cari bagian yang setara, dan sesuaikan; jangan menimpa perubahan agen lain.
-- `M=/home/mrrizaldi/dev/finance-project/.worktrees/redesign/mobile`, `SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad` (sudah ada `hp.sh`, APK menunjuk ke worktree redesign). Kalau `SCRATCH` tidak ada di sesi eksekusi: buat direktori scratchpad sesi itu, salin isi `hp.sh` dari plan redesign Task 3 Step 1, ganti `SCRATCH` di dalamnya.
+- **Tempat kerja:** worktree `/home/mrrizaldi/dev/finance-project/.worktrees/analytics`, branch `analytics` (bercabang dari `3ad0f64`, akhir plan redesign). Mulai tiap task hanya kalau `git -C /home/mrrizaldi/dev/finance-project/.worktrees/analytics status --short` kosong dan task sebelumnya sudah di-commit. Tidak kosong → ada agen lain yang masih jalan: tunggu, jangan sentuh.
+- **Baca ulang berkas sebelum mengedit.** Teks `old` Task 3a/3b/4/5 diambil 16 Okt 2026 dari commit `fc19a86` + isi kerja Task 3 yang belum di-commit. Kalau teks `old` pada langkah Edit tidak cocok persis, buka berkasnya, cari bagian yang setara, dan sesuaikan; jangan menimpa perubahan agen lain.
+- `M=/home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile`, `SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad` (sudah ada `hp.sh`; baris `APK=` di dalamnya masih menunjuk worktree redesign yang sudah tidak ada, Task 3a Step 0 menggantinya ke `.worktrees/analytics` dengan `sed`). Kalau `SCRATCH` tidak ada di sesi eksekusi: buat direktori scratchpad sesi itu, salin isi `hp.sh` dari plan redesign Task 3 Step 1, ganti `SCRATCH` dan `APK` di dalamnya.
 - **Prefix setiap perintah Gradle** (cwd `$M`): `export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;`. `mobile/local.properties` sudah ada di worktree (gitignored), jangan diubah.
 - **Tanpa komentar kode** di `.kt/.kts`. Sebelum commit: `python3 /home/mrrizaldi/dev/finance-project/scripts/cek_komentar.py <berkas .kt/.kts yang diubah>` harus exit 0.
-- **Satu fitur per commit.** Commit dari worktree: `git -C /home/mrrizaldi/dev/finance-project/.worktrees/redesign ...`. Trailer persis `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Jangan push.
+- **Satu fitur per commit.** Commit dari worktree: `git -C /home/mrrizaldi/dev/finance-project/.worktrees/analytics ...`. Trailer persis `Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>`. Jangan push.
 - **Bukti di pesan commit harus keluaran nyata** (angka test, BUILD SUCCESSFUL, path screenshot, baris logcat). Bagian `<...>` di template commit diisi dari keluaran nyata. Keluaran beda dari "Expected" → berhenti, perbaiki, jangan commit.
 - **Dependency baru:** tidak ada. Vico `compose-m3` 3.3.1 sudah disetujui; tidak boleh menambah artefak lain.
-- **HP:** Samsung SM-G998B, Android 15, locale en-US (string yang tampil = `values-en`). User sudah login dengan data asli. DILARANG: `pm clear`, uninstall, logout, menekan tombol **Sign out di dalam dialog konfirmasi**, menyimpan transaksi. Install selalu `adb install -r` (lewat `hp_pasang`). Selalu `hp_ui`/lihat screenshot sebelum mengetuk. `hp_cek` gagal → BERHENTI, bilang ke user "colok HP SM-G998B dengan USB debugging aktif", jangan klaim teruji, jangan commit task yang butuh bukti HP.
+- **HP:** Samsung SM-G998B, Android 15, locale en-US (string yang tampil = `values-en`). User sudah login dengan data asli. DILARANG: `pm clear`, uninstall, logout, menekan tombol **Sign out di dalam dialog konfirmasi**, menyimpan transaksi (tombol Save di layar Tambah), menekan OK di pemilih tanggal/jam. Install selalu `adb install -r` (lewat `hp_pasang`). Selalu `hp_ui`/lihat screenshot sebelum mengetuk. `hp_cek` gagal → BERHENTI, bilang ke user "colok HP SM-G998B dengan USB debugging aktif", jangan klaim teruji, jangan commit task yang butuh bukti HP.
 - **Database:** hanya Supabase MCP `execute_sql` dengan `select` (read-only). Tidak ada migrasi di plan ini.
 
 ## File Structure
@@ -79,7 +89,7 @@ Paket Vico 3 = `com.patrykandpatrick.vico.compose.*` (tidak ada lagi `vico.core`
 ```
 mobile/
   app/build.gradle.kts                                    + implementation(libs.vico.compose.m3)            (Task 4)
-  app/src/main/res/values/strings.xml                     string analytics + pengaturan (id), hapus more_*   (Task 3-5)
+  app/src/main/res/values/strings.xml                     string analytics + pengaturan + add_time_title (id), hapus more_* (Task 3-5)
   app/src/main/res/values-en/strings.xml                  sama (en)                                          (Task 3-5)
   app/src/main/java/com/mrrizaldi/finance/
     MainActivity.kt                                       rute analytics gantiin more                        (Task 3)
@@ -88,22 +98,26 @@ mobile/
     data/remote/SupabaseApiImpl.kt                        + implementasi 5 RPC                               (Task 1)
     data/local/Daos.kt                                    + SnapshotDao.upsertAll                            (Task 1)
     data/Mappers.kt                                       + TopTransactionDto.toEntity()                     (Task 1)
-    data/Repository.kt                                    + flow analytics, refreshAnalytics(month)          (Task 1)
-    ui/analytics/AnalyticsMath.kt                         logika murni                                       (Task 2)
-    ui/analytics/AnalyticsViewModel.kt                    AnalyticsUiState + VM                              (Task 3)
-    ui/analytics/AnalyticsScreen.kt                       layar (kerangka Task 3, isi Task 4-5)              (Task 3-5)
+    data/Repository.kt                                    + flow analytics, refreshAnalytics(month) → (bounds) (Task 1, 3a)
+    util/AnalyticsPeriod.kt                               AnalyticsPeriod, PeriodBounds, periodBounds()      (Task 3a)
+    ui/analytics/AnalyticsMath.kt                         logika murni; monthWeeks → weeksOf(start, end)     (Task 2, 5)
+    ui/analytics/AnalyticsViewModel.kt                    AnalyticsUiState + VM (bulan → bounds)             (Task 3, 3a)
+    ui/analytics/AnalyticsScreen.kt                       layar (kerangka Task 3, pemilih periode Task 4, seksi Task 5) (Task 3-5)
     ui/analytics/AnalyticsCharts.kt                       TrendChart + SavingsChart (Vico)                   (Task 4)
-    ui/analytics/AnalyticsSections.kt                     kategori, kalender, budget, top-5                  (Task 5)
+    ui/analytics/AnalyticsSections.kt                     kategori, kalender/grid kontribusi, budget, top-5  (Task 5)
+    ui/components/GlassDialog.kt                          GlassDialog + DangerButton                         (Task 3b)
+    ui/add/AddScreen.kt                                   DatePicker/TimePicker di GlassDialog               (Task 3b)
     ui/components/FloatingNavBar.kt                       Tab.MORE → Tab.ANALYTICS                           (Task 3)
     ui/icons/AppIcons.kt                                  + Chart, ChartActive, Settings; - Profile          (Task 3)
     ui/home/HomeScreen.kt                                 ikon pengaturan di header + sheet                  (Task 3)
     ui/home/HomeViewModel.kt                              + logout()                                         (Task 3)
-    ui/home/SettingsSheet.kt                              sheet versi + Keluar + dialog konfirmasi           (Task 3)
+    ui/home/SettingsSheet.kt                              sheet versi + Keluar + dialog konfirmasi (AlertDialog → GlassDialog) (Task 3, 3b)
     ui/more/MoreScreen.kt                                 DIHAPUS                                            (Task 3)
   app/src/test/java/com/mrrizaldi/finance/
     data/RepositoryTest.kt                                FakeApi + FakeSnapshotDao dapat override baru      (Task 1)
-    data/AnalyticsRepositoryTest.kt                       refreshAnalytics                                   (Task 1)
-    ui/analytics/AnalyticsMathTest.kt                     logika murni                                       (Task 2)
+    data/AnalyticsRepositoryTest.kt                       refreshAnalytics (bulan → bounds + test mingguan)  (Task 1, 3a)
+    util/AnalyticsPeriodTest.kt                           batas/geser/label periode                          (Task 3a)
+    ui/analytics/AnalyticsMathTest.kt                     logika murni + grid minggu kuartal/tahun           (Task 2, 5)
 ```
 
 ---
@@ -119,9 +133,9 @@ mobile/
 - [ ] **Step 0: Prasyarat + jumlah test awal**
 
 ```bash
-git -C /home/mrrizaldi/dev/finance-project/.worktrees/redesign status --short
-git -C /home/mrrizaldi/dev/finance-project/.worktrees/redesign log --oneline -5
-cd /home/mrrizaldi/dev/finance-project/.worktrees/redesign/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+git -C /home/mrrizaldi/dev/finance-project/.worktrees/analytics status --short
+git -C /home/mrrizaldi/dev/finance-project/.worktrees/analytics log --oneline -5
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
 ./gradlew test 2>&1 | tail -2
 grep -ho 'tests="[0-9]*"' app/build/test-results/testDebugUnitTest/*.xml | grep -o '[0-9]*' | awk '{s+=$1} END {print s}'
 ```
@@ -312,7 +326,7 @@ dengan
 - [ ] **Step 3: Jalankan, pastikan gagal**
 
 ```bash
-cd /home/mrrizaldi/dev/finance-project/.worktrees/redesign/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
 ./gradlew :app:testDebugUnitTest --tests 'com.mrrizaldi.finance.data.AnalyticsRepositoryTest' 2>&1 | grep -E "^e: |BUILD" | head -5
 ```
 Expected: `BUILD FAILED` dengan `e: ... Unresolved reference 'PeriodComparisonDto'` (atau `refreshAnalytics`).
@@ -588,7 +602,7 @@ dengan
 - [ ] **Step 10: Test lulus + seluruh test + build**
 
 ```bash
-cd /home/mrrizaldi/dev/finance-project/.worktrees/redesign/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
 ./gradlew :app:testDebugUnitTest --tests 'com.mrrizaldi.finance.data.AnalyticsRepositoryTest' 2>&1 | tail -2
 ./gradlew test assembleDebug 2>&1 | tail -2
 grep -ho 'tests="[0-9]*"' app/build/test-results/testDebugUnitTest/*.xml | grep -o '[0-9]*' | awk '{s+=$1} END {print s}'
@@ -599,7 +613,7 @@ Expected: dua kali `BUILD SUCCESSFUL`; total = **B + 3**; hanya `failures="0"`.
 - [ ] **Step 11: Cek komentar + commit**
 
 ```bash
-cd /home/mrrizaldi/dev/finance-project/.worktrees/redesign
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics
 J=mobile/app/src/main/java/com/mrrizaldi/finance; T=mobile/app/src/test/java/com/mrrizaldi/finance
 python3 /home/mrrizaldi/dev/finance-project/scripts/cek_komentar.py $J/data/remote/Dto.kt $J/data/remote/SupabaseApi.kt $J/data/remote/SupabaseApiImpl.kt $J/data/local/Daos.kt $J/data/Mappers.kt $J/data/Repository.kt $T/data/RepositoryTest.kt $T/data/AnalyticsRepositoryTest.kt; echo "exit=$?"
 git add $J/data/remote/Dto.kt $J/data/remote/SupabaseApi.kt $J/data/remote/SupabaseApiImpl.kt $J/data/local/Daos.kt $J/data/Mappers.kt $J/data/Repository.kt $T/data/RepositoryTest.kt $T/data/AnalyticsRepositoryTest.kt
@@ -783,7 +797,7 @@ class AnalyticsMathTest {
 - [ ] **Step 2: Jalankan, pastikan gagal**
 
 ```bash
-cd /home/mrrizaldi/dev/finance-project/.worktrees/redesign/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
 ./gradlew :app:testDebugUnitTest --tests 'com.mrrizaldi.finance.ui.analytics.AnalyticsMathTest' 2>&1 | grep -E "^e: |BUILD" | head -3
 ```
 Expected: `BUILD FAILED`, `Unresolved reference 'percentChange'` (atau simbol lain dari berkas ini).
@@ -881,7 +895,7 @@ internal fun budgetLines(categories: List<CategoryEntity>, breakdown: List<Categ
 - [ ] **Step 4: Test lulus + seluruh test**
 
 ```bash
-cd /home/mrrizaldi/dev/finance-project/.worktrees/redesign/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
 ./gradlew :app:testDebugUnitTest --tests 'com.mrrizaldi.finance.ui.analytics.AnalyticsMathTest' 2>&1 | tail -2
 ./gradlew test assembleDebug 2>&1 | tail -2
 grep -ho 'tests="[0-9]*"' app/build/test-results/testDebugUnitTest/*.xml | grep -o '[0-9]*' | awk '{s+=$1} END {print s}'
@@ -892,7 +906,7 @@ Expected: `BUILD SUCCESSFUL` dua kali; total = **B + 14** (3 + 11); `failures="0
 - [ ] **Step 5: Cek komentar + commit**
 
 ```bash
-cd /home/mrrizaldi/dev/finance-project/.worktrees/redesign
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics
 F1=mobile/app/src/main/java/com/mrrizaldi/finance/ui/analytics/AnalyticsMath.kt
 F2=mobile/app/src/test/java/com/mrrizaldi/finance/ui/analytics/AnalyticsMathTest.kt
 python3 /home/mrrizaldi/dev/finance-project/scripts/cek_komentar.py $F1 $F2; echo "exit=$?"
@@ -1329,7 +1343,7 @@ dengan
 ```
 
 ```bash
-cd /home/mrrizaldi/dev/finance-project/.worktrees/redesign
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics
 git rm -q mobile/app/src/main/java/com/mrrizaldi/finance/ui/more/MoreScreen.kt
 grep -rn "nav_more\|more_title\|more_logout\|more_version\|MoreScreen\|ui\.more\|AppIcons.Profile\|Tab.MORE" mobile/app/src || echo "bersih"
 ```
@@ -1338,7 +1352,7 @@ Expected: `bersih`.
 - [ ] **Step 10: Build + test**
 
 ```bash
-cd /home/mrrizaldi/dev/finance-project/.worktrees/redesign/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
 ./gradlew test assembleDebug 2>&1 | tail -2
 grep -ho 'tests="[0-9]*"' app/build/test-results/testDebugUnitTest/*.xml | grep -o '[0-9]*' | awk '{s+=$1} END {print s}'
 ```
@@ -1381,7 +1395,7 @@ Expected: angka ≥ 1 (masih di Home, masih login); `logcat bersih`.
 - [ ] **Step 12: Cek komentar + commit**
 
 ```bash
-cd /home/mrrizaldi/dev/finance-project/.worktrees/redesign
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics
 J=mobile/app/src/main/java/com/mrrizaldi/finance
 F="$J/ui/icons/AppIcons.kt $J/ui/components/FloatingNavBar.kt $J/MainActivity.kt $J/ui/home/HomeScreen.kt $J/ui/home/HomeViewModel.kt $J/ui/home/SettingsSheet.kt $J/ui/analytics/AnalyticsViewModel.kt $J/ui/analytics/AnalyticsScreen.kt"
 python3 /home/mrrizaldi/dev/finance-project/scripts/cek_komentar.py $F; echo "exit=$?"
@@ -1410,7 +1424,1156 @@ EOF
 
 ---
 
-### Task 4: Analytics bagian 1 — perbandingan bulan, tren 6/12 (Vico), savings rate
+### Task 3a: Periode analytics — batas periode murni, repository per periode, ViewModel
+
+Permintaan user 16 Okt 2026: "filter periode waktu analytics nya bisa disamakan kaya yang di dashboard". Task ini hanya logika + data + ViewModel; tampilan pemilih periode di Task 4.
+
+**Files:**
+- Create: `util/AnalyticsPeriod.kt`, test `util/AnalyticsPeriodTest.kt`
+- Modify: `data/Repository.kt`, test `data/AnalyticsRepositoryTest.kt` (ganti seluruh isi), `ui/analytics/AnalyticsViewModel.kt` (ganti seluruh isi), `ui/analytics/AnalyticsScreen.kt` (buang `MonthPicker` dari kerangka)
+
+- [ ] **Step 0: Prasyarat, perbaiki `hp.sh`, jumlah test awal C**
+
+```bash
+W=/home/mrrizaldi/dev/finance-project/.worktrees/analytics
+SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad
+git -C $W status --short
+git -C $W log --oneline -3
+sed -i 's#/.worktrees/analytics/#/.worktrees/analytics/#' "$SCRATCH/hp.sh"; grep '^APK=' "$SCRATCH/hp.sh"
+cd $W/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+./gradlew test 2>&1 | tail -2
+grep -ho 'tests="[0-9]*"' app/build/test-results/testDebugUnitTest/*.xml | grep -o '[0-9]*' | awk '{s+=$1} END {print s}'
+```
+Expected: status kosong; commit teratas `feat(mobile): tab analytics gantiin lainnya, pengaturan pindah ke home`; `APK=/home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile/app/build/outputs/apk/debug/app-debug.apk`; `BUILD SUCCESSFUL`; angka = **C** (catat). Status tidak kosong atau Task 3 belum di-commit → tunggu, jangan sentuh.
+
+- [ ] **Step 1: Test gagal dulu — `util/AnalyticsPeriodTest.kt`**
+
+```kotlin
+package com.mrrizaldi.finance.util
+
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import java.time.LocalDate
+import java.time.YearMonth
+import java.util.Locale
+
+class AnalyticsPeriodTest {
+    private val id = Locale.forLanguageTag("id-ID")
+    private val en = Locale.US
+
+    private fun d(year: Int, month: Int, day: Int) = LocalDate.of(year, month, day)
+
+    private fun assertBounds(b: PeriodBounds, start: LocalDate, end: LocalDate, prevStart: LocalDate, prevEnd: LocalDate) {
+        assertEquals(listOf(start, end, prevStart, prevEnd), listOf(b.start, b.end, b.prevStart, b.prevEnd))
+    }
+
+    @Test
+    fun `minggu mulai senin termasuk lintas bulan dan tahun`() {
+        assertBounds(periodBounds(AnalyticsPeriod.WEEK, d(2026, 10, 16)), d(2026, 10, 12), d(2026, 10, 18), d(2026, 10, 5), d(2026, 10, 11))
+        assertBounds(periodBounds(AnalyticsPeriod.WEEK, d(2026, 10, 12)), d(2026, 10, 12), d(2026, 10, 18), d(2026, 10, 5), d(2026, 10, 11))
+        assertBounds(periodBounds(AnalyticsPeriod.WEEK, d(2026, 10, 1)), d(2026, 9, 28), d(2026, 10, 4), d(2026, 9, 21), d(2026, 9, 27))
+        assertBounds(periodBounds(AnalyticsPeriod.WEEK, d(2027, 1, 3)), d(2026, 12, 28), d(2027, 1, 3), d(2026, 12, 21), d(2026, 12, 27))
+    }
+
+    @Test
+    fun `bulan dan bulan lalu sampai hari terakhirnya`() {
+        assertBounds(periodBounds(AnalyticsPeriod.MONTH, d(2026, 10, 16)), d(2026, 10, 1), d(2026, 10, 31), d(2026, 9, 1), d(2026, 9, 30))
+        assertBounds(periodBounds(AnalyticsPeriod.MONTH, d(2026, 3, 31)), d(2026, 3, 1), d(2026, 3, 31), d(2026, 2, 1), d(2026, 2, 28))
+        assertBounds(periodBounds(AnalyticsPeriod.MONTH, d(2026, 5, 2)), d(2026, 5, 1), d(2026, 5, 31), d(2026, 4, 1), d(2026, 4, 30))
+    }
+
+    @Test
+    fun `kuartal termasuk q4 dan q2`() {
+        assertBounds(periodBounds(AnalyticsPeriod.QUARTER, d(2026, 11, 20)), d(2026, 10, 1), d(2026, 12, 31), d(2026, 7, 1), d(2026, 9, 30))
+        assertBounds(periodBounds(AnalyticsPeriod.QUARTER, d(2026, 5, 5)), d(2026, 4, 1), d(2026, 6, 30), d(2026, 1, 1), d(2026, 3, 31))
+        assertBounds(periodBounds(AnalyticsPeriod.QUARTER, d(2026, 2, 14)), d(2026, 1, 1), d(2026, 3, 31), d(2025, 10, 1), d(2025, 12, 31))
+    }
+
+    @Test
+    fun `tahun penuh dan tahun lalu`() {
+        assertBounds(periodBounds(AnalyticsPeriod.YEAR, d(2026, 10, 16)), d(2026, 1, 1), d(2026, 12, 31), d(2025, 1, 1), d(2025, 12, 31))
+    }
+
+    @Test
+    fun `geser maju mundur satu periode`() {
+        val week = periodBounds(AnalyticsPeriod.WEEK, d(2026, 10, 16))
+        assertEquals(d(2026, 10, 5), week.shift(-1).start)
+        assertEquals(d(2026, 10, 19), week.shift(1).start)
+        assertEquals(d(2026, 11, 1), periodBounds(AnalyticsPeriod.MONTH, d(2026, 10, 31)).shift(1).start)
+        assertEquals(d(2027, 1, 1), periodBounds(AnalyticsPeriod.QUARTER, d(2026, 11, 20)).shift(1).start)
+        assertEquals(d(2025, 1, 1), periodBounds(AnalyticsPeriod.YEAR, d(2026, 10, 16)).shift(-1).start)
+        val quarter = periodBounds(AnalyticsPeriod.QUARTER, d(2026, 11, 20))
+        assertEquals(quarter.prevStart, quarter.shift(-1).start)
+        assertEquals(quarter.prevEnd, quarter.shift(-1).end)
+    }
+
+    @Test
+    fun `jumlah bulan tren per periode`() {
+        assertEquals(listOf(8, 12, 12, 24), AnalyticsPeriod.entries.map { it.trendMonths })
+    }
+
+    @Test
+    fun `label periode id dan en`() {
+        val week = periodBounds(AnalyticsPeriod.WEEK, d(2026, 10, 1))
+        assertEquals("28 Sep – 4 Okt 2026", week.label(id))
+        assertEquals("28 Sep – 4 Oct 2026", week.label(en))
+        assertEquals("28 Des – 3 Jan 2027", periodBounds(AnalyticsPeriod.WEEK, d(2027, 1, 3)).label(id))
+        val month = periodBounds(AnalyticsPeriod.MONTH, d(2026, 10, 16))
+        assertEquals("Oktober 2026", month.label(id))
+        assertEquals("October 2026", month.label(en))
+        assertEquals("September 2026", month.shift(-1).label(en))
+        assertEquals("Q4 2026", periodBounds(AnalyticsPeriod.QUARTER, d(2026, 11, 20)).label(id))
+        assertEquals("Q2 2026", periodBounds(AnalyticsPeriod.QUARTER, d(2026, 5, 5)).label(en))
+        assertEquals("2026", periodBounds(AnalyticsPeriod.YEAR, d(2026, 10, 16)).label(id))
+        assertEquals("2025", periodBounds(AnalyticsPeriod.YEAR, d(2026, 10, 16)).shift(-1).label(en))
+    }
+
+    @Test
+    fun `bulan yang beririsan dengan periode`() {
+        val week = periodBounds(AnalyticsPeriod.WEEK, d(2026, 10, 1))
+        assertTrue(week.covers(YearMonth.of(2026, 9)))
+        assertTrue(week.covers(YearMonth.of(2026, 10)))
+        assertFalse(week.covers(YearMonth.of(2026, 11)))
+        val quarter = periodBounds(AnalyticsPeriod.QUARTER, d(2026, 11, 20))
+        assertEquals(listOf(10, 11, 12), (1..12).filter { quarter.covers(YearMonth.of(2026, it)) })
+    }
+}
+```
+
+- [ ] **Step 2: Jalankan, pastikan gagal**
+
+```bash
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+./gradlew :app:testDebugUnitTest --tests 'com.mrrizaldi.finance.util.AnalyticsPeriodTest' 2>&1 | grep -E "^e: |BUILD" | head -3
+```
+Expected: `BUILD FAILED`, `e: ... Unresolved reference 'periodBounds'` (atau `PeriodBounds`/`AnalyticsPeriod`).
+
+- [ ] **Step 3: `util/AnalyticsPeriod.kt`**
+
+```kotlin
+package com.mrrizaldi.finance.util
+
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+
+enum class AnalyticsPeriod(val trendMonths: Int) { WEEK(8), MONTH(12), QUARTER(12), YEAR(24) }
+
+data class PeriodBounds(
+    val period: AnalyticsPeriod,
+    val start: LocalDate,
+    val end: LocalDate,
+    val prevStart: LocalDate,
+    val prevEnd: LocalDate
+) {
+    fun shift(steps: Long): PeriodBounds = periodBounds(period, period.step(start, steps))
+
+    fun covers(month: YearMonth): Boolean = month in YearMonth.from(start)..YearMonth.from(end)
+
+    fun label(locale: Locale): String = when (period) {
+        AnalyticsPeriod.WEEK ->
+            start.format(DateTimeFormatter.ofPattern("d MMM", locale)) + " – " +
+                end.format(DateTimeFormatter.ofPattern("d MMM yyyy", locale))
+        AnalyticsPeriod.MONTH -> JakartaDate.formatMonth(YearMonth.from(start), locale)
+        AnalyticsPeriod.QUARTER -> "Q${(start.monthValue - 1) / 3 + 1} ${start.year}"
+        AnalyticsPeriod.YEAR -> start.year.toString()
+    }
+}
+
+private fun AnalyticsPeriod.step(date: LocalDate, steps: Long): LocalDate = when (this) {
+    AnalyticsPeriod.WEEK -> date.plusWeeks(steps)
+    AnalyticsPeriod.MONTH -> date.plusMonths(steps)
+    AnalyticsPeriod.QUARTER -> date.plusMonths(3 * steps)
+    AnalyticsPeriod.YEAR -> date.plusYears(steps)
+}
+
+fun periodBounds(period: AnalyticsPeriod, anchor: LocalDate): PeriodBounds {
+    val start = when (period) {
+        AnalyticsPeriod.WEEK -> anchor.minusDays(anchor.dayOfWeek.value - 1L)
+        AnalyticsPeriod.MONTH -> anchor.withDayOfMonth(1)
+        AnalyticsPeriod.QUARTER -> LocalDate.of(anchor.year, (anchor.monthValue - 1) / 3 * 3 + 1, 1)
+        AnalyticsPeriod.YEAR -> anchor.withDayOfYear(1)
+    }
+    return PeriodBounds(period, start, period.step(start, 1).minusDays(1), period.step(start, -1), start.minusDays(1))
+}
+```
+
+```bash
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+./gradlew :app:testDebugUnitTest --tests 'com.mrrizaldi.finance.util.AnalyticsPeriodTest' 2>&1 | tail -2
+grep -o 'tests="[0-9]*" skipped="[0-9]*" failures="[0-9]*"' app/build/test-results/testDebugUnitTest/TEST-com.mrrizaldi.finance.util.AnalyticsPeriodTest.xml
+```
+Expected: `BUILD SUCCESSFUL`; `tests="8" skipped="0" failures="0"`. Gagal di label (`Okt`/`Des`) → locale JVM beda dari hasil cek 16 Okt (`Cek2.java` di `$SCRATCH/cek2`), berhenti dan lapor, jangan ubah ekspektasi.
+
+- [ ] **Step 4: Test repository gagal dulu — `data/AnalyticsRepositoryTest.kt` (ganti seluruh isi)**
+
+```kotlin
+package com.mrrizaldi.finance.data
+
+import com.mrrizaldi.finance.data.local.RpcSnapshot
+import com.mrrizaldi.finance.data.local.SyncMeta
+import com.mrrizaldi.finance.util.AnalyticsPeriod
+import com.mrrizaldi.finance.util.periodBounds
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
+import org.junit.Test
+import java.time.LocalDate
+
+class AnalyticsRepositoryTest {
+    private val api = FakeApi()
+    private val categoryDao = FakeCategoryDao()
+    private val snapshotDao = FakeSnapshotDao()
+    private val syncMetaDao = FakeSyncMetaDao()
+    private val repo = Repository(
+        api,
+        FakeAccountDao(),
+        categoryDao,
+        FakeTransactionDao(),
+        snapshotDao,
+        syncMetaDao
+    ) { 1_000L }
+    private val bounds = periodBounds(AnalyticsPeriod.MONTH, LocalDate.of(2026, 10, 16))
+
+    @Test
+    fun `refreshAnalytics pakai tanggal jakarta lalu nyimpen semua`() = runTest {
+        assertTrue(repo.refreshAnalytics(bounds).isSuccess)
+
+        assertEquals(
+            listOf(
+                "get_period_comparison:2026-10-01:2026-10-31:2026-09-01:2026-09-30",
+                "get_monthly_trend:12",
+                "get_savings_rate_trend:12",
+                "get_daily_spending:2026-10-01:2026-10-31",
+                "get_top_transactions:2026-10-01:2026-10-31:5"
+            ),
+            api.analyticsCalls
+        )
+        assertTrue(
+            snapshotDao.data.value.keys.containsAll(
+                listOf(
+                    "get_period_comparison:month:2026-10-01:2026-10-31",
+                    "get_monthly_trend:12",
+                    "get_savings_rate_trend:12",
+                    "get_category_breakdown:month:2026-10-01:2026-10-31",
+                    "get_daily_spending:month:2026-10-01:2026-10-31",
+                    "get_top_transactions:month:2026-10-01:2026-10-31"
+                )
+            )
+        )
+        assertEquals(4_000_000.0, repo.periodComparison(bounds).first()?.curr_income ?: 0.0, 0.0)
+        assertEquals(12, repo.monthlyTrend(12).first().size)
+        assertEquals(12, repo.savingsRateTrend(12).first().size)
+        assertEquals(31, repo.dailySpending(bounds).first().size)
+        val top = repo.topTransactions(bounds).first().single()
+        assertEquals("top1", top.id)
+        assertEquals("2026-10-13", top.toEntity().dateKey)
+        assertEquals(250_000L, top.toEntity().amount)
+        assertEquals(listOf("c1"), repo.categories().first().map { it.id })
+        assertEquals(1_000L, repo.lastSuccessAt().first())
+    }
+
+    @Test
+    fun `periode mingguan pakai rentang senin minggu dan tren 8 bulan`() = runTest {
+        val week = periodBounds(AnalyticsPeriod.WEEK, LocalDate.of(2026, 10, 1))
+
+        assertTrue(repo.refreshAnalytics(week).isSuccess)
+
+        assertEquals(
+            listOf(
+                "get_period_comparison:2026-09-28:2026-10-04:2026-09-21:2026-09-27",
+                "get_monthly_trend:8",
+                "get_savings_rate_trend:8",
+                "get_daily_spending:2026-09-28:2026-10-04",
+                "get_top_transactions:2026-09-28:2026-10-04:5"
+            ),
+            api.analyticsCalls
+        )
+        assertTrue("get_daily_spending:week:2026-09-28:2026-10-04" in snapshotDao.data.value.keys)
+        assertEquals(7, repo.dailySpending(week).first().size)
+        assertEquals(8, repo.monthlyTrend(8).first().size)
+        assertTrue(repo.dailySpending(bounds).first().isEmpty())
+        assertTrue(repo.monthlyTrend(12).first().isEmpty())
+    }
+
+    @Test
+    fun `gagal di tengah refreshAnalytics cache utuh`() = runTest {
+        snapshotDao.upsert(RpcSnapshot("get_monthly_trend:12", "[]", 1L))
+        syncMetaDao.upsert(SyncMeta(lastSuccessAt = 500L, ownerId = "u1"))
+        api.failFrom = 4
+
+        val result = repo.refreshAnalytics(bounds)
+
+        assertTrue(result.exceptionOrNull() is SyncError.Offline)
+        assertEquals(setOf("get_monthly_trend:12"), snapshotDao.data.value.keys)
+        assertTrue(categoryDao.data.value.isEmpty())
+        assertEquals(500L, repo.lastSuccessAt().first())
+    }
+
+    @Test
+    fun `tanpa cache flow analytics kosong`() = runTest {
+        assertNull(repo.periodComparison(bounds).first())
+        assertTrue(repo.monthlyTrend(12).first().isEmpty())
+        assertTrue(repo.savingsRateTrend(12).first().isEmpty())
+        assertTrue(repo.breakdown(bounds).first().isEmpty())
+        assertTrue(repo.dailySpending(bounds).first().isEmpty())
+        assertTrue(repo.topTransactions(bounds).first().isEmpty())
+    }
+}
+```
+
+```bash
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+./gradlew :app:testDebugUnitTest --tests 'com.mrrizaldi.finance.data.AnalyticsRepositoryTest' 2>&1 | grep -E "^e: |BUILD" | head -3
+```
+Expected: `BUILD FAILED` dengan baris `e:` di `AnalyticsRepositoryTest.kt` (tipe argumen `PeriodBounds` vs `YearMonth`, atau parameter `months` belum ada): repository masih versi bulan.
+
+- [ ] **Step 5: `data/Repository.kt` — dari bulan ke `PeriodBounds`**
+
+Baca ulang berkasnya dulu. Empat Edit, teks `old` = isi commit `a74bf1d` (dicek 16 Okt).
+
+Import: ganti
+```kotlin
+import com.mrrizaldi.finance.util.JakartaDate
+```
+dengan
+```kotlin
+import com.mrrizaldi.finance.util.JakartaDate
+import com.mrrizaldi.finance.util.PeriodBounds
+```
+
+Flow: ganti
+```kotlin
+    fun periodComparison(month: YearMonth): Flow<PeriodComparisonDto?> = cached<PeriodComparisonDto>(comparisonKey(month))
+
+    fun monthlyTrend(): Flow<List<MonthlyTrendDto>> = cached<List<MonthlyTrendDto>>(TREND_KEY).map { it.orEmpty() }
+
+    fun savingsRateTrend(): Flow<List<SavingsRateDto>> =
+        cached<List<SavingsRateDto>>(SAVINGS_KEY).map { it.orEmpty() }
+
+    fun dailySpending(month: YearMonth): Flow<List<DailySpendingDto>> =
+        cached<List<DailySpendingDto>>(dailyKey(month)).map { it.orEmpty() }
+
+    fun topTransactions(month: YearMonth): Flow<List<TopTransactionDto>> =
+        cached<List<TopTransactionDto>>(topKey(month)).map { it.orEmpty() }
+```
+dengan
+```kotlin
+    fun periodComparison(bounds: PeriodBounds): Flow<PeriodComparisonDto?> =
+        cached<PeriodComparisonDto>(analyticsKey("get_period_comparison", bounds))
+
+    fun monthlyTrend(months: Int): Flow<List<MonthlyTrendDto>> =
+        cached<List<MonthlyTrendDto>>(trendKey(months)).map { it.orEmpty() }
+
+    fun savingsRateTrend(months: Int): Flow<List<SavingsRateDto>> =
+        cached<List<SavingsRateDto>>(savingsKey(months)).map { it.orEmpty() }
+
+    fun breakdown(bounds: PeriodBounds): Flow<List<CategoryBreakdownDto>> =
+        cached<List<CategoryBreakdownDto>>(analyticsKey("get_category_breakdown", bounds)).map { it.orEmpty() }
+
+    fun dailySpending(bounds: PeriodBounds): Flow<List<DailySpendingDto>> =
+        cached<List<DailySpendingDto>>(analyticsKey("get_daily_spending", bounds)).map { it.orEmpty() }
+
+    fun topTransactions(bounds: PeriodBounds): Flow<List<TopTransactionDto>> =
+        cached<List<TopTransactionDto>>(analyticsKey("get_top_transactions", bounds)).map { it.orEmpty() }
+```
+
+Refresh: ganti
+```kotlin
+    suspend fun refreshAnalytics(month: YearMonth): Result<Unit> = guard {
+        val start = JakartaDate.monthStart(month)
+        val end = JakartaDate.monthEnd(month)
+        val previous = month.minusMonths(1)
+        val categories = api.listCategories()
+        val comparison = api.getPeriodComparison(
+            start,
+            end,
+            JakartaDate.monthStart(previous),
+            JakartaDate.monthEnd(previous)
+        )
+        val trend = api.getMonthlyTrend(TREND_MONTHS)
+        val savings = api.getSavingsRateTrend(TREND_MONTHS)
+        val breakdown = api.getCategoryBreakdown(start, end, "expense")
+        val daily = api.getDailySpending(start, end)
+        val top = api.getTopTransactions(start, end, TOP_LIMIT)
+        val now = clock()
+        categoryDao.replaceAll(categories.map { it.toEntity() })
+        snapshotDao.upsertAll(
+            listOf(
+                RpcSnapshot(comparisonKey(month), json.encodeToString(comparison), now),
+                RpcSnapshot(TREND_KEY, json.encodeToString(trend), now),
+                RpcSnapshot(SAVINGS_KEY, json.encodeToString(savings), now),
+                RpcSnapshot(breakdownKey(month), json.encodeToString(breakdown), now),
+                RpcSnapshot(dailyKey(month), json.encodeToString(daily), now),
+                RpcSnapshot(topKey(month), json.encodeToString(top), now)
+            )
+        )
+    }
+```
+dengan
+```kotlin
+    suspend fun refreshAnalytics(bounds: PeriodBounds): Result<Unit> = guard {
+        val start = bounds.start.toString()
+        val end = bounds.end.toString()
+        val months = bounds.period.trendMonths
+        val categories = api.listCategories()
+        val comparison = api.getPeriodComparison(start, end, bounds.prevStart.toString(), bounds.prevEnd.toString())
+        val trend = api.getMonthlyTrend(months)
+        val savings = api.getSavingsRateTrend(months)
+        val breakdown = api.getCategoryBreakdown(start, end, "expense")
+        val daily = api.getDailySpending(start, end)
+        val top = api.getTopTransactions(start, end, TOP_LIMIT)
+        val now = clock()
+        categoryDao.replaceAll(categories.map { it.toEntity() })
+        snapshotDao.upsertAll(
+            listOf(
+                RpcSnapshot(analyticsKey("get_period_comparison", bounds), json.encodeToString(comparison), now),
+                RpcSnapshot(trendKey(months), json.encodeToString(trend), now),
+                RpcSnapshot(savingsKey(months), json.encodeToString(savings), now),
+                RpcSnapshot(analyticsKey("get_category_breakdown", bounds), json.encodeToString(breakdown), now),
+                RpcSnapshot(analyticsKey("get_daily_spending", bounds), json.encodeToString(daily), now),
+                RpcSnapshot(analyticsKey("get_top_transactions", bounds), json.encodeToString(top), now)
+            )
+        )
+    }
+```
+
+Kunci: ganti
+```kotlin
+    private fun comparisonKey(month: YearMonth) =
+        "get_period_comparison:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}"
+
+    private fun dailyKey(month: YearMonth) =
+        "get_daily_spending:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}"
+
+    private fun topKey(month: YearMonth) =
+        "get_top_transactions:${JakartaDate.monthStart(month)}:${JakartaDate.monthEnd(month)}:$TOP_LIMIT"
+
+    private companion object {
+        const val PAGE_SIZE = 1000
+        const val TREND_MONTHS = 12
+        const val TOP_LIMIT = 5
+        const val TREND_KEY = "get_monthly_trend:$TREND_MONTHS"
+        const val SAVINGS_KEY = "get_savings_rate_trend:$TREND_MONTHS"
+    }
+```
+dengan
+```kotlin
+    private fun analyticsKey(rpc: String, bounds: PeriodBounds) =
+        "$rpc:${bounds.period.name.lowercase()}:${bounds.start}:${bounds.end}"
+
+    private fun trendKey(months: Int) = "get_monthly_trend:$months"
+
+    private fun savingsKey(months: Int) = "get_savings_rate_trend:$months"
+
+    private companion object {
+        const val PAGE_SIZE = 1000
+        const val TOP_LIMIT = 5
+    }
+```
+`breakdown(month)`, `breakdownKey(month)` dan `refreshHome` tidak disentuh (Home tetap pakai kunci lama).
+
+- [ ] **Step 6: `ui/analytics/AnalyticsViewModel.kt` (ganti seluruh isi)**
+
+```kotlin
+package com.mrrizaldi.finance.ui.analytics
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.mrrizaldi.finance.data.Repository
+import com.mrrizaldi.finance.data.SyncError
+import com.mrrizaldi.finance.data.local.TransactionEntity
+import com.mrrizaldi.finance.data.remote.DailySpendingDto
+import com.mrrizaldi.finance.data.remote.MonthlyTrendDto
+import com.mrrizaldi.finance.data.remote.PeriodComparisonDto
+import com.mrrizaldi.finance.data.remote.SavingsRateDto
+import com.mrrizaldi.finance.data.toEntity
+import com.mrrizaldi.finance.util.AnalyticsPeriod
+import com.mrrizaldi.finance.util.JakartaDate
+import com.mrrizaldi.finance.util.PeriodBounds
+import com.mrrizaldi.finance.util.periodBounds
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
+
+data class AnalyticsUiState(
+    val bounds: PeriodBounds,
+    val comparison: PeriodComparisonDto? = null,
+    val trend: List<MonthlyTrendDto> = emptyList(),
+    val savings: List<SavingsRateDto> = emptyList(),
+    val categories: List<CategorySlice> = emptyList(),
+    val daily: List<DailySpendingDto> = emptyList(),
+    val budgets: List<BudgetLine> = emptyList(),
+    val top: List<TransactionEntity> = emptyList(),
+    val lastSuccessAt: Long? = null
+)
+
+class AnalyticsViewModel(private val repo: Repository) : ViewModel() {
+    private val bounds = MutableStateFlow(periodBounds(AnalyticsPeriod.MONTH, JakartaDate.today()))
+    private val _error = MutableStateFlow<SyncError?>(null)
+    val error: StateFlow<SyncError?> = _error
+    private val _refreshing = MutableStateFlow(false)
+    val refreshing: StateFlow<Boolean> = _refreshing
+
+    val uiState: StateFlow<AnalyticsUiState> = bounds.flatMapLatest { b ->
+        val months = b.period.trendMonths
+        combine(
+            combine(repo.periodComparison(b), repo.monthlyTrend(months), repo.savingsRateTrend(months)) { c, t, s ->
+                Triple(c, t, s)
+            },
+            combine(repo.categories(), repo.breakdown(b), repo.dailySpending(b)) { c, d, e -> Triple(c, d, e) },
+            repo.topTransactions(b),
+            repo.lastSuccessAt()
+        ) { (comparison, trend, savings), (categories, breakdown, daily), top, last ->
+            AnalyticsUiState(
+                bounds = b,
+                comparison = comparison,
+                trend = trend,
+                savings = savings,
+                categories = topWithOthers(breakdown),
+                daily = daily,
+                budgets = budgetLines(categories, breakdown),
+                top = top.map { it.toEntity() },
+                lastSuccessAt = last
+            )
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), AnalyticsUiState(bounds.value))
+
+    init {
+        refresh()
+    }
+
+    fun refresh() {
+        viewModelScope.launch {
+            _refreshing.value = true
+            val e = repo.refreshAnalytics(bounds.value).exceptionOrNull() as? SyncError
+            if (e is SyncError.Unauthorized) repo.logout()
+            _error.value = e
+            _refreshing.value = false
+        }
+    }
+
+    fun setPeriod(period: AnalyticsPeriod) {
+        bounds.value = periodBounds(period, JakartaDate.today())
+        refresh()
+    }
+
+    fun shift(steps: Long) {
+        bounds.value = bounds.value.shift(steps)
+        refresh()
+    }
+}
+```
+`setPeriod` sengaja tanpa cek "periode sama": ketuk segmen yang aktif = balik ke periode berjalan, sama dengan `switchPeriod` dashboard.
+
+- [ ] **Step 7: `ui/analytics/AnalyticsScreen.kt` — buang `MonthPicker` dari kerangka**
+
+Ganti
+```kotlin
+import com.mrrizaldi.finance.data.SyncError
+import com.mrrizaldi.finance.ui.components.MonthPicker
+```
+dengan
+```kotlin
+import com.mrrizaldi.finance.data.SyncError
+```
+lalu ganti
+```kotlin
+            )
+            MonthPicker(state.month, vm::setMonth)
+            when (error) {
+```
+dengan
+```kotlin
+            )
+            when (error) {
+```
+(Task 4 mengganti seluruh isi berkas ini dengan pemilih periode.)
+
+- [ ] **Step 8: Seluruh test + build**
+
+```bash
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+./gradlew :app:testDebugUnitTest --tests 'com.mrrizaldi.finance.data.AnalyticsRepositoryTest' 2>&1 | tail -2
+./gradlew test assembleDebug 2>&1 | grep -E "^e: |BUILD" | head -5
+grep -ho 'tests="[0-9]*"' app/build/test-results/testDebugUnitTest/*.xml | grep -o '[0-9]*' | awk '{s+=$1} END {print s}'
+grep -h -o 'failures="[0-9]*"' app/build/test-results/testDebugUnitTest/*.xml | sort -u
+grep -rn "setMonth\|monthlyTrend()\|savingsRateTrend()\|TREND_KEY\|comparisonKey" app/src/main/java/com/mrrizaldi/finance/ui/analytics app/src/main/java/com/mrrizaldi/finance/data || echo bersih
+```
+Expected: `BUILD SUCCESSFUL` (dua kali, tanpa `e:`); total = **C + 9** (8 `AnalyticsPeriodTest` + 1 test mingguan baru); hanya `failures="0"`; `bersih`.
+
+- [ ] **Step 9: Di HP — Analytics masih kebuka tanpa crash**
+
+```bash
+SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
+hp_cek && hp_pasang && sleep 4
+hp_tap 'content-desc="Analytics"'; sleep 3; hp_foto t3a-analytics
+hp_ui t3a-analytics | xargs grep -c 'text="Analytics"'
+hp_crash
+```
+Expected: angka ≥ 1; `logcat bersih`. `hp_cek` gagal → berhenti, minta user colok HP, jangan commit.
+
+- [ ] **Step 10: Cek komentar + commit**
+
+```bash
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics
+J=mobile/app/src/main/java/com/mrrizaldi/finance; T=mobile/app/src/test/java/com/mrrizaldi/finance
+F="$J/util/AnalyticsPeriod.kt $T/util/AnalyticsPeriodTest.kt $J/data/Repository.kt $T/data/AnalyticsRepositoryTest.kt $J/ui/analytics/AnalyticsViewModel.kt $J/ui/analytics/AnalyticsScreen.kt"
+python3 /home/mrrizaldi/dev/finance-project/scripts/cek_komentar.py $F; echo "exit=$?"
+git add $F
+git commit -F- <<'EOF'
+feat(mobile): periode analytics mingguan/bulanan/kuartal/tahunan
+
+Batas periode niru getPeriodBounds dashboard (minggu mulai Senin,
+tanggal Jakarta): start/end/prev, geser +-1 periode, label
+"28 Sep – 4 Okt 2026" / "Oktober 2026" / "Q4 2026" / "2026", tren
+8/12/12/24 bulan. Bedanya satu: prevEnd = start - 1 hari, bukan
+end - 1 periode, biar Q2/April gak kepotong sehari kayak di dashboard.
+refreshAnalytics sekarang terima PeriodBounds, kunci cache
+<rpc>:<periode>:<start>:<end> jadi tiap periode tetap kebuka offline.
+VM simpan bounds; ganti periode balik ke periode berjalan.
+
+Bukti: AnalyticsPeriodTest 8 lulus, AnalyticsRepositoryTest 4 lulus;
+./gradlew test assembleDebug BUILD SUCCESSFUL, <total> test (C + 9),
+failures=0; di HP: $SCRATCH/t3a-analytics.png, logcat bersih;
+cek_komentar exit 0.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+EOF
+```
+(Ganti `<total>`, `C`, `$SCRATCH` di pesan dengan angka/path nyata.)
+
+---
+
+### Task 3b: Dialog kaca — `GlassDialog` untuk Keluar, tanggal, jam
+
+Permintaan user 16 Okt 2026: "dialog dialognya jg benerin, masih basic banget jomplang".
+
+**Files:**
+- Create: `ui/components/GlassDialog.kt`
+- Modify: `ui/home/SettingsSheet.kt`, `ui/add/AddScreen.kt`, `res/values/strings.xml`, `res/values-en/strings.xml`
+
+API Material3 1.4.0 dan Compose UI 1.12.1 yang dipakai sudah dicek di sources jar resmi (`$SCRATCH/m3src/m3`, `$SCRATCH/m3src/ui`, diunduh dari `dl.google.com/android/maven2`): `DatePicker(state, modifier, dateFormatter, colors, title, headline, showModeToggle, focusRequester)` (stabil), `DatePickerDefaults.colors(containerColor, titleContentColor, headlineContentColor, weekdayContentColor, subheadContentColor, navigationContentColor, yearContentColor, disabledYearContentColor, currentYearContentColor, selectedYearContentColor, disabledSelectedYearContentColor, selectedYearContainerColor, disabledSelectedYearContainerColor, dayContentColor, disabledDayContentColor, selectedDayContentColor, disabledSelectedDayContentColor, selectedDayContainerColor, disabledSelectedDayContainerColor, todayContentColor, todayDateBorderColor, dayInSelectionRangeContentColor, dayInSelectionRangeContainerColor, dividerColor, dateTextFieldColors)`, `TimePicker(state, modifier, colors, layoutType)` (`@ExperimentalMaterial3Api`, sudah di-opt-in global di `app/build.gradle.kts`), `TimePickerDefaults.colors(clockDialColor, clockDialSelectedContentColor, clockDialUnselectedContentColor, selectorColor, containerColor, periodSelectorBorderColor, periodSelectorSelectedContainerColor, periodSelectorUnselectedContainerColor, periodSelectorSelectedContentColor, periodSelectorUnselectedContentColor, timeSelectorSelectedContainerColor, timeSelectorUnselectedContainerColor, timeSelectorSelectedContentColor, timeSelectorUnselectedContentColor)`; parameter yang tidak diisi = `Color.Unspecified` → `copy` pakai `takeOrElse` default tema. `androidx.compose.ui.window.Dialog(onDismissRequest, properties, content)`, `DialogProperties(dismissOnBackPress, dismissOnClickOutside, usePlatformDefaultWidth, ...)`; `usePlatformDefaultWidth = false` → window `MATCH_PARENT` lebar, jadi wadah memakai `fillMaxWidth().padding(horizontal = 16.dp)`. `DatePicker` minta lebar minimal 360dp (`DatePickerModalTokens.ContainerWidth`); HP 411dp − 32dp = 379dp, cukup.
+
+- [ ] **Step 1: Strings**
+
+`values/strings.xml`: ganti `    <string name="add_saved">Tersimpan</string>` dengan
+```xml
+    <string name="add_saved">Tersimpan</string>
+    <string name="add_time_title">Pilih jam</string>
+```
+`values-en/strings.xml`: ganti `    <string name="add_saved">Saved</string>` dengan
+```xml
+    <string name="add_saved">Saved</string>
+    <string name="add_time_title">Select time</string>
+```
+
+- [ ] **Step 2: `ui/components/GlassDialog.kt`**
+
+```kotlin
+package com.mrrizaldi.finance.ui.components
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.mrrizaldi.finance.ui.theme.AppType
+import com.mrrizaldi.finance.ui.theme.LocalGlass
+import com.mrrizaldi.finance.ui.theme.LocalPalette
+
+private val DialogShape = RoundedCornerShape(28.dp)
+
+@Composable
+fun GlassDialog(
+    onDismiss: () -> Unit,
+    actions: @Composable RowScope.() -> Unit,
+    modifier: Modifier = Modifier,
+    title: String? = null,
+    body: String? = null,
+    content: @Composable ColumnScope.() -> Unit = {}
+) {
+    val p = LocalPalette.current
+    val glass = LocalGlass.current
+    Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
+        Column(
+            modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+                .clip(DialogShape)
+                .background(p.surface)
+                .background(glass.tint)
+                .border(1.dp, glass.edge, DialogShape)
+                .padding(top = if (title != null) 24.dp else 8.dp, bottom = 16.dp)
+        ) {
+            if (title != null) {
+                Text(
+                    title,
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontSize = 20.sp,
+                        lineHeight = 26.sp,
+                        fontWeight = FontWeight.SemiBold
+                    ),
+                    color = p.textHi,
+                    modifier = Modifier.padding(horizontal = 24.dp)
+                )
+            }
+            if (body != null) {
+                Text(
+                    body,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = p.textMute,
+                    modifier = Modifier.padding(horizontal = 24.dp).padding(top = 8.dp)
+                )
+            }
+            content()
+            Row(
+                Modifier.fillMaxWidth().padding(horizontal = 16.dp).padding(top = 20.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                content = actions
+            )
+        }
+    }
+}
+
+@Composable
+fun DangerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+    val p = LocalPalette.current
+    Box(
+        modifier
+            .height(52.dp)
+            .clip(CircleShape)
+            .background(p.negativeSoft)
+            .border(1.dp, p.negative.copy(alpha = 0.35f), CircleShape)
+            .clickable(role = Role.Button, onClick = onClick),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(text, style = AppType.rowTitle.copy(fontWeight = FontWeight.SemiBold), color = p.negative)
+    }
+}
+```
+Catatan desain (bukan di kode): tanpa blur Haze karena `Dialog` window terpisah dari sumber Haze di window utama; scrim window dialog sudah meredupkan latar. `CapsuleButton` bawaan tingginya 48dp; di dialog dipanggil dengan `Modifier.weight(1f).height(52.dp)` (modifier luar menang) supaya sejajar `GradientButton` 52dp.
+
+- [ ] **Step 3: `ui/home/SettingsSheet.kt`**
+
+Baca ulang berkasnya dulu (hasil commit Task 3). Import: ganti
+```kotlin
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
+```
+dengan
+```kotlin
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
+```
+ganti
+```kotlin
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
+```
+dengan
+```kotlin
+import androidx.compose.material3.MaterialTheme
+```
+ganti
+```kotlin
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+```
+dengan
+```kotlin
+import androidx.compose.material3.Text
+```
+ganti
+```kotlin
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.ui.components.GroupDivider
+```
+dengan
+```kotlin
+import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.ui.components.CapsuleButton
+import com.mrrizaldi.finance.ui.components.DangerButton
+import com.mrrizaldi.finance.ui.components.GlassDialog
+import com.mrrizaldi.finance.ui.components.GroupDivider
+```
+Lalu ganti
+```kotlin
+    if (confirm) {
+        AlertDialog(
+            onDismissRequest = { confirm = false },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        confirm = false
+                        onLogout()
+                    }
+                ) {
+                    Text(stringResource(R.string.settings_logout), color = p.negative)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.common_cancel)) }
+            },
+            title = { Text(stringResource(R.string.settings_logout_confirm_title)) },
+            text = { Text(stringResource(R.string.settings_logout_confirm_body)) },
+            containerColor = p.surface
+        )
+    }
+```
+dengan
+```kotlin
+    if (confirm) {
+        GlassDialog(
+            onDismiss = { confirm = false },
+            title = stringResource(R.string.settings_logout_confirm_title),
+            body = stringResource(R.string.settings_logout_confirm_body),
+            actions = {
+                CapsuleButton(
+                    stringResource(R.string.common_cancel),
+                    { confirm = false },
+                    Modifier.weight(1f).height(52.dp)
+                )
+                DangerButton(
+                    stringResource(R.string.settings_logout),
+                    {
+                        confirm = false
+                        onLogout()
+                    },
+                    Modifier.weight(1f)
+                )
+            }
+        )
+    }
+```
+
+- [ ] **Step 4: `ui/add/AddScreen.kt`**
+
+Baca ulang berkasnya dulu (tidak disentuh Task 1-3; isi dicek 16 Okt). Import: ganti
+```kotlin
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+```
+dengan
+```kotlin
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+```
+ganti
+```kotlin
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.Icon
+```
+dengan
+```kotlin
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerColors
+import androidx.compose.material3.DatePickerDefaults
+import androidx.compose.material3.Icon
+```
+ganti
+```kotlin
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TimePicker
+```
+dengan
+```kotlin
+import androidx.compose.material3.Text
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerColors
+import androidx.compose.material3.TimePickerDefaults
+```
+ganti
+```kotlin
+import com.mrrizaldi.finance.ui.components.DropdownField
+import com.mrrizaldi.finance.ui.components.GlassSegmented
+```
+dengan
+```kotlin
+import com.mrrizaldi.finance.ui.components.DropdownField
+import com.mrrizaldi.finance.ui.components.GlassDialog
+import com.mrrizaldi.finance.ui.components.GlassSegmented
+```
+ganti
+```kotlin
+import com.mrrizaldi.finance.ui.theme.AppType
+import com.mrrizaldi.finance.util.JakartaDate
+```
+dengan
+```kotlin
+import com.mrrizaldi.finance.ui.theme.AppType
+import com.mrrizaldi.finance.ui.theme.LocalGlass
+import com.mrrizaldi.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.util.JakartaDate
+```
+
+Dialog: ganti seluruh blok dari `    if (showDate) {` sampai akhir berkas, yaitu
+```kotlin
+    if (showDate) {
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = form.date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        )
+        DatePickerDialog(
+            onDismissRequest = { showDate = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    state.selectedDateMillis?.let { ms ->
+                        vm.edit { copy(date = Instant.ofEpochMilli(ms).atZone(ZoneOffset.UTC).toLocalDate()) }
+                    }
+                    showDate = false
+                }) { Text(stringResource(R.string.common_ok)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDate = false }) { Text(stringResource(R.string.common_cancel)) }
+            }
+        ) { DatePicker(state = state) }
+    }
+
+    if (showTime) {
+        val state = rememberTimePickerState(initialHour = form.time.hour, initialMinute = form.time.minute, is24Hour = true)
+        AlertDialog(
+            onDismissRequest = { showTime = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.edit { copy(time = LocalTime.of(state.hour, state.minute)) }
+                    showTime = false
+                }) { Text(stringResource(R.string.common_ok)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showTime = false }) { Text(stringResource(R.string.common_cancel)) }
+            },
+            text = { TimePicker(state = state) }
+        )
+    }
+}
+```
+dengan
+```kotlin
+    if (showDate) {
+        val state = rememberDatePickerState(
+            initialSelectedDateMillis = form.date.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+        )
+        GlassDialog(
+            onDismiss = { showDate = false },
+            actions = {
+                CapsuleButton(
+                    stringResource(R.string.common_cancel),
+                    { showDate = false },
+                    Modifier.weight(1f).height(52.dp)
+                )
+                GradientButton(
+                    text = stringResource(R.string.common_ok),
+                    onClick = {
+                        state.selectedDateMillis?.let { ms ->
+                            vm.edit { copy(date = Instant.ofEpochMilli(ms).atZone(ZoneOffset.UTC).toLocalDate()) }
+                        }
+                        showDate = false
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        ) {
+            DatePicker(state = state, colors = glassDateColors())
+        }
+    }
+
+    if (showTime) {
+        val state = rememberTimePickerState(initialHour = form.time.hour, initialMinute = form.time.minute, is24Hour = true)
+        GlassDialog(
+            onDismiss = { showTime = false },
+            title = stringResource(R.string.add_time_title),
+            actions = {
+                CapsuleButton(
+                    stringResource(R.string.common_cancel),
+                    { showTime = false },
+                    Modifier.weight(1f).height(52.dp)
+                )
+                GradientButton(
+                    text = stringResource(R.string.common_ok),
+                    onClick = {
+                        vm.edit { copy(time = LocalTime.of(state.hour, state.minute)) }
+                        showTime = false
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+            }
+        ) {
+            Box(Modifier.fillMaxWidth().padding(top = 20.dp), contentAlignment = Alignment.Center) {
+                TimePicker(state = state, colors = glassTimeColors())
+            }
+        }
+    }
+}
+
+@Composable
+private fun glassDateColors(): DatePickerColors {
+    val p = LocalPalette.current
+    return DatePickerDefaults.colors(
+        containerColor = Color.Transparent,
+        titleContentColor = p.textMute,
+        headlineContentColor = p.textHi,
+        weekdayContentColor = p.textMute,
+        subheadContentColor = p.textMute,
+        navigationContentColor = p.textHi,
+        yearContentColor = p.textHi,
+        disabledYearContentColor = p.textDim,
+        currentYearContentColor = p.primary,
+        selectedYearContentColor = p.primaryFg,
+        selectedYearContainerColor = p.primary,
+        dayContentColor = p.textHi,
+        disabledDayContentColor = p.textDim,
+        selectedDayContentColor = p.primaryFg,
+        selectedDayContainerColor = p.primary,
+        todayContentColor = p.primary,
+        todayDateBorderColor = p.primary,
+        dividerColor = LocalGlass.current.divider
+    )
+}
+
+@Composable
+private fun glassTimeColors(): TimePickerColors {
+    val p = LocalPalette.current
+    return TimePickerDefaults.colors(
+        clockDialColor = p.surfaceHi,
+        clockDialSelectedContentColor = p.primaryFg,
+        clockDialUnselectedContentColor = p.textHi,
+        selectorColor = p.primary,
+        containerColor = Color.Transparent,
+        timeSelectorSelectedContainerColor = p.primarySoft,
+        timeSelectorUnselectedContainerColor = p.surfaceHi,
+        timeSelectorSelectedContentColor = p.primary,
+        timeSelectorUnselectedContentColor = p.textHi
+    )
+}
+```
+
+- [ ] **Step 5: Build + test + grep dialog Material**
+
+```bash
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+./gradlew test assembleDebug 2>&1 | grep -E "^e: |BUILD" | head -5
+grep -ho 'tests="[0-9]*"' app/build/test-results/testDebugUnitTest/*.xml | grep -o '[0-9]*' | awk '{s+=$1} END {print s}'
+grep -rn "AlertDialog\|DatePickerDialog\|TimePickerDialog\|BasicAlertDialog" app/src/main/java || echo bersih
+```
+Expected: `BUILD SUCCESSFUL` tanpa `e:`; total = C + 9 (tidak berubah); `bersih`.
+
+- [ ] **Step 6: Di HP — catat mode malam, dialog di terang lalu gelap**
+
+DILARANG menekan tombol **Sign out** di dalam dialog dan tombol **Save** di layar Tambah. Hanya Cancel / Back.
+
+```bash
+SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
+hp_cek && hp_pasang && sleep 4
+adb shell cmd uimode night | tee "$SCRATCH/t3b-night-awal.txt"
+```
+Expected: `Night mode: no` / `yes` / `auto` (dikembalikan di akhir step ini).
+
+Untuk `MODE` = `no` lalu `yes`, jalankan blok ini dua kali (ganti `MODE` dan sufiks `-light`/`-dark`):
+```bash
+SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
+MODE=no; S=light
+hp_malam $MODE
+hp_tap 'content-desc="Home"'; sleep 2
+hp_tap 'content-desc="Settings"'; sleep 1
+hp_ui t3b-settings-$S | xargs grep -c 'text="Sign out?"'
+```
+Expected: `0` (dialog belum terbuka). Angka lain → berhenti, hanya Cancel. Lanjut:
+```bash
+SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
+S=light
+hp_tap 'text="Sign out"'; hp_foto t3b-confirm-$S
+hp_ui t3b-confirm-$S | xargs grep -o 'text="Sign out?"\|text="Cancel"\|text="Data stored on this phone[^"]*"' | sort -u
+hp_tap 'text="Cancel"'; sleep 1; adb shell input keyevent KEYCODE_BACK; sleep 1
+hp_ui t3b-after-$S | xargs grep -c 'text="Total balance"'
+hp_tap 'content-desc="Add"'; sleep 2
+hp_tap 'text="[0-9]\{1,2\} [A-Z][a-z][a-z] 20[0-9][0-9]"'; hp_foto t3b-date-$S
+hp_ui t3b-date-$S | xargs grep -o 'text="OK"\|text="Cancel"' | sort -u
+hp_tap 'text="Cancel"'; sleep 1
+hp_tap 'text="[0-2][0-9]:[0-5][0-9]"'; hp_foto t3b-time-$S
+hp_ui t3b-time-$S | xargs grep -o 'text="Select time"\|text="OK"\|text="Cancel"' | sort -u
+hp_tap 'text="Cancel"'; sleep 1
+hp_tap 'content-desc="Back"'; sleep 1
+hp_crash
+```
+Expected tiap mode: dialog Keluar memuat `Sign out?`, teks isi, `Cancel`; setelah Cancel angka ≥ 1 (masih login); dialog tanggal `OK` + `Cancel`; dialog jam `Select time` + `OK` + `Cancel`; `logcat bersih`. Lihat screenshot `t3b-confirm-*`, `t3b-date-*`, `t3b-time-*`: wadah sudut besar 28dp dengan tepi tipis, judul tebal, dua tombol kapsul sama lebar (Cancel kaca, Sign out kapsul merah lembut, OK gradien hijau), tanggal/jam terpilih hijau `primary`, tidak ada latar ungu/abu bawaan Material. Ada yang masih bawaan Material → perbaiki sebelum commit.
+
+Kembalikan mode malam:
+```bash
+SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
+ASAL=$(grep -o 'yes\|no\|auto' "$SCRATCH/t3b-night-awal.txt" | head -1); hp_malam "$ASAL"; adb shell cmd uimode night
+```
+Expected: sama dengan isi `t3b-night-awal.txt`.
+
+- [ ] **Step 7: Cek komentar + commit**
+
+```bash
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics
+J=mobile/app/src/main/java/com/mrrizaldi/finance
+F="$J/ui/components/GlassDialog.kt $J/ui/home/SettingsSheet.kt $J/ui/add/AddScreen.kt"
+python3 /home/mrrizaldi/dev/finance-project/scripts/cek_komentar.py $F; echo "exit=$?"
+git add $F mobile/app/src/main/res/values/strings.xml mobile/app/src/main/res/values-en/strings.xml
+git commit -F- <<'EOF'
+feat(mobile): dialog gaya kaca buat keluar, tanggal, jam
+
+Dialog Material bawaan diganti GlassDialog: wadah 28dp isi surface +
+tint kaca + tepi 1dp, judul 20sp tebal, tombol kapsul sama lebar
+(batal kaca, utama gradien, hapus/keluar kapsul merah lembut).
+Dipakai buat konfirmasi Keluar, DatePicker dan TimePicker di layar
+Tambah; warna picker dipetakan ke palette lewat
+DatePickerDefaults.colors / TimePickerDefaults.colors (dicek di
+sources material3 1.4.0). Tanpa blur haze karena dialog window
+terpisah, scrim window udah ngeredupin latar.
+
+Bukti: ./gradlew test assembleDebug BUILD SUCCESSFUL, <total> test;
+grep AlertDialog/DatePickerDialog bersih; di HP terang + gelap:
+$SCRATCH/t3b-confirm-light.png, $SCRATCH/t3b-confirm-dark.png,
+$SCRATCH/t3b-date-light.png, $SCRATCH/t3b-date-dark.png,
+$SCRATCH/t3b-time-light.png, $SCRATCH/t3b-time-dark.png; Cancel ->
+masih login ("Total balance" ada); logcat bersih; cek_komentar exit 0.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+EOF
+```
+
+---
+
+### Task 4: Analytics bagian 1 — pemilih periode, perbandingan, tren, savings rate
 
 **Files:**
 - Modify: `mobile/app/build.gradle.kts`, `ui/analytics/AnalyticsScreen.kt` (ganti seluruh isi), strings id/en
@@ -1433,18 +2596,28 @@ dengan
 `values/strings.xml`: ganti `    <string name="analytics_title">Analytics</string>` dengan
 ```xml
     <string name="analytics_title">Analytics</string>
+    <string name="analytics_week">Mingguan</string>
+    <string name="analytics_month">Bulanan</string>
+    <string name="analytics_quarter">Kuartal</string>
+    <string name="analytics_year">Tahunan</string>
+    <string name="analytics_prev">Periode sebelumnya</string>
+    <string name="analytics_next">Periode berikutnya</string>
     <string name="analytics_vs">vs %1$s</string>
     <string name="analytics_trend">Tren</string>
-    <string name="analytics_span">%1$d bln</string>
     <string name="analytics_million">jt</string>
     <string name="analytics_savings">Savings rate</string>
 ```
 `values-en/strings.xml`: ganti `    <string name="analytics_title">Analytics</string>` dengan
 ```xml
     <string name="analytics_title">Analytics</string>
+    <string name="analytics_week">Weekly</string>
+    <string name="analytics_month">Monthly</string>
+    <string name="analytics_quarter">Quarterly</string>
+    <string name="analytics_year">Yearly</string>
+    <string name="analytics_prev">Previous period</string>
+    <string name="analytics_next">Next period</string>
     <string name="analytics_vs">vs %1$s</string>
     <string name="analytics_trend">Trend</string>
-    <string name="analytics_span">%1$d mo</string>
     <string name="analytics_million">M</string>
     <string name="analytics_savings">Savings rate</string>
 ```
@@ -1501,12 +2674,12 @@ private val ChartHeight = 180.dp
 private val BarShape = RoundedCornerShape(topStart = 3.dp, topEnd = 3.dp)
 
 private data class HighlightPoints(
-    private val selectedX: Double,
+    private val selectedX: Set<Double>,
     private val normal: LineCartesianLayer.Point,
     private val selected: LineCartesianLayer.Point
 ) : LineCartesianLayer.PointProvider {
     override fun getPoint(entry: LineCartesianLayerModel.Entry, extraStore: ExtraStore): LineCartesianLayer.Point =
-        if (entry.x == selectedX) selected else normal
+        if (entry.x in selectedX) selected else normal
 
     override fun getLargestPoint(extraStore: ExtraStore): LineCartesianLayer.Point = selected
 }
@@ -1532,7 +2705,7 @@ private fun monthAxis(rows: Int, labels: List<String>, label: TextComponent) = H
     },
     tick = null,
     guideline = null,
-    itemPlacer = remember(rows) { HorizontalAxis.ItemPlacer.aligned(spacing = { if (rows > 6) 2 else 1 }) }
+    itemPlacer = remember(rows) { HorizontalAxis.ItemPlacer.aligned(spacing = { (rows + 5) / 6 }) }
 )
 
 @Composable
@@ -1583,7 +2756,7 @@ internal fun TrendChart(rows: List<MonthlyTrendDto>, modifier: Modifier = Modifi
 }
 
 @Composable
-internal fun SavingsChart(rows: List<SavingsRateDto>, selected: Int, modifier: Modifier = Modifier) {
+internal fun SavingsChart(rows: List<SavingsRateDto>, selected: Set<Int>, modifier: Modifier = Modifier) {
     val p = LocalPalette.current
     val locale = LocalConfiguration.current.locales[0]
     val labels = remember(rows, locale) { rows.map { shortMonth(it.month_date, locale) } }
@@ -1608,7 +2781,9 @@ internal fun SavingsChart(rows: List<SavingsRateDto>, selected: Int, modifier: M
                     LineCartesianLayer.rememberLine(
                         fill = remember(p.primary) { LineCartesianLayer.LineFill.single(Fill(p.primary)) },
                         stroke = LineCartesianLayer.LineStroke.Continuous(thickness = 2.dp, cap = StrokeCap.Round),
-                        pointProvider = remember(selected, normal, big) { HighlightPoints(selected.toDouble(), normal, big) }
+                        pointProvider = remember(selected, normal, big) {
+                            HighlightPoints(selected.map { it.toDouble() }.toSet(), normal, big)
+                        }
                     )
                 )
             ),
@@ -1633,7 +2808,7 @@ internal fun SavingsChart(rows: List<SavingsRateDto>, selected: Int, modifier: M
 }
 ```
 
-Catatan kompilasi: kalau kompiler menolak tipe kembalian `monthAxis` yang diinferensi, tulis eksplisit `: HorizontalAxis<Axis.Position.Horizontal.Bottom>` dan import `com.patrykandpatrick.vico.compose.cartesian.axis.Axis`. Paket `TextComponent` (`common.component`), `Zoom.Content` (companion `cartesian.Zoom`) dan `ProvideVicoTheme(theme, content)` sudah dicek di sources jar; salinan sources ada di `$SCRATCH/vico-dl/src-compose` dan `$SCRATCH/vico-dl/src-m3` untuk cek ulang.
+Catatan kompilasi: kalau kompiler menolak tipe kembalian `monthAxis` yang diinferensi, tulis eksplisit `: HorizontalAxis<Axis.Position.Horizontal.Bottom>` dan import `com.patrykandpatrick.vico.compose.cartesian.axis.Axis`. Paket `TextComponent` (`common.component`), `Zoom.Content` (companion `cartesian.Zoom`) dan `ProvideVicoTheme(theme, content)` sudah dicek di sources jar (`$SCRATCH/vico-dl/src-compose`, `$SCRATCH/vico-dl/src-m3`). 24 bulan muat lebar layar: `Zoom.Content` = `(lebar − padding) / lebar konten` (bisa < 1) dan `ColumnCartesianLayer` menggambar kolom dengan `drawVertical(..., zoom)`, jadi tebal batang ikut mengecil. Label bulan dijarangkan `(rows + 5) / 6`: 8 → tiap 2, 12 → tiap 2, 24 → tiap 4.
 
 - [ ] **Step 4: `ui/analytics/AnalyticsScreen.kt` (ganti seluruh isi)**
 
@@ -1641,6 +2816,7 @@ Catatan kompilasi: kalau kompiler menolak tipe kembalian `monthAxis` yang diinfe
 package com.mrrizaldi.finance.ui.analytics
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -1655,13 +2831,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -1677,13 +2856,13 @@ import com.mrrizaldi.finance.data.remote.PeriodComparisonDto
 import com.mrrizaldi.finance.ui.components.GlassSegmented
 import com.mrrizaldi.finance.ui.components.GlassSurface
 import com.mrrizaldi.finance.ui.components.GroupedCard
-import com.mrrizaldi.finance.ui.components.MonthPicker
 import com.mrrizaldi.finance.ui.components.NavBarClearance
 import com.mrrizaldi.finance.ui.components.OfflineChip
 import com.mrrizaldi.finance.ui.components.SectionLabel
 import com.mrrizaldi.finance.ui.theme.AppType
 import com.mrrizaldi.finance.ui.theme.LocalPalette
-import com.mrrizaldi.finance.util.JakartaDate
+import com.mrrizaldi.finance.util.AnalyticsPeriod
+import com.mrrizaldi.finance.util.PeriodBounds
 import com.mrrizaldi.finance.util.RupiahFormat
 import java.time.YearMonth
 import kotlin.math.roundToLong
@@ -1693,11 +2872,10 @@ fun AnalyticsScreen(vm: AnalyticsViewModel) {
     val state by vm.uiState.collectAsStateWithLifecycle()
     val error by vm.error.collectAsStateWithLifecycle()
     val refreshing by vm.refreshing.collectAsStateWithLifecycle()
-    var span by rememberSaveable { mutableIntStateOf(6) }
     val p = LocalPalette.current
-    val trend = state.trend.takeLast(span)
-    val savings = state.savings.takeLast(span)
-    val selected = savings.indexOfFirst { it.month_date.startsWith(state.month.toString()) }
+    val highlighted = state.savings.indices
+        .filter { state.bounds.covers(YearMonth.parse(state.savings[it].month_date.take(7))) }
+        .toSet()
 
     PullToRefreshBox(isRefreshing = refreshing, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
@@ -1706,7 +2884,7 @@ fun AnalyticsScreen(vm: AnalyticsViewModel) {
                 style = AppType.screenTitle,
                 modifier = Modifier.padding(top = 8.dp, bottom = 4.dp)
             )
-            MonthPicker(state.month, vm::setMonth)
+            PeriodSwitcher(state.bounds, vm::setPeriod, vm::shift)
             when (error) {
                 SyncError.Offline -> Box(Modifier.padding(top = 8.dp)) { OfflineChip(state.lastSuccessAt) }
                 is SyncError.Server -> Text(
@@ -1716,31 +2894,21 @@ fun AnalyticsScreen(vm: AnalyticsViewModel) {
                 )
                 else -> Unit
             }
-            state.comparison?.let { ComparisonCard(it, state.month) }
+            state.comparison?.let { ComparisonCard(it, state.bounds) }
             SectionLabel(stringResource(R.string.analytics_trend))
             GroupedCard {
                 Column(Modifier.padding(16.dp)) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         LegendDot(p.positive, stringResource(R.string.home_income))
                         LegendDot(p.negative, stringResource(R.string.home_expense), Modifier.padding(start = 12.dp))
-                        Spacer(Modifier.weight(1f))
-                        GlassSegmented(
-                            options = listOf(
-                                stringResource(R.string.analytics_span, 6),
-                                stringResource(R.string.analytics_span, 12)
-                            ),
-                            selected = if (span == 6) 0 else 1,
-                            onSelect = { span = if (it == 0) 6 else 12 },
-                            modifier = Modifier.width(136.dp)
-                        )
                     }
-                    if (trend.isNotEmpty()) TrendChart(trend, Modifier.fillMaxWidth().padding(top = 12.dp))
+                    if (state.trend.isNotEmpty()) TrendChart(state.trend, Modifier.fillMaxWidth().padding(top = 12.dp))
                 }
             }
             SectionLabel(stringResource(R.string.analytics_savings))
             GroupedCard {
                 Box(Modifier.padding(16.dp)) {
-                    if (savings.isNotEmpty()) SavingsChart(savings, selected, Modifier.fillMaxWidth())
+                    if (state.savings.isNotEmpty()) SavingsChart(state.savings, highlighted, Modifier.fillMaxWidth())
                 }
             }
             Spacer(Modifier.navigationBarsPadding().height(NavBarClearance))
@@ -1749,9 +2917,39 @@ fun AnalyticsScreen(vm: AnalyticsViewModel) {
 }
 
 @Composable
-private fun ComparisonCard(c: PeriodComparisonDto, month: YearMonth) {
+private fun PeriodSwitcher(bounds: PeriodBounds, onPeriod: (AnalyticsPeriod) -> Unit, onShift: (Long) -> Unit) {
     val locale = LocalConfiguration.current.locales[0]
-    val previous = JakartaDate.formatMonth(month.minusMonths(1), locale)
+    val names = listOf(
+        R.string.analytics_week,
+        R.string.analytics_month,
+        R.string.analytics_quarter,
+        R.string.analytics_year
+    )
+    GlassSegmented(
+        options = names.map { stringResource(it) },
+        selected = bounds.period.ordinal,
+        onSelect = { onPeriod(AnalyticsPeriod.entries[it]) },
+        modifier = Modifier.padding(top = 8.dp)
+    )
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        IconButton(onClick = { onShift(-1) }) {
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.analytics_prev))
+        }
+        Text(bounds.label(locale), style = MaterialTheme.typography.titleMedium)
+        IconButton(onClick = { onShift(1) }) {
+            Icon(Icons.AutoMirrored.Filled.KeyboardArrowRight, stringResource(R.string.analytics_next))
+        }
+    }
+}
+
+@Composable
+private fun ComparisonCard(c: PeriodComparisonDto, bounds: PeriodBounds) {
+    val locale = LocalConfiguration.current.locales[0]
+    val previous = bounds.shift(-1).label(locale)
     GlassSurface(Modifier.fillMaxWidth().padding(top = 12.dp)) {
         Row(Modifier.padding(16.dp)) {
             ComparisonCell(R.string.tx_type_income, c.curr_income, c.prev_income, true, previous, Modifier.weight(1f))
@@ -1767,7 +2965,7 @@ private fun ComparisonCell(
     current: Double,
     previous: Double,
     higherIsGood: Boolean,
-    previousMonth: String,
+    previousLabel: String,
     modifier: Modifier
 ) {
     val p = LocalPalette.current
@@ -1793,7 +2991,7 @@ private fun ComparisonCell(
             modifier = Modifier.padding(top = 6.dp)
         )
         Text(
-            stringResource(R.string.analytics_vs, previousMonth),
+            stringResource(R.string.analytics_vs, previousLabel),
             style = AppType.rowMeta,
             color = p.textMute,
             maxLines = 1,
@@ -1819,48 +3017,69 @@ private fun LegendDot(color: Color, label: String, modifier: Modifier = Modifier
 - [ ] **Step 5: Build, test, cek dependency**
 
 ```bash
-cd /home/mrrizaldi/dev/finance-project/.worktrees/redesign/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
 ./gradlew test assembleDebug 2>&1 | grep -E "^e: |BUILD" | head -5
+grep -ho 'tests="[0-9]*"' app/build/test-results/testDebugUnitTest/*.xml | grep -o '[0-9]*' | awk '{s+=$1} END {print s}'
 ./gradlew :app:dependencies --configuration debugRuntimeClasspath 2>&1 | grep -E "patrykandpatrick.vico:compose(-m3)?(-android)?:|androidx.compose.material3:material3:|androidx.compose.ui:ui-android:" | sort -u | head
 ```
-Expected: `BUILD SUCCESSFUL` tanpa baris `e:`; dependency memuat `com.patrykandpatrick.vico:compose-m3:3.3.1` dan `com.patrykandpatrick.vico:compose:3.3.1`; `androidx.compose.material3:material3` berakhir di `1.4.0` (boleh `1.4.0 -> 1.4.0`, tidak boleh `-> 1.5`); `androidx.compose.ui:ui-android` tetap `1.12.1`. Versi naik → berhenti dan lapor (BOM bergeser = gate point).
+Expected: `BUILD SUCCESSFUL` tanpa baris `e:`; total = C + 9; dependency memuat `com.patrykandpatrick.vico:compose-m3:3.3.1` dan `com.patrykandpatrick.vico:compose:3.3.1`; `androidx.compose.material3:material3` berakhir di `1.4.0` (boleh `1.4.0 -> 1.4.0`, tidak boleh `-> 1.5`); `androidx.compose.ui:ui-android` tetap `1.12.1`. Versi naik → berhenti dan lapor (BOM bergeser = gate point).
 
-- [ ] **Step 6: Di HP — bagian atas Analytics + toggle**
+- [ ] **Step 6: Di HP — empat periode + geser**
+
+Label di bawah dihitung untuk eksekusi 16 Okt 2026 (Jumat); hari lain → hitung ulang dari `periodBounds(…, hari ini)`.
 
 ```bash
 SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
 hp_cek && hp_pasang && sleep 4
-hp_tap 'content-desc="Analytics"'; sleep 3; hp_foto t4a-analytics-6
-hp_ui t4a-analytics-6 | xargs grep -o 'text="Income"\|text="Expense"\|text="vs [^"]*"\|text="[▲▼] [^"]*"\|text="6 mo"\|text="12 mo"' | sort -u
-hp_tap 'text="12 mo"'; sleep 2; hp_foto t4b-analytics-12
-hp_tap 'text="6 mo"'; sleep 1
+hp_tap 'content-desc="Analytics"'; sleep 3; hp_foto t4a-monthly
+hp_ui t4a-monthly | xargs grep -o 'text="Weekly"\|text="Monthly"\|text="Quarterly"\|text="Yearly"\|text="October 2026"\|text="vs September 2026"\|text="[▲▼] [^"]*"\|content-desc="Previous period"\|content-desc="Next period"' | sort -u
+```
+Expected: keempat opsi, `October 2026`, `vs September 2026` (dua kali di dump, `sort -u` jadi satu), teks persen `▲ …%`/`▼ …%` (atau `–` kalau periode lalu 0), dua content-desc panah. `t4a`: segmen kaca 4 opsi dengan "Monthly" terpilih (pil gelap), baris `‹ October 2026 ›`, kartu kaca dua kolom, tren 12 pasang batang, savings 12 titik dengan titik Oktober lebih besar.
+
+```bash
+SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
+hp_tap 'text="Weekly"'; sleep 3; hp_foto t4b-weekly
+hp_ui t4b-weekly | xargs grep -o 'text="12 Oct – 18 Oct 2026"\|text="vs 5 Oct – 11 Oct 2026"' | sort -u
+hp_tap 'text="Quarterly"'; sleep 3; hp_foto t4c-quarterly
+hp_ui t4c-quarterly | xargs grep -o 'text="Q4 2026"\|text="vs Q3 2026"' | sort -u
+hp_tap 'text="Yearly"'; sleep 3; hp_foto t4d-yearly
+hp_ui t4d-yearly | xargs grep -o 'text="2026"\|text="vs 2025"' | sort -u
+hp_tap 'text="Monthly"'; sleep 3
+hp_tap 'content-desc="Previous period"'; sleep 3; hp_foto t4e-prev
+hp_ui t4e-prev | xargs grep -o 'text="September 2026"\|text="vs August 2026"' | sort -u
+hp_tap 'content-desc="Next period"'; sleep 3
+hp_ui t4f-next | xargs grep -o 'text="October 2026"\|text="vs September 2026"' | sort -u
 hp_crash
 ```
-Expected: `Income`, `Expense`, `vs September 2026`, dua teks persen `▲ …%`/`▼ …%` (atau `–` kalau bulan lalu 0), `6 mo`, `12 mo`. Lihat `t4a`: kartu kaca dua kolom, chart batang hijau/merah 6 bulan dengan label `Jun … Oct` dan sumbu kiri `… M`; savings garis hijau dengan titik terakhir lebih besar. `t4b`: 12 pasang batang, label tiap 2 bulan. `logcat bersih`.
+Expected: tiap grep mengeluarkan kedua teks; `t4b`: tren 8 pasang batang, titik savings Oktober tebal; `t4c`: 12 pasang batang, hanya titik Okt tebal (jendela berakhir di Okt, Nov/Des belum ada); `t4d`: 24 pasang batang muat lebar kartu tanpa tumpang tindih, label bulan tiap 4, titik Jan–Okt 2026 tebal; `t4e`: angka perbandingan berubah. `logcat bersih`.
 
 - [ ] **Step 7: Cek komentar + commit**
 
 ```bash
-cd /home/mrrizaldi/dev/finance-project/.worktrees/redesign
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics
 J=mobile/app/src/main/java/com/mrrizaldi/finance
 F="mobile/app/build.gradle.kts $J/ui/analytics/AnalyticsCharts.kt $J/ui/analytics/AnalyticsScreen.kt"
 python3 /home/mrrizaldi/dev/finance-project/scripts/cek_komentar.py $F; echo "exit=$?"
 git add $F mobile/app/src/main/res/values/strings.xml mobile/app/src/main/res/values-en/strings.xml
 git commit -F- <<'EOF'
-feat(mobile): analytics - perbandingan bulan, tren 6/12, savings rate
+feat(mobile): analytics - pemilih periode, perbandingan, tren, savings
 
-Kartu kaca pemasukan/pengeluaran vs bulan lalu (get_period_comparison,
-pengeluaran naik merah, pemasukan naik hijau). Tren batang berkelompok
-masuk vs keluar + garis savings rate pakai Vico 3.3.1 compose-m3 (sudah
-di katalog, disetujui), sumbu Y dalam juta, toggle 6/12 cuma motong data
-12 bulan. Chart lewat CartesianChartHost(chart, model) yang di-remember
-dari data, jadi gak perlu LaunchedEffect. Titik savings bulan terpilih
-ditebalkan kalau masuk jendela (rpc tren selalu berakhir di bulan ini).
+Pemilih periode kayak dashboard: segmen kaca Mingguan/Bulanan/Kuartal/
+Tahunan + baris "< label >" buat geser satu periode. Kartu kaca
+pemasukan/pengeluaran vs periode lalu (get_period_comparison). Tren
+batang masuk vs keluar + garis savings rate pakai Vico 3.3.1
+compose-m3 (sudah di katalog, disetujui), panjangnya ikut trendMonths
+(8/12/12/24), toggle 6/12 dibuang. Titik savings yang bulannya kena
+periode ditebalkan. Chart lewat CartesianChartHost(chart, model) yang
+di-remember dari data, jadi gak perlu LaunchedEffect.
 
 Bukti: ./gradlew test assembleDebug BUILD SUCCESSFUL, <total> test;
 debugRuntimeClasspath: vico compose-m3 3.3.1, material3 tetap 1.4.0,
-ui-android tetap 1.12.1; di HP: $SCRATCH/t4a-analytics-6.png,
-$SCRATCH/t4b-analytics-12.png; logcat bersih; cek_komentar exit 0.
+ui-android tetap 1.12.1; di HP: $SCRATCH/t4a-monthly.png,
+$SCRATCH/t4b-weekly.png ("12 Oct – 18 Oct 2026"),
+$SCRATCH/t4c-quarterly.png ("Q4 2026"), $SCRATCH/t4d-yearly.png
+(24 batang), $SCRATCH/t4e-prev.png ("September 2026"); logcat bersih;
+cek_komentar exit 0.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 EOF
@@ -1868,13 +3087,120 @@ EOF
 
 ---
 
-### Task 5: Analytics bagian 2 — kategori, kalender harian, budget, transaksi terbesar
+### Task 5: Analytics bagian 2 — kategori, kalender/grid kontribusi, budget bulanan, transaksi terbesar
 
 **Files:**
+- Modify: `ui/analytics/AnalyticsMath.kt` (`monthWeeks` → `weeksOf`), test `ui/analytics/AnalyticsMathTest.kt`, `ui/analytics/AnalyticsScreen.kt`, strings id/en
 - Create: `ui/analytics/AnalyticsSections.kt`
-- Modify: `ui/analytics/AnalyticsScreen.kt`, strings id/en
 
-- [ ] **Step 1: Strings**
+- [ ] **Step 1: Test gagal dulu — `ui/analytics/AnalyticsMathTest.kt`**
+
+Ganti import
+```kotlin
+import java.time.LocalDate
+import java.time.YearMonth
+import java.util.Locale
+```
+dengan
+```kotlin
+import java.time.LocalDate
+import java.util.Locale
+```
+ganti
+```kotlin
+        val oct = monthWeeks(YearMonth.of(2026, 10))
+```
+dengan
+```kotlin
+        val oct = weeksOf(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 10, 31))
+```
+ganti
+```kotlin
+        val feb = monthWeeks(YearMonth.of(2027, 2))
+```
+dengan
+```kotlin
+        val feb = weeksOf(LocalDate.of(2027, 2, 1), LocalDate.of(2027, 2, 28))
+```
+ganti
+```kotlin
+        val nov = monthWeeks(YearMonth.of(2026, 11))
+        assertEquals(6, nov.size)
+        assertEquals(LocalDate.of(2026, 11, 1), nov.first()[6])
+        assertEquals(30, nov.flatten().count { it != null })
+    }
+```
+dengan
+```kotlin
+        val nov = weeksOf(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 30))
+        assertEquals(6, nov.size)
+        assertEquals(LocalDate.of(2026, 11, 1), nov.first()[6])
+        assertEquals(30, nov.flatten().count { it != null })
+    }
+
+    @Test
+    fun `grid minggu untuk minggu kuartal dan tahun`() {
+        val week = weeksOf(LocalDate.of(2026, 9, 28), LocalDate.of(2026, 10, 4))
+        assertEquals(1, week.size)
+        assertTrue(week.single().none { it == null })
+
+        val q4 = weeksOf(LocalDate.of(2026, 10, 1), LocalDate.of(2026, 12, 31))
+        assertEquals(14, q4.size)
+        assertEquals(listOf(null, null, null), q4.first().take(3))
+        assertEquals(92, q4.flatten().count { it != null })
+
+        val year = weeksOf(LocalDate.of(2026, 1, 1), LocalDate.of(2026, 12, 31))
+        assertEquals(53, year.size)
+        assertEquals(365, year.flatten().count { it != null })
+        assertEquals(LocalDate.of(2026, 12, 31), year.last()[3])
+        assertNull(year.last()[4])
+    }
+```
+
+```bash
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+./gradlew :app:testDebugUnitTest --tests 'com.mrrizaldi.finance.ui.analytics.AnalyticsMathTest' 2>&1 | grep -E "^e: |BUILD" | head -3
+```
+Expected: `BUILD FAILED`, `Unresolved reference 'weeksOf'`.
+
+- [ ] **Step 2: `ui/analytics/AnalyticsMath.kt`**
+
+Ganti
+```kotlin
+import java.time.LocalDate
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+```
+dengan
+```kotlin
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+```
+ganti
+```kotlin
+internal fun monthWeeks(month: YearMonth): List<List<LocalDate?>> {
+    val lead = month.atDay(1).dayOfWeek.value - 1
+    val cells = List<LocalDate?>(lead) { null } + (1..month.lengthOfMonth()).map { month.atDay(it) }
+    return cells.chunked(7) { week -> week + List(7 - week.size) { null } }
+}
+```
+dengan
+```kotlin
+internal fun weeksOf(start: LocalDate, end: LocalDate): List<List<LocalDate?>> =
+    generateSequence(start.minusDays(start.dayOfWeek.value - 1L)) { it.plusWeeks(1) }
+        .takeWhile { it <= end }
+        .map { monday -> (0L..6L).map { d -> monday.plusDays(d).takeIf { it in start..end } } }
+        .toList()
+```
+
+```bash
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+./gradlew :app:testDebugUnitTest --tests 'com.mrrizaldi.finance.ui.analytics.AnalyticsMathTest' 2>&1 | tail -2
+grep -o 'tests="[0-9]*" skipped="[0-9]*" failures="[0-9]*"' app/build/test-results/testDebugUnitTest/TEST-com.mrrizaldi.finance.ui.analytics.AnalyticsMathTest.xml
+```
+Expected: `BUILD SUCCESSFUL`; `tests="12" skipped="0" failures="0"`.
+
+- [ ] **Step 3: Strings**
 
 `values/strings.xml`: ganti `    <string name="analytics_savings">Savings rate</string>` dengan
 ```xml
@@ -1883,7 +3209,7 @@ EOF
     <string name="analytics_others">Lainnya</string>
     <string name="analytics_daily">Pengeluaran harian</string>
     <string name="analytics_daily_hint">Ketuk tanggal untuk lihat totalnya</string>
-    <string name="analytics_budget">Budget bulan ini</string>
+    <string name="analytics_budget">Budget bulanan</string>
     <string name="analytics_budget_used">%1$s / %2$s</string>
     <string name="analytics_top">Transaksi terbesar</string>
     <string name="analytics_empty">Belum ada pengeluaran</string>
@@ -1895,13 +3221,13 @@ EOF
     <string name="analytics_others">Others</string>
     <string name="analytics_daily">Daily spending</string>
     <string name="analytics_daily_hint">Tap a day to see its total</string>
-    <string name="analytics_budget">Budget this month</string>
+    <string name="analytics_budget">Monthly budget</string>
     <string name="analytics_budget_used">%1$s / %2$s</string>
     <string name="analytics_top">Largest expenses</string>
     <string name="analytics_empty">No spending yet</string>
 ```
 
-- [ ] **Step 2: `ui/analytics/AnalyticsSections.kt`**
+- [ ] **Step 4: `ui/analytics/AnalyticsSections.kt`**
 
 ```kotlin
 package com.mrrizaldi.finance.ui.analytics
@@ -1909,6 +3235,8 @@ package com.mrrizaldi.finance.ui.analytics
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -1920,11 +3248,13 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -1938,6 +3268,8 @@ import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -1950,15 +3282,23 @@ import com.mrrizaldi.finance.ui.components.hexColor
 import com.mrrizaldi.finance.ui.theme.AppType
 import com.mrrizaldi.finance.ui.theme.FinancePalette
 import com.mrrizaldi.finance.ui.theme.LocalPalette
+import com.mrrizaldi.finance.util.AnalyticsPeriod
 import com.mrrizaldi.finance.util.JakartaDate
+import com.mrrizaldi.finance.util.PeriodBounds
 import com.mrrizaldi.finance.util.RupiahFormat
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.YearMonth
 import java.time.format.TextStyle as JavaTextStyle
+import java.util.Locale
 import kotlin.math.roundToLong
 
 private val CellShape = RoundedCornerShape(8.dp)
+
+private val GridShape = RoundedCornerShape(3.dp)
+
+private val GridCell = 14.dp
+
+private val GridGap = 3.dp
 
 @Composable
 private fun EmptyCard(text: String) {
@@ -2021,67 +3361,116 @@ private fun dayFill(level: Float, p: FinancePalette): Color {
 }
 
 @Composable
-private fun DayCell(date: LocalDate, level: Float, isToday: Boolean, isPicked: Boolean, onClick: () -> Unit) {
+private fun DayCell(
+    date: LocalDate,
+    level: Float,
+    detail: String,
+    isToday: Boolean,
+    isPicked: Boolean,
+    numbered: Boolean,
+    onClick: () -> Unit
+) {
     val p = LocalPalette.current
     val fill = dayFill(level, p)
     val ink = if (fill.luminance() > 0.179f) Color(0xFF11171D) else Color.White
+    val shape = if (numbered) CellShape else GridShape
     Box(
         Modifier
             .fillMaxSize()
-            .clip(CellShape)
+            .clip(shape)
             .background(fill)
-            .then(
-                if (isToday || isPicked) Modifier.border(if (isPicked) 2.dp else 1.dp, p.textHi, CellShape) else Modifier
-            )
+            .then(if (isToday || isPicked) Modifier.border(if (isPicked) 2.dp else 1.dp, p.textHi, shape) else Modifier)
+            .semantics { contentDescription = detail }
             .clickable(role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
-        Text(date.dayOfMonth.toString(), style = AppType.rowMeta, color = ink)
+        if (numbered) Text(date.dayOfMonth.toString(), style = AppType.rowMeta, color = ink)
     }
 }
 
 @Composable
-internal fun DailyCard(month: YearMonth, daily: List<DailySpendingDto>) {
+private fun CalendarGrid(weeks: List<List<LocalDate?>>, locale: Locale, cell: @Composable (LocalDate) -> Unit) {
     val p = LocalPalette.current
-    val locale = LocalConfiguration.current.locales[0]
-    val today = JakartaDate.today()
-    var picked by rememberSaveable(month) { mutableStateOf<Int?>(null) }
-    val byDay = daily.associate { it.day to it.daily_expense }
-    val max = byDay.values.maxOrNull() ?: 0.0
-    GroupedCard {
-        Column(Modifier.padding(12.dp)) {
-            Row {
-                DayOfWeek.entries.forEach { day ->
-                    Text(
-                        day.getDisplayName(JavaTextStyle.SHORT, locale),
-                        style = AppType.sectionLabel,
-                        color = p.textMute,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.weight(1f)
-                    )
+    Row {
+        DayOfWeek.entries.forEach { day ->
+            Text(
+                day.getDisplayName(JavaTextStyle.SHORT, locale),
+                style = AppType.sectionLabel,
+                color = p.textMute,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.weight(1f)
+            )
+        }
+    }
+    weeks.forEach { week ->
+        Row {
+            week.forEach { date ->
+                Box(Modifier.weight(1f).aspectRatio(1f).padding(3.dp)) {
+                    if (date != null) cell(date)
                 }
             }
-            monthWeeks(month).forEach { week ->
-                Row {
+        }
+    }
+}
+
+@Composable
+private fun ContributionGrid(
+    weeks: List<List<LocalDate?>>,
+    bounds: PeriodBounds,
+    locale: Locale,
+    cell: @Composable (LocalDate) -> Unit
+) {
+    val p = LocalPalette.current
+    key(bounds) {
+        Row(
+            Modifier.fillMaxWidth().horizontalScroll(rememberScrollState(Int.MAX_VALUE)),
+            horizontalArrangement = Arrangement.spacedBy(GridGap)
+        ) {
+            weeks.forEach { week ->
+                Column(verticalArrangement = Arrangement.spacedBy(GridGap)) {
+                    Box(Modifier.size(GridCell), contentAlignment = Alignment.Center) {
+                        week.firstOrNull { it?.dayOfMonth == 1 }?.let {
+                            Text(shortMonth(it.toString(), locale).take(1), style = AppType.sectionLabel, color = p.textMute)
+                        }
+                    }
                     week.forEach { date ->
-                        Box(Modifier.weight(1f).aspectRatio(1f).padding(3.dp)) {
-                            if (date != null) {
-                                DayCell(
-                                    date = date,
-                                    level = intensity(byDay[date.toString()] ?: 0.0, max),
-                                    isToday = date == today,
-                                    isPicked = date.dayOfMonth == picked,
-                                    onClick = { picked = date.dayOfMonth }
-                                )
-                            }
+                        Box(Modifier.size(GridCell)) {
+                            if (date != null) cell(date)
                         }
                     }
                 }
             }
-            val detail = picked?.let { day ->
-                val date = month.atDay(day)
-                formatDayDetail(date, RupiahFormat.format((byDay[date.toString()] ?: 0.0).roundToLong()), locale)
-            }
+        }
+    }
+}
+
+@Composable
+internal fun DailyCard(bounds: PeriodBounds, daily: List<DailySpendingDto>) {
+    val p = LocalPalette.current
+    val locale = LocalConfiguration.current.locales[0]
+    val today = JakartaDate.today()
+    var picked by rememberSaveable(bounds) { mutableStateOf<String?>(null) }
+    val byDay = daily.associate { it.day to it.daily_expense }
+    val max = byDay.values.maxOrNull() ?: 0.0
+    val calendar = bounds.period == AnalyticsPeriod.WEEK || bounds.period == AnalyticsPeriod.MONTH
+    val weeks = weeksOf(bounds.start, bounds.end)
+    fun detailOf(date: LocalDate) =
+        formatDayDetail(date, RupiahFormat.format((byDay[date.toString()] ?: 0.0).roundToLong()), locale)
+    val cell: @Composable (LocalDate) -> Unit = { date ->
+        DayCell(
+            date = date,
+            level = intensity(byDay[date.toString()] ?: 0.0, max),
+            detail = detailOf(date),
+            isToday = date == today,
+            isPicked = date.toString() == picked,
+            numbered = calendar,
+            onClick = { picked = date.toString() }
+        )
+    }
+    GroupedCard {
+        Column(Modifier.padding(12.dp)) {
+            if (calendar) CalendarGrid(weeks, locale, cell) else ContributionGrid(weeks, bounds, locale, cell)
+            val detail = picked?.let { detailOf(LocalDate.parse(it)) }
             Text(
                 detail ?: stringResource(R.string.analytics_daily_hint),
                 style = AppType.rowMeta,
@@ -2135,89 +3524,114 @@ internal fun TopCard(rows: List<TransactionEntity>) {
     if (rows.isEmpty()) EmptyCard(stringResource(R.string.analytics_empty)) else GroupedCard(rows) { tx -> TxRow(tx) {} }
 }
 ```
+Catatan: `rememberScrollState(Int.MAX_VALUE)` = mulai dari ujung kanan; dicek di sources foundation 1.12.1 (`ScrollState.maxValue` setter memotong `value` ke `maxValue`). `key(bounds)` supaya ganti periode/geser membuat state gulir baru yang kembali ke ujung kanan.
 
-- [ ] **Step 3: `ui/analytics/AnalyticsScreen.kt` — sisipkan empat seksi**
+- [ ] **Step 5: `ui/analytics/AnalyticsScreen.kt` — sisipkan empat seksi**
 
 Ganti
 ```kotlin
-                    if (savings.isNotEmpty()) SavingsChart(savings, selected, Modifier.fillMaxWidth())
+                    if (state.savings.isNotEmpty()) SavingsChart(state.savings, highlighted, Modifier.fillMaxWidth())
                 }
             }
             Spacer(Modifier.navigationBarsPadding().height(NavBarClearance))
 ```
 dengan
 ```kotlin
-                    if (savings.isNotEmpty()) SavingsChart(savings, selected, Modifier.fillMaxWidth())
+                    if (state.savings.isNotEmpty()) SavingsChart(state.savings, highlighted, Modifier.fillMaxWidth())
                 }
             }
             SectionLabel(stringResource(R.string.analytics_by_category))
             CategoryCard(state.categories)
             SectionLabel(stringResource(R.string.analytics_daily))
-            DailyCard(state.month, state.daily)
-            SectionLabel(stringResource(R.string.analytics_budget))
-            BudgetCard(state.budgets)
+            DailyCard(state.bounds, state.daily)
+            if (state.bounds.period == AnalyticsPeriod.MONTH) {
+                SectionLabel(stringResource(R.string.analytics_budget))
+                BudgetCard(state.budgets)
+            }
             SectionLabel(stringResource(R.string.analytics_top))
             TopCard(state.top)
             Spacer(Modifier.navigationBarsPadding().height(NavBarClearance))
 ```
 
-- [ ] **Step 4: Build + test**
+- [ ] **Step 6: Build + test**
 
 ```bash
-cd /home/mrrizaldi/dev/finance-project/.worktrees/redesign/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
 ./gradlew test assembleDebug 2>&1 | grep -E "^e: |BUILD" | head -5
+grep -ho 'tests="[0-9]*"' app/build/test-results/testDebugUnitTest/*.xml | grep -o '[0-9]*' | awk '{s+=$1} END {print s}'
+grep -h -o 'failures="[0-9]*"' app/build/test-results/testDebugUnitTest/*.xml | sort -u
+grep -rn "monthWeeks" app/src || echo bersih
 ```
-Expected: `BUILD SUCCESSFUL`.
+Expected: `BUILD SUCCESSFUL`; total = **C + 10**; `failures="0"` saja; `bersih`.
 
-- [ ] **Step 5: Di HP — scroll + ketuk hari**
+- [ ] **Step 7: Di HP — bulanan (kalender + budget), mingguan, kuartal & tahunan (grid)**
+
+Bantuan gulir ke atas (tarikan dari atas memicu pull-to-refresh, tidak apa): `atas() { for i in 1 2 3 4 5 6; do adb shell input swipe 540 700 540 2100 200; done; sleep 2; }`. `SectionLabel` menampilkan huruf besar, jadi dump memuat `MONTHLY BUDGET`, `DAILY SPENDING`, `LARGEST EXPENSES`.
 
 ```bash
 SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
 hp_cek && hp_pasang && sleep 4
 hp_tap 'content-desc="Analytics"'; sleep 3
-hp_geser; hp_foto t5a-category
-hp_geser; hp_foto t5b-daily
-hp_ui t5b-daily | xargs grep -o 'text="Tap a day to see its total"\|text="Mon"\|text="Sun"' | sort -u
+for i in 1 2 3 4 5; do hp_geser; hp_foto t5-m-$i >/dev/null; hp_ui t5-m-$i >/dev/null; done
+cat $SCRATCH/t5-m-*.xml | grep -o 'text="SPENDING BY CATEGORY"\|text="DAILY SPENDING"\|text="MONTHLY BUDGET"\|text="LARGEST EXPENSES"\|text="Tap a day to see its total"\|text="Mon"\|text="Sun"' | sort -u
+cat $SCRATCH/t5-m-*.xml | grep -o 'content-desc="[A-Z][a-z][a-z], 13 Oct · Rp [^"]*"' | sort -u
 ```
-Expected: `t5a`: daftar kategori dengan titik warna, nominal, persen, bar tipis; baris `Others` hanya kalau kategori > 6. `t5b`: kalender 7 kolom `Mon … Sun`, hari mahal lebih merah, hari ini bergaris tepi; teks hint ada.
+Expected: ketujuh teks; satu `content-desc="Tue, 13 Oct · Rp …"`. Screenshot `t5-m-*`: kategori dengan titik warna + bar tipis (baris `Others` hanya kalau kategori > 6), kalender 7 kolom bernomor, hari ini bergaris tepi, Budget (bar hijau/oranye/merah, urut persen), 5 baris Largest expenses, bawah tidak tertutup bottom bar.
 
-Ketuk satu tanggal yang terlihat (pilih yang ada di layar dari dump, contoh `13`; cek dulu `grep -c 'text="13"'` = 1 supaya tidak salah sasaran):
-
+Ketuk tanggal 13 di kalender (gulir sampai kalender terlihat; cek dulu muncul di dump):
 ```bash
 SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
-hp_ui t5c-before | xargs grep -c 'text="13"'
-hp_tap 'text="13"'; sleep 1; hp_foto t5c-picked
-hp_ui t5c-picked | xargs grep -o 'text="[A-Z][a-z][a-z], 13 Oct · Rp [^"]*"'
-hp_geser; hp_foto t5d-budget-top
-hp_geser; hp_foto t5e-bottom
+atas() { for i in 1 2 3 4 5 6; do adb shell input swipe 540 700 540 2100 200; done; sleep 2; }
+atas; hp_geser; hp_geser
+hp_ui t5a-before | xargs grep -c 'content-desc="[A-Z][a-z][a-z], 13 Oct '
+hp_tap 'content-desc="[A-Z][a-z][a-z], 13 Oct '; sleep 1; hp_foto t5a-picked
+hp_ui t5a-picked | xargs grep -o 'text="[A-Z][a-z][a-z], 13 Oct · Rp [^"]*"'
+```
+Expected: `1` (kalau `0`, `hp_geser` sekali lagi lalu ulang); lalu satu baris `text="Tue, 13 Oct · Rp …"` sama dengan content-desc di atas; sel 13 bergaris tepi 2dp.
+
+Mingguan, Kuartal, Tahunan:
+```bash
+SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
+atas() { for i in 1 2 3 4 5 6; do adb shell input swipe 540 700 540 2100 200; done; sleep 2; }
+for P in Weekly Quarterly Yearly; do
+  atas; hp_tap "text=\"$P\""; sleep 3
+  for i in 1 2 3 4; do hp_geser; hp_foto t5-$P-$i >/dev/null; hp_ui t5-$P-$i >/dev/null; done
+  echo "$P budget: $(cat $SCRATCH/t5-$P-*.xml | grep -c 'text="MONTHLY BUDGET"')"
+  echo "$P hari: $(cat $SCRATCH/t5-$P-*.xml | grep -o 'content-desc="[A-Z][a-z][a-z], [0-9]* [A-Z][a-z][a-z] · Rp [^"]*"' | sort -u | wc -l)"
+  echo "$P inisial: $(cat $SCRATCH/t5-$P-*.xml | grep -o 'text="[A-Z]"' | sort -u | tr '\n' ' ')"
+done
+atas; hp_tap 'text="Monthly"'; sleep 2
 hp_crash
 ```
-Expected: `1`; lalu satu baris `text="Tue, 13 Oct · Rp …"`; `t5d`/`t5e`: Budget this month (bar hijau/oranye/merah, urut persen tertinggi) dan Largest expenses 5 baris `TxRow`; bagian bawah tidak tertutup bottom bar. `logcat bersih`.
+Expected: ketiga periode `budget: 0`; `Weekly hari: 7`, `Quarterly hari: 92`, `Yearly hari:` ≥ 1 (grid tahun digulir horizontal; yang di luar layar tidak masuk dump); `Weekly inisial:` kosong, `Quarterly inisial:` memuat `O N D`, `Yearly inisial:` memuat inisial bulan yang terlihat (mulai dari ujung kanan: `… O N D`). Screenshot: Weekly = kalender satu baris bernomor; Quarterly = grid 14 kolom × 7 baris kotak kecil tanpa angka, inisial di atas; Yearly = grid tergulir ke kanan. `logcat bersih`.
 
-- [ ] **Step 6: Cek komentar + commit**
+- [ ] **Step 8: Cek komentar + commit**
 
 ```bash
-cd /home/mrrizaldi/dev/finance-project/.worktrees/redesign
-J=mobile/app/src/main/java/com/mrrizaldi/finance
-F="$J/ui/analytics/AnalyticsSections.kt $J/ui/analytics/AnalyticsScreen.kt"
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics
+J=mobile/app/src/main/java/com/mrrizaldi/finance; T=mobile/app/src/test/java/com/mrrizaldi/finance
+F="$J/ui/analytics/AnalyticsMath.kt $T/ui/analytics/AnalyticsMathTest.kt $J/ui/analytics/AnalyticsSections.kt $J/ui/analytics/AnalyticsScreen.kt"
 python3 /home/mrrizaldi/dev/finance-project/scripts/cek_komentar.py $F; echo "exit=$?"
 git add $F mobile/app/src/main/res/values/strings.xml mobile/app/src/main/res/values-en/strings.xml
 git commit -F- <<'EOF'
-feat(mobile): analytics - kategori, kalender harian, budget, top 5
+feat(mobile): analytics - kategori, kalender/grid harian, budget, top 5
 
 Pengeluaran per kategori pakai bar horizontal compose biasa (6 teratas
-+ Lainnya), kalender bulan Sen-Min tanpa library dengan warna hijau ->
-oranye -> merah relatif ke hari termahal, hari ini bergaris tepi, ketuk
-hari muncul "Sel, 13 Okt · Rp X". Budget per kategori dari categories +
-get_category_breakdown (>80% oranye, >100% merah, urut persen), dan 5
-pengeluaran terbesar pakai TxRow. Angka tanggal hitam/putih dipilih dari
-luminans latar biar kebaca di sel merah.
++ Lainnya). Harian ikut periode: mingguan/bulanan kalender Sen-Min
+bernomor, kuartal/tahunan grid kontribusi ala github (kolom = minggu,
+7 baris, geser horizontal mulai dari kanan, inisial bulan di atas),
+warna hijau -> oranye -> merah relatif ke hari termahal, ketuk hari
+muncul "Sel, 13 Okt · Rp X" (teks yang sama jadi content description
+sel). weeksOf(start, end) gantiin monthWeeks buat dua bentuk grid.
+Budget cuma tampil di periode bulanan (budget di db per bulan), 5
+pengeluaran terbesar pakai TxRow.
 
-Bukti: ./gradlew test assembleDebug BUILD SUCCESSFUL; di HP:
-$SCRATCH/t5a-category.png, $SCRATCH/t5b-daily.png,
-$SCRATCH/t5c-picked.png ("<teks detail dari dump>"),
-$SCRATCH/t5d-budget-top.png, $SCRATCH/t5e-bottom.png; logcat bersih;
-cek_komentar exit 0.
+Bukti: AnalyticsMathTest 12 lulus; ./gradlew test assembleDebug BUILD
+SUCCESSFUL, <total> test (C + 10), failures=0; di HP:
+$SCRATCH/t5-m-1..5.png, $SCRATCH/t5a-picked.png ("<teks detail>"),
+$SCRATCH/t5-Weekly-*.png (hari 7, budget 0),
+$SCRATCH/t5-Quarterly-*.png (hari 92, inisial O N D),
+$SCRATCH/t5-Yearly-*.png; logcat bersih; cek_komentar exit 0.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 EOF
@@ -2225,56 +3639,63 @@ EOF
 
 ---
 
-### Task 6: Verifikasi akhir di HP + cocokkan angka dengan database
+### Task 6: Verifikasi akhir di HP + cocokkan angka periode dengan database
 
 **Files:** tidak ada perubahan kode. Temuan → perbaiki di commit terpisah `fix(mobile): ...` dengan bukti, lalu ulangi step yang gagal. Tanpa temuan, task ini tidak menghasilkan commit; buktinya dilaporkan ke user.
+
+Bantuan yang dipakai di step HP: `atas() { for i in 1 2 3 4 5 6; do adb shell input swipe 540 700 540 2100 200; done; sleep 2; }`. Label contoh dihitung untuk 16 Okt 2026.
 
 - [ ] **Step 1: Build terakhir + catat mode malam awal**
 
 ```bash
-cd /home/mrrizaldi/dev/finance-project/.worktrees/redesign/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
+cd /home/mrrizaldi/dev/finance-project/.worktrees/analytics/mobile && export ANDROID_HOME="$HOME/Android/Sdk"; export PATH="$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$PATH"; export JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64;
 ./gradlew test assembleDebug 2>&1 | tail -2
-python3 /home/mrrizaldi/dev/finance-project/scripts/cek_komentar.py $(git -C .. diff --name-only --diff-filter=d HEAD~5 -- '*.kt' '*.kts' | sed 's|^|../|'); echo "exit=$?"
+python3 /home/mrrizaldi/dev/finance-project/scripts/cek_komentar.py $(git -C .. diff --name-only --diff-filter=d 3ad0f64 -- '*.kt' '*.kts' | sed 's|^|../|'); echo "exit=$?"
 SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
 hp_cek && hp_pasang && sleep 4
 adb shell cmd uimode night | tee "$SCRATCH/a6-night-awal.txt"
 ```
-Expected: `BUILD SUCCESSFUL`; `exit=0`; baris `Night mode: no` / `yes` / `auto` (dicatat untuk dikembalikan di Step 5). Nilai lain (`custom`) → catat dan kembalikan lewat Settings HP secara manual oleh user; bilang ke user.
+Expected: `BUILD SUCCESSFUL`; `exit=0` (semua `.kt/.kts` yang berubah sejak awal branch `3ad0f64`); baris `Night mode: no` / `yes` / `auto` (dikembalikan di Step 5). Nilai lain (`custom`) → catat, bilang ke user untuk mengembalikan manual.
 
-- [ ] **Step 2: Terang — scroll penuh, toggle, ganti bulan, ketuk hari**
+- [ ] **Step 2: Terang — keempat periode scroll penuh, geser mundur/maju**
 
 ```bash
 SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
+atas() { for i in 1 2 3 4 5 6; do adb shell input swipe 540 700 540 2100 200; done; sleep 2; }
 hp_malam no
 hp_tap 'content-desc="Analytics"'; sleep 3
-hp_foto a6-light-1; hp_geser; hp_foto a6-light-2; hp_geser; hp_foto a6-light-3; hp_geser; hp_foto a6-light-4; hp_geser; hp_foto a6-light-5
-hp_ui a6-light-5 | xargs grep -c 'text="Largest expenses"'
+for P in Monthly Weekly Quarterly Yearly; do
+  atas; hp_tap "text=\"$P\""; sleep 3
+  hp_foto a6-light-$P-1 >/dev/null; for i in 2 3 4 5; do hp_geser; hp_foto a6-light-$P-$i >/dev/null; hp_ui a6-light-$P-$i >/dev/null; done
+  echo "$P: $(cat $SCRATCH/a6-light-$P-*.xml | grep -c 'text="LARGEST EXPENSES"')"
+done
+atas; hp_tap 'text="Monthly"'; sleep 3
+hp_tap 'content-desc="Previous period"'; sleep 3; hp_foto a6-prev
+hp_ui a6-prev | xargs grep -o 'text="September 2026"\|text="vs August 2026"' | sort -u
+hp_tap 'content-desc="Next period"'; sleep 3
+hp_tap 'content-desc="Next period"'; sleep 3; hp_foto a6-next
+hp_ui a6-next | xargs grep -o 'text="November 2026"\|text="vs October 2026"' | sort -u
+hp_tap 'text="Monthly"'; sleep 3
+hp_ui a6-reset | xargs grep -o 'text="October 2026"'
 ```
-Expected: lima screenshot dari judul sampai Largest expenses; angka terakhir ≥ 1. Lihat semuanya: tidak ada teks terpotong, kartu tidak tumpang tindih, bagian bawah tidak tertutup bottom bar.
+Expected: tiap periode angka ≥ 1; 20 screenshot dari judul sampai Largest expenses, lihat semuanya: tidak ada teks terpotong, kartu tidak tumpang tindih, bawah tidak tertutup bottom bar, budget hanya di Monthly, kalender di Monthly/Weekly, grid di Quarterly/Yearly. `a6-prev` dan `a6-next` memuat kedua teks (November = periode depan, isinya boleh kosong / `Belum ada`/`No spending yet`); ketuk Monthly yang sedang aktif mengembalikan `October 2026`.
 
-Toggle + ganti bulan (kembali ke atas dulu):
+- [ ] **Step 3: Gelap — keempat periode**
+
 ```bash
 SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
-hp_tap 'content-desc="Home"'; sleep 1; hp_tap 'content-desc="Analytics"'; sleep 2
-hp_tap 'text="12 mo"'; sleep 2; hp_foto a6-toggle-12
-hp_tap 'text="6 mo"'; sleep 1
-hp_tap 'content-desc="Previous month"'; sleep 4; hp_foto a6-prev-month
-hp_ui a6-prev-month | xargs grep -o 'text="September 2026"\|text="vs August 2026"' | sort -u
-hp_tap 'content-desc="Next month"'; sleep 3
-```
-Expected: `a6-toggle-12` 12 pasang batang; `a6-prev-month` memuat `September 2026` dan `vs August 2026`, angka perbandingan berubah. (Kalau tab dibuka ulang posisinya tetap di bawah, gulir ke atas dengan `adb shell input swipe 540 800 540 2000 300` dua kali.)
-
-- [ ] **Step 3: Gelap — scroll penuh**
-
-```bash
-SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
+atas() { for i in 1 2 3 4 5 6; do adb shell input swipe 540 700 540 2100 200; done; sleep 2; }
 hp_malam yes
-hp_foto a6-dark-1; hp_geser; hp_foto a6-dark-2; hp_geser; hp_foto a6-dark-3; hp_geser; hp_foto a6-dark-4; hp_geser; hp_foto a6-dark-5
+for P in Monthly Weekly Quarterly Yearly; do
+  atas; hp_tap "text=\"$P\""; sleep 3
+  hp_foto a6-dark-$P-1 >/dev/null; for i in 2 3 4 5; do hp_geser; hp_foto a6-dark-$P-$i >/dev/null; done
+done
+atas; hp_tap 'text="Monthly"'; sleep 2
 hp_crash
 ```
-Expected: latar gelap, teks terang, batang `#44D070`/`#FF645F`, angka tanggal kalender terbaca (hitam di sel terang, putih di sel gelap); `logcat bersih`.
+Expected: latar gelap, teks terang, batang `#44D070`/`#FF645F`, angka tanggal kalender terbaca (hitam di sel terang, putih di sel gelap), kotak grid kontribusi kontras dengan kartu; `logcat bersih`.
 
-- [ ] **Step 4: Sheet pengaturan + batalkan Keluar (mode gelap)**
+- [ ] **Step 4: Dialog kaca gelap — Keluar (Cancel saja), tanggal, jam**
 
 ```bash
 SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
@@ -2282,16 +3703,22 @@ hp_tap 'content-desc="Home"'; sleep 2
 hp_tap 'content-desc="Settings"'; sleep 1
 hp_ui a6-settings | xargs grep -c 'text="Sign out?"'
 ```
-Expected: `0` (dialog belum terbuka). Baru lanjut:
+Expected: `0` (dialog belum terbuka). Baru lanjut; DILARANG menekan Sign out di dialog dan Save:
 ```bash
 SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
-hp_foto a6-settings
-hp_tap 'text="Sign out"'; sleep 1; hp_foto a6-confirm
+hp_tap 'text="Sign out"'; hp_foto a6-confirm
 hp_ui a6-confirm | xargs grep -o 'text="Sign out?"\|text="Cancel"' | sort -u
 hp_tap 'text="Cancel"'; sleep 1; adb shell input keyevent KEYCODE_BACK; sleep 1
 hp_ui a6-after | xargs grep -c 'text="Total balance"'
+hp_tap 'content-desc="Add"'; sleep 2
+hp_tap 'text="[0-9]\{1,2\} [A-Z][a-z][a-z] 20[0-9][0-9]"'; hp_foto a6-date
+hp_tap 'text="Cancel"'; sleep 1
+hp_tap 'text="[0-2][0-9]:[0-5][0-9]"'; hp_foto a6-time
+hp_tap 'text="Cancel"'; sleep 1
+hp_tap 'content-desc="Back"'; sleep 1
+hp_crash
 ```
-Expected: `text="Cancel"` + `text="Sign out?"`; setelah Cancel angka ≥ 1 (masih login).
+Expected: `text="Cancel"` + `text="Sign out?"`; setelah Cancel angka ≥ 1 (masih login); `a6-confirm`, `a6-date`, `a6-time` bergaya kaca (sama dengan Task 3b); `logcat bersih`.
 
 - [ ] **Step 5: Kembalikan mode malam awal**
 
@@ -2303,62 +3730,74 @@ Expected: sama dengan isi `a6-night-awal.txt`.
 
 - [ ] **Step 6: Angka layar vs database (Supabase MCP `execute_sql`, read-only)**
 
-Query A — kategori pengeluaran terbesar bulan berjalan (WIB):
+Jalankan untuk tiga periode: **Monthly berjalan** (`S=2026-10-01`, `E=2026-10-31`), **Weekly berjalan** (`S=2026-10-12`, `E=2026-10-18`), **Quarterly sebelumnya** (Quarterly lalu `Previous period` → `Q3 2026`, `S=2026-07-01`, `E=2026-09-30`). Ganti `<S>`/`<E>` di empat query ini (kolom `is_adjustment`, `is_deleted`, `type`, `amount`, `transaction_date`, `user_id`, `category_id`, `description`, `merchant` dicek ada di `public.transactions` 16 Okt).
+
+Query A — total pemasukan dan pengeluaran periode (kartu perbandingan):
 ```sql
 with u as (select id from auth.users where email = 'muhammadrafiriz23@gmail.com'),
-r as (select date_trunc('month', now() at time zone 'Asia/Jakarta') as s)
+r as (select date '<S>' as s, date '<E>' as e)
+select t.type, sum(t.amount) as total
+from transactions t, u, r
+where t.user_id = u.id and t.is_deleted = false and coalesce(t.is_adjustment, false) = false
+  and t.type in ('income', 'expense')
+  and t.transaction_date >= (r.s::timestamp at time zone 'Asia/Jakarta')
+  and t.transaction_date < ((r.e + 1)::timestamp at time zone 'Asia/Jakarta')
+group by t.type order by t.type;
+```
+
+Query B — kategori pengeluaran terbesar:
+```sql
+with u as (select id from auth.users where email = 'muhammadrafiriz23@gmail.com'),
+r as (select date '<S>' as s, date '<E>' as e)
 select c.name, sum(t.amount) as total
 from transactions t join categories c on c.id = t.category_id, u, r
 where t.user_id = u.id and t.is_deleted = false and coalesce(t.is_adjustment, false) = false
   and t.type = 'expense'
-  and t.transaction_date >= (r.s at time zone 'Asia/Jakarta')
-  and t.transaction_date < ((r.s + interval '1 month') at time zone 'Asia/Jakarta')
+  and t.transaction_date >= (r.s::timestamp at time zone 'Asia/Jakarta')
+  and t.transaction_date < ((r.e + 1)::timestamp at time zone 'Asia/Jakarta')
 group by c.name order by total desc limit 1;
 ```
 
-Query B — hari termahal bulan berjalan:
+Query C — hari termahal:
 ```sql
 with u as (select id from auth.users where email = 'muhammadrafiriz23@gmail.com'),
-r as (select date_trunc('month', now() at time zone 'Asia/Jakarta') as s)
+r as (select date '<S>' as s, date '<E>' as e)
 select (t.transaction_date at time zone 'Asia/Jakarta')::date as day, sum(t.amount) as total
 from transactions t, u, r
 where t.user_id = u.id and t.is_deleted = false and coalesce(t.is_adjustment, false) = false
   and t.type = 'expense'
-  and t.transaction_date >= (r.s at time zone 'Asia/Jakarta')
-  and t.transaction_date < ((r.s + interval '1 month') at time zone 'Asia/Jakarta')
+  and t.transaction_date >= (r.s::timestamp at time zone 'Asia/Jakarta')
+  and t.transaction_date < ((r.e + 1)::timestamp at time zone 'Asia/Jakarta')
 group by 1 order by total desc limit 1;
 ```
 
-Query C — transaksi pengeluaran terbesar bulan berjalan:
+Query D — transaksi pengeluaran terbesar:
 ```sql
 with u as (select id from auth.users where email = 'muhammadrafiriz23@gmail.com'),
-r as (select date_trunc('month', now() at time zone 'Asia/Jakarta') as s)
+r as (select date '<S>' as s, date '<E>' as e)
 select t.amount, t.description, t.merchant, t.transaction_date at time zone 'Asia/Jakarta' as waktu_wib
 from transactions t, u, r
 where t.user_id = u.id and t.is_deleted = false and coalesce(t.is_adjustment, false) = false
   and t.type = 'expense'
-  and t.transaction_date >= (r.s at time zone 'Asia/Jakarta')
-  and t.transaction_date < ((r.s + interval '1 month') at time zone 'Asia/Jakarta')
+  and t.transaction_date >= (r.s::timestamp at time zone 'Asia/Jakarta')
+  and t.transaction_date < ((r.e + 1)::timestamp at time zone 'Asia/Jakarta')
 order by t.amount desc limit 1;
 ```
 
-Di HP (mode awal, Analytics bulan berjalan), ambil angka dari dump:
+Di HP (mode awal), per periode (contoh Monthly; Weekly: `hp_tap 'text="Weekly"'`; Q3: `hp_tap 'text="Quarterly"'` lalu `hp_tap 'content-desc="Previous period"'`):
 ```bash
 SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
-hp_tap 'content-desc="Analytics"'; sleep 3; hp_geser
-hp_ui a6-db-cat | xargs grep -o 'text="[^"]*"' | sed -n '1,60p'
+atas() { for i in 1 2 3 4 5 6; do adb shell input swipe 540 700 540 2100 200; done; sleep 2; }
+P=Monthly
+hp_tap 'content-desc="Analytics"'; sleep 2; atas; hp_tap "text=\"$P\""; sleep 3
+hp_ui a6-db-$P-0 | xargs grep -o 'text="Rp [^"]*"' | head -2
+for i in 1 2 3 4 5; do hp_geser; hp_ui a6-db-$P-$i >/dev/null; done
+cat $SCRATCH/a6-db-$P-*.xml | grep -o 'text="[^"]*"' | grep -A1 -m1 'text="SPENDING BY CATEGORY"'
+cat $SCRATCH/a6-db-$P-*.xml | grep -o 'content-desc="[A-Z][a-z][a-z], [0-9]* [A-Z][a-z][a-z] · Rp [^"]*"' | sort -u
+cat $SCRATCH/a6-db-$P-*.xml | grep -o 'text="-Rp [^"]*"' | head -1
 ```
-Cocokkan baris pertama kategori (nama + `Rp …`) dengan Query A. Lalu gulir ke kalender, ketuk tanggal = `day` Query B (cek `grep -c 'text="<tgl>"'` = 1 dulu), dan cocokkan teks `…, <tgl> Oct · Rp …` dengan `total` Query B:
-```bash
-SCRATCH=/tmp/claude-1000/-home-mrrizaldi-dev-finance-project/3b46db19-1949-4249-a208-7472f9426df3/scratchpad; source "$SCRATCH/hp.sh"
-hp_geser; TGL=<hari dari Query B tanpa nol depan>
-hp_ui a6-db-day-before | xargs grep -c "text=\"$TGL\""
-hp_tap "text=\"$TGL\""; sleep 1
-hp_ui a6-db-day | xargs grep -o "text=\"[A-Z][a-z][a-z], $TGL Oct · Rp [^\"]*\""
-hp_geser; hp_geser; hp_ui a6-db-top | xargs grep -o 'text="-Rp [^"]*"' | head -1
-```
-Expected: ketiga angka layar sama persis dengan A/B/C (format `Rp 1.234.567`, nilai dibulatkan ke rupiah). Baris pertama Largest expenses = `-Rp <amount C>` dengan judul = `description` (atau `merchant` kalau description null). Beda → berhenti, cari akar masalahnya (kunci cache, tanggal WIB), perbaiki di commit `fix(mobile): ...`.
+Cocokkan: dua `Rp` pertama = income lalu expense Query A; baris setelah label kategori = nama kategori Query B (nominalnya ada di dump yang sama, `grep -A3` kalau perlu); content-desc untuk `day` Query C (tanggal tanpa nol depan, bulan en) = `total` Query C (Q3: grid kuartal muat layar, semua 92 hari masuk dump); baris pertama Largest expenses = `-Rp <amount D>` dengan judul `description` (atau `merchant` kalau null). Format `Rp 1.234.567`, dibulatkan ke rupiah. Beda → berhenti, cari akar masalahnya (kunci cache periode, tanggal WIB, prevEnd), perbaiki di commit `fix(mobile): ...`.
 
 - [ ] **Step 7: Laporan ke user**
 
-Laporkan: daftar screenshot (`a6-light-1..5`, `a6-dark-1..5`, `a6-toggle-12`, `a6-prev-month`, `a6-settings`, `a6-confirm`), hasil A/B/C vs layar, logcat bersih, mode malam dikembalikan. Yang **tidak** diverifikasi (bilang jujur + cara cek): tombol Sign out di dialog benar-benar logout (sengaja tidak ditekan; cek: tekan sendiri lalu login lagi), tampilan offline Analytics (cek: mode pesawat lalu tarik refresh → chip Offline, data terakhir tetap tampil).
+Laporkan: daftar screenshot (`a6-light-<P>-1..5`, `a6-dark-<P>-1..5` untuk keempat periode, `a6-prev`, `a6-next`, `a6-confirm`, `a6-date`, `a6-time`), hasil A/B/C/D vs layar untuk Monthly, Weekly, Q3, logcat bersih, mode malam dikembalikan. Yang **tidak** diverifikasi (bilang jujur + cara cek): tombol Sign out di dialog benar-benar logout (sengaja tidak ditekan; cek: tekan sendiri lalu login lagi), OK di pemilih tanggal/jam benar-benar mengubah nilai (tidak ditekan supaya form tidak berubah; cek: pilih tanggal lain, OK, lihat kapsul tanggal berubah, lalu Back tanpa Save), tampilan offline Analytics per periode (cek: buka keempat periode online, mode pesawat, tarik refresh → chip Offline, data terakhir tiap periode tetap tampil).
