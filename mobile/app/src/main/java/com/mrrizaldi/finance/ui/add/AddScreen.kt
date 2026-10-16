@@ -88,7 +88,7 @@ fun AddScreen(vm: AddViewModel, onBack: () -> Unit) {
     }
     LaunchedEffect(message) {
         message?.let {
-            if (it.res == R.string.add_saved) haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+            if (it.res == R.string.add_saved || it.res == R.string.add_saved_offline) haptic.performHapticFeedback(HapticFeedbackType.Confirm)
             snackbar.showSnackbar(context.getString(it.res, it.arg))
             vm.consumeMessage()
         }

@@ -4,6 +4,8 @@ import com.mrrizaldi.finance.data.local.AccountDao
 import com.mrrizaldi.finance.data.local.AccountEntity
 import com.mrrizaldi.finance.data.local.CategoryDao
 import com.mrrizaldi.finance.data.local.CategoryEntity
+import com.mrrizaldi.finance.data.local.Outbox
+import com.mrrizaldi.finance.data.local.OutboxDao
 import com.mrrizaldi.finance.data.local.RpcSnapshot
 import com.mrrizaldi.finance.data.local.SnapshotDao
 import com.mrrizaldi.finance.data.local.SyncMeta
@@ -171,6 +173,26 @@ class FakeApi : SupabaseApi {
         ).take(limit)
     }
 
+    val clientIds = mutableListOf<String>()
+    var rejectClientIds = setOf<String>()
+    var loseNextResponse = false
+    private val byClient = mutableMapOf<String, String>()
+
+    private fun acceptOnce(clientId: String): String? {
+        if (clientId in rejectClientIds) throw IllegalArgumentException("Akun tidak ditemukan")
+        return byClient[clientId]
+    }
+
+    private fun answer(clientId: String, id: String): String {
+        clientIds += clientId
+        byClient[clientId] = id
+        if (loseNextResponse) {
+            loseNextResponse = false
+            throw IOException("respon hilang")
+        }
+        return id
+    }
+
     override suspend fun recordManualEntry(
         account: String,
         type: String,
@@ -178,9 +200,11 @@ class FakeApi : SupabaseApi {
         category: String?,
         description: String?,
         merchant: String?,
-        date: String
+        date: String,
+        clientId: String
     ): String {
         gate()
+        acceptOnce(clientId)?.let { return it }
         val id = "tx${entries.size + 1}"
         entries += id
         transactions += TransactionDto(
@@ -193,7 +217,7 @@ class FakeApi : SupabaseApi {
             description = description,
             merchant = merchant
         )
-        return id
+        return answer(clientId, id)
     }
 
     override suspend fun recordManualTransfer(
@@ -202,10 +226,24 @@ class FakeApi : SupabaseApi {
         amount: Long,
         toAmount: Long?,
         description: String?,
-        date: String
+        date: String,
+        clientId: String
     ): String {
         gate()
-        return "tr1"
+        acceptOnce(clientId)?.let { return it }
+        val id = "tr${entries.size + 1}"
+        entries += id
+        transactions += TransactionDto(
+            id = id,
+            type = "transfer",
+            amount = amount.toDouble(),
+            transaction_date = date,
+            to_amount = toAmount?.toDouble(),
+            account_id = fromAccount,
+            to_account_id = toAccount,
+            description = description
+        )
+        return answer(clientId, id)
     }
 }
 
@@ -255,7 +293,11 @@ class FakeTransactionDao : TransactionDao {
     override suspend fun deleteRange(start: String, end: String) {
         data.update { list -> list.filterNot { it.dateKey in start..end && !it.pending } }
     }
-    override suspend fun deleteAll() { data.value = emptyList() }
+    override suspend fun deleteSynced() { data.update { list -> list.filter { it.pending } } }
+    override suspend fun deleteById(id: String) { data.update { list -> list.filterNot { it.id == id } } }
+    override suspend fun markSynced(id: String) {
+        data.update { list -> list.map { if (it.id == id) it.copy(pending = false) else it } }
+    }
     override suspend fun insertAll(rows: List<TransactionEntity>) {
         data.update { old -> (old.associateBy { it.id } + rows.associateBy { it.id }).values.toList() }
     }
@@ -276,6 +318,25 @@ class FakeSyncMetaDao : SyncMetaDao {
     override suspend fun deleteAll() { data.value = null }
 }
 
+class FakeOutboxDao : OutboxDao {
+    val data = MutableStateFlow<List<Outbox>>(emptyList())
+    override suspend fun insert(row: Outbox) { data.update { it + row } }
+    override suspend fun nextSendable(owner: String): Outbox? =
+        data.value.filter { it.ownerId == owner && it.lastError == null }.minByOrNull { it.createdAt }
+    override suspend fun get(clientId: String): Outbox? = data.value.firstOrNull { it.clientId == clientId }
+    override fun observe(owner: String): Flow<List<Outbox>> =
+        data.map { list -> list.filter { it.ownerId == owner }.sortedBy { it.createdAt } }
+    override suspend fun markAttempt(clientId: String, error: String?) {
+        data.update { list ->
+            list.map { if (it.clientId == clientId) it.copy(attempts = it.attempts + 1, lastError = error) else it }
+        }
+    }
+    override suspend fun clearError(clientId: String) {
+        data.update { list -> list.map { if (it.clientId == clientId) it.copy(lastError = null) else it } }
+    }
+    override suspend fun delete(clientId: String) { data.update { list -> list.filterNot { it.clientId == clientId } } }
+}
+
 class RepositoryTest {
     private val api = FakeApi()
     private val accountDao = FakeAccountDao()
@@ -283,7 +344,7 @@ class RepositoryTest {
     private val transactionDao = FakeTransactionDao()
     private val snapshotDao = FakeSnapshotDao()
     private val syncMetaDao = FakeSyncMetaDao()
-    private val repo = Repository(api, accountDao, categoryDao, transactionDao, snapshotDao, syncMetaDao) { 1_000L }
+    private val repo = Repository(api, accountDao, categoryDao, transactionDao, snapshotDao, syncMetaDao, FakeOutboxDao()) { 1_000L }
     private val month = YearMonth.of(2026, 10)
 
     @Test
@@ -322,7 +383,7 @@ class RepositoryTest {
             time = LocalTime.of(9, 30)
         )
 
-        assertTrue(result.isSuccess)
+        assertEquals(SaveStatus.SENT, result.getOrNull())
         assertEquals(listOf("tx1"), api.entries)
         assertEquals(1, api.listAccountCalls)
         val tx = repo.transactions(TxFilter(month)).first().single()

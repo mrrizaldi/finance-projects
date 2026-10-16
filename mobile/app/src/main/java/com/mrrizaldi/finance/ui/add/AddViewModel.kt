@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.mrrizaldi.finance.R
 import com.mrrizaldi.finance.data.Repository
+import com.mrrizaldi.finance.data.SaveStatus
 import com.mrrizaldi.finance.data.SyncError
 import com.mrrizaldi.finance.data.local.AccountEntity
 import com.mrrizaldi.finance.data.local.CategoryEntity
@@ -17,7 +18,6 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import java.time.LocalDate
 import java.time.LocalTime
-import java.time.YearMonth
 
 enum class AddTab { ENTRY, TRANSFER }
 
@@ -113,18 +113,12 @@ class AddViewModel(private val repo: Repository) : ViewModel() {
                 )
             }
             _form.update { it.copy(saving = false) }
-            result.onSuccess {
+            result.onSuccess { status ->
                 _form.update { it.copy(amount = "", toAmount = "", description = "", merchant = "") }
-                _message.value = UiMessage(R.string.add_saved)
+                _message.value = UiMessage(if (status == SaveStatus.SENT) R.string.add_saved else R.string.add_saved_offline)
             }.onFailure { e ->
-                when (e) {
-                    SyncError.Unauthorized -> repo.logout()
-                    SyncError.Offline -> {
-                        _message.value = UiMessage(R.string.add_err_uncertain)
-                        repo.refreshTransactions(YearMonth.from(f.date))
-                    }
-                    else -> _message.value = UiMessage(R.string.add_err_failed, e.message ?: "")
-                }
+                if (e == SyncError.Unauthorized) repo.logout()
+                else _message.value = UiMessage(R.string.add_err_failed, e.message ?: "")
             }
         }
     }

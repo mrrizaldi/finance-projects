@@ -5,6 +5,7 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.builtin.Email
 import io.github.jan.supabase.auth.status.SessionStatus
+import io.github.jan.supabase.auth.user.UserSession
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
@@ -31,6 +32,11 @@ class SupabaseApiImpl(private val client: SupabaseClient) : SupabaseApi {
 
     override suspend fun clearLocalSession() {
         client.auth.clearSession()
+    }
+
+    override suspend fun awaitSession(): UserSession? {
+        client.auth.awaitInitialization()
+        return currentSession()
     }
 
     override suspend fun listAccounts(): List<AccountDto> =
@@ -114,7 +120,8 @@ class SupabaseApiImpl(private val client: SupabaseClient) : SupabaseApi {
         category: String?,
         description: String?,
         merchant: String?,
-        date: String
+        date: String,
+        clientId: String
     ): String =
         client.postgrest.rpc("record_manual_entry", buildJsonObject {
             put("p_account", account)
@@ -124,6 +131,7 @@ class SupabaseApiImpl(private val client: SupabaseClient) : SupabaseApi {
             put("p_description", description)
             put("p_merchant", merchant)
             put("p_date", date)
+            put("p_client_id", clientId)
         }).decodeAs()
 
     override suspend fun recordManualTransfer(
@@ -132,7 +140,8 @@ class SupabaseApiImpl(private val client: SupabaseClient) : SupabaseApi {
         amount: Long,
         toAmount: Long?,
         description: String?,
-        date: String
+        date: String,
+        clientId: String
     ): String =
         client.postgrest.rpc("record_manual_transfer", buildJsonObject {
             put("p_from_account", fromAccount)
@@ -141,6 +150,7 @@ class SupabaseApiImpl(private val client: SupabaseClient) : SupabaseApi {
             put("p_to_amount", toAmount)
             put("p_description", description)
             put("p_date", date)
+            put("p_client_id", clientId)
         }).decodeAs()
 
     private companion object {

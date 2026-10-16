@@ -71,8 +71,14 @@ interface TransactionDao {
     @Query("DELETE FROM transactions WHERE dateKey BETWEEN :start AND :end AND pending = 0")
     suspend fun deleteRange(start: String, end: String)
 
-    @Query("DELETE FROM transactions")
-    suspend fun deleteAll()
+    @Query("DELETE FROM transactions WHERE pending = 0")
+    suspend fun deleteSynced()
+
+    @Query("DELETE FROM transactions WHERE id = :id")
+    suspend fun deleteById(id: String)
+
+    @Query("UPDATE transactions SET pending = 0 WHERE id = :id")
+    suspend fun markSynced(id: String)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertAll(rows: List<TransactionEntity>)
@@ -109,4 +115,28 @@ interface SyncMetaDao {
 
     @Query("DELETE FROM sync_meta")
     suspend fun deleteAll()
+}
+
+@Dao
+interface OutboxDao {
+    @Insert
+    suspend fun insert(row: Outbox)
+
+    @Query("SELECT * FROM outbox WHERE ownerId = :owner AND lastError IS NULL ORDER BY createdAt ASC LIMIT 1")
+    suspend fun nextSendable(owner: String): Outbox?
+
+    @Query("SELECT * FROM outbox WHERE clientId = :clientId")
+    suspend fun get(clientId: String): Outbox?
+
+    @Query("SELECT * FROM outbox WHERE ownerId = :owner ORDER BY createdAt ASC")
+    fun observe(owner: String): Flow<List<Outbox>>
+
+    @Query("UPDATE outbox SET attempts = attempts + 1, lastError = :error WHERE clientId = :clientId")
+    suspend fun markAttempt(clientId: String, error: String?)
+
+    @Query("UPDATE outbox SET lastError = NULL WHERE clientId = :clientId")
+    suspend fun clearError(clientId: String)
+
+    @Query("DELETE FROM outbox WHERE clientId = :clientId")
+    suspend fun delete(clientId: String)
 }

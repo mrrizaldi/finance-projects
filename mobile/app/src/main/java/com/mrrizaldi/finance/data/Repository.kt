@@ -4,6 +4,9 @@ import com.mrrizaldi.finance.data.local.AccountDao
 import com.mrrizaldi.finance.data.local.AccountEntity
 import com.mrrizaldi.finance.data.local.CategoryDao
 import com.mrrizaldi.finance.data.local.CategoryEntity
+import com.mrrizaldi.finance.data.local.Outbox
+import com.mrrizaldi.finance.data.local.OutboxDao
+import com.mrrizaldi.finance.data.local.OutboxKind
 import com.mrrizaldi.finance.data.local.RpcSnapshot
 import com.mrrizaldi.finance.data.local.SnapshotDao
 import com.mrrizaldi.finance.data.local.SyncMeta
@@ -23,9 +26,12 @@ import com.mrrizaldi.finance.util.JakartaDate
 import com.mrrizaldi.finance.util.PeriodBounds
 import io.github.jan.supabase.exceptions.RestException
 import io.github.jan.supabase.exceptions.UnauthorizedRestException
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -33,6 +39,7 @@ import java.io.IOException
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.YearMonth
+import java.util.UUID
 
 data class TxFilter(
     val month: YearMonth,
@@ -52,9 +59,13 @@ class Repository(
     private val transactionDao: TransactionDao,
     private val snapshotDao: SnapshotDao,
     private val syncMetaDao: SyncMetaDao,
+    private val outboxDao: OutboxDao,
+    private val scheduleFlush: () -> Unit = {},
+    private val newId: () -> String = { UUID.randomUUID().toString() },
     private val clock: () -> Long = System::currentTimeMillis
 ) {
     private val json = Json { ignoreUnknownKeys = true }
+    private val flushLock = Mutex()
 
     fun accounts(): Flow<List<AccountEntity>> = accountDao.observeActive()
 
@@ -70,6 +81,8 @@ class Repository(
     )
 
     fun recent(limit: Int): Flow<List<TransactionEntity>> = transactionDao.observeRecent(limit)
+
+    fun outbox(): Flow<List<Outbox>> = outboxDao.observe(api.currentSession()?.user?.id.orEmpty())
 
     fun summary(month: YearMonth): Flow<SummaryDto?> =
         snapshotDao.observe(summaryKey(month)).map { row -> row?.let { json.decodeFromString<SummaryDto>(it.json) } }
@@ -171,9 +184,28 @@ class Repository(
         merchant: String?,
         date: LocalDate,
         time: LocalTime
-    ): Result<Unit> = write {
-        api.recordManualEntry(account, type, amount, category, description, merchant, JakartaDate.toTimestamp(date, time))
-        refreshHome(YearMonth.from(date))
+    ): Result<SaveStatus> {
+        val owner = api.awaitSession()?.user?.id ?: return Result.failure(SyncError.Unauthorized)
+        val timestamp = JakartaDate.toTimestamp(date, time)
+        val payload = EntryPayload(account, type, amount, category, description, merchant, timestamp)
+        val categoryRow = categoryDao.observeActive().first().firstOrNull { it.id == category }
+        val clientId = newId()
+        val preview = TransactionEntity(
+            id = clientId,
+            type = type,
+            amount = amount,
+            transactionDate = timestamp,
+            dateKey = JakartaDate.dateKey(timestamp),
+            description = description,
+            merchant = merchant,
+            categoryId = category,
+            accountId = account,
+            categoryName = categoryRow?.name,
+            categoryColor = categoryRow?.color,
+            accountName = accountName(account),
+            pending = true
+        )
+        return queue(Outbox(clientId, owner, OutboxKind.ENTRY, json.encodeToString(payload), clock()), preview)
     }
 
     suspend fun addTransfer(
@@ -184,15 +216,105 @@ class Repository(
         description: String?,
         date: LocalDate,
         time: LocalTime
-    ): Result<Unit> = write {
-        api.recordManualTransfer(fromAccount, toAccount, amount, toAmount, description, JakartaDate.toTimestamp(date, time))
-        refreshHome(YearMonth.from(date))
+    ): Result<SaveStatus> {
+        val owner = api.awaitSession()?.user?.id ?: return Result.failure(SyncError.Unauthorized)
+        val timestamp = JakartaDate.toTimestamp(date, time)
+        val payload = TransferPayload(fromAccount, toAccount, amount, toAmount, description, timestamp)
+        val clientId = newId()
+        val preview = TransactionEntity(
+            id = clientId,
+            type = "transfer",
+            amount = amount,
+            transactionDate = timestamp,
+            dateKey = JakartaDate.dateKey(timestamp),
+            toAmount = toAmount,
+            description = description,
+            accountId = fromAccount,
+            toAccountId = toAccount,
+            accountName = accountName(fromAccount),
+            toAccountName = accountName(toAccount),
+            pending = true
+        )
+        return queue(Outbox(clientId, owner, OutboxKind.TRANSFER, json.encodeToString(payload), clock()), preview)
+    }
+
+    suspend fun flushOutbox(): FlushResult = flushLock.withLock {
+        val owner = api.awaitSession()?.user?.id ?: return@withLock FlushResult.DONE
+        val months = mutableSetOf<YearMonth>()
+        var result = FlushResult.DONE
+        while (true) {
+            val row = outboxDao.nextSendable(owner) ?: break
+            when (val outcome = send(row)) {
+                is SendOutcome.Sent -> {
+                    outboxDao.delete(row.clientId)
+                    transactionDao.markSynced(row.clientId)
+                    months += YearMonth.from(JakartaDate.parseKey(JakartaDate.dateKey(outcome.date)))
+                }
+                is SendOutcome.Failed -> outboxDao.markAttempt(row.clientId, outcome.message)
+                SendOutcome.Retry -> {
+                    outboxDao.markAttempt(row.clientId, null)
+                    result = FlushResult.RETRY
+                    break
+                }
+            }
+        }
+        months.forEach { refreshHome(it) }
+        result
+    }
+
+    suspend fun retry(clientId: String) {
+        outboxDao.clearError(clientId)
+        if (flushOutbox() == FlushResult.RETRY) scheduleFlush()
+    }
+
+    suspend fun discard(clientId: String) {
+        flushLock.withLock {
+            outboxDao.delete(clientId)
+            transactionDao.deleteById(clientId)
+        }
     }
 
     suspend fun logout(): Result<Unit> = write {
         if (write { api.signOut() }.isFailure) api.clearLocalSession()
         clearCache()
     }
+
+    private suspend fun queue(row: Outbox, preview: TransactionEntity): Result<SaveStatus> {
+        outboxDao.insert(row)
+        transactionDao.insertAll(listOf(preview))
+        flushOutbox()
+        val left = outboxDao.get(row.clientId) ?: return Result.success(SaveStatus.SENT)
+        val error = left.lastError
+        if (error == null) {
+            scheduleFlush()
+            return Result.success(SaveStatus.QUEUED)
+        }
+        discard(row.clientId)
+        return Result.failure(SyncError.Server(IllegalStateException(error)))
+    }
+
+    private suspend fun send(row: Outbox): SendOutcome = try {
+        val sentDate = when (row.kind) {
+            OutboxKind.ENTRY -> {
+                val p = json.decodeFromString<EntryPayload>(row.payloadJson)
+                api.recordManualEntry(p.account, p.type, p.amount, p.category, p.description, p.merchant, p.date, row.clientId)
+                p.date
+            }
+            OutboxKind.TRANSFER -> {
+                val p = json.decodeFromString<TransferPayload>(row.payloadJson)
+                api.recordManualTransfer(p.fromAccount, p.toAccount, p.amount, p.toAmount, p.description, p.date, row.clientId)
+                p.date
+            }
+        }
+        SendOutcome.Sent(sentDate)
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        if (retryable(e)) SendOutcome.Retry else SendOutcome.Failed(errorText(e))
+    }
+
+    private suspend fun accountName(id: String): String? =
+        accountDao.observeActive().first().firstOrNull { it.id == id }?.name
 
     private suspend fun fetchMonth(start: String, end: String): List<TransactionEntity> {
         val rows = mutableListOf<TransactionDto>()
@@ -207,7 +329,7 @@ class Repository(
     }
 
     private suspend fun clearCache() {
-        transactionDao.deleteAll()
+        transactionDao.deleteSynced()
         accountDao.deleteAll()
         categoryDao.deleteAll()
         snapshotDao.deleteAll()
@@ -215,7 +337,7 @@ class Repository(
     }
 
     private suspend fun guard(block: suspend () -> Unit): Result<Unit> {
-        val owner = api.currentSession()?.user?.id ?: return Result.failure(SyncError.Unauthorized)
+        val owner = api.awaitSession()?.user?.id ?: return Result.failure(SyncError.Unauthorized)
         return write {
             val meta = syncMetaDao.observe().first()
             if (meta?.ownerId != owner) {

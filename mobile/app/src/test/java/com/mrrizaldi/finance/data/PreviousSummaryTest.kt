@@ -36,7 +36,8 @@ class PreviousSummaryTest {
             FakeCategoryDao(),
             FakeTransactionDao(),
             FakeSnapshotDao(),
-            FakeSyncMetaDao()
+            FakeSyncMetaDao(),
+            FakeOutboxDao()
         ) { 1_000L }
         val month = YearMonth.of(2026, 10)
         assertNull(repo.previousSummary(month).first())

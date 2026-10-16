@@ -77,13 +77,12 @@
     <string name="add_save">Save</string>
     <string name="add_saving">Saving…</string>
     <string name="add_saved">Saved</string>
+    <string name="add_saved_offline">Saved offline, will send when online</string>
     <string name="add_time_title">Select time</string>
     <string name="add_err_amount">Amount must be greater than 0</string>
     <string name="add_err_account">Pick an account first</string>
     <string name="add_err_same_account">From and to accounts must differ</string>
     <string name="add_err_failed">Failed to save: %1$s</string>
-    <string name="add_err_offline">No connection. Offline save comes in a later version</string>
-    <string name="add_err_uncertain">Connection lost. Check the transactions list before retrying; it may already be saved.</string>
 
     <string name="balances_title">Account Balances</string>
     <string name="balances_total">Total</string>

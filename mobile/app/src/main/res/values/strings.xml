@@ -77,13 +77,12 @@
     <string name="add_save">Simpan</string>
     <string name="add_saving">Menyimpan…</string>
     <string name="add_saved">Tersimpan</string>
+    <string name="add_saved_offline">Disimpan offline, dikirim saat online</string>
     <string name="add_time_title">Pilih jam</string>
     <string name="add_err_amount">Nominal harus lebih dari 0</string>
     <string name="add_err_account">Pilih akun dulu</string>
     <string name="add_err_same_account">Akun asal dan tujuan tidak boleh sama</string>
     <string name="add_err_failed">Gagal menyimpan: %1$s</string>
-    <string name="add_err_offline">Tidak ada koneksi. Simpan offline hadir di versi berikutnya</string>
-    <string name="add_err_uncertain">Koneksi terputus. Cek daftar transaksi dulu sebelum coba lagi, mungkin sudah tersimpan.</string>
 
     <string name="balances_title">Saldo Akun</string>
     <string name="balances_total">Total</string>

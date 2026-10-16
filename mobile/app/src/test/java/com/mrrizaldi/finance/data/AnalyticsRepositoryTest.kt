@@ -23,7 +23,8 @@ class AnalyticsRepositoryTest {
         categoryDao,
         FakeTransactionDao(),
         snapshotDao,
-        syncMetaDao
+        syncMetaDao,
+        FakeOutboxDao()
     ) { 1_000L }
     private val bounds = periodBounds(AnalyticsPeriod.MONTH, LocalDate.of(2026, 10, 16))
 

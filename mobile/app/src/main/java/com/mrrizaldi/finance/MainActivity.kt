@@ -15,9 +15,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -31,6 +33,7 @@ import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import com.mrrizaldi.finance.auth.LoginScreen
 import com.mrrizaldi.finance.auth.LoginViewModel
+import com.mrrizaldi.finance.sync.Sync
 import com.mrrizaldi.finance.ui.add.AddScreen
 import com.mrrizaldi.finance.ui.add.AddViewModel
 import com.mrrizaldi.finance.ui.analytics.AnalyticsScreen
@@ -70,6 +73,10 @@ class MainActivity : ComponentActivity() {
 private fun Root(container: AppContainer) {
     val status by container.api.sessionStatus.collectAsStateWithLifecycle()
     val hazeState = rememberHazeState()
+    val context = LocalContext.current
+    LaunchedEffect(status) {
+        if (status is SessionStatus.Authenticated) Sync.flush(context)
+    }
     CompositionLocalProvider(LocalHazeState provides hazeState) {
         Box(Modifier.fillMaxSize()) {
             AuroraBackground(Modifier.fillMaxSize().hazeSource(hazeState, zIndex = 0f))

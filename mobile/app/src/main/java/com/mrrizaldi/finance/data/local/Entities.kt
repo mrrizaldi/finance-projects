@@ -61,3 +61,16 @@ data class SyncMeta(
     val lastSuccessAt: Long? = null,
     val ownerId: String? = null
 )
+
+enum class OutboxKind { ENTRY, TRANSFER }
+
+@Entity(tableName = "outbox")
+data class Outbox(
+    @PrimaryKey val clientId: String,
+    val ownerId: String,
+    val kind: OutboxKind,
+    val payloadJson: String,
+    val createdAt: Long,
+    val attempts: Int = 0,
+    val lastError: String? = null
+)

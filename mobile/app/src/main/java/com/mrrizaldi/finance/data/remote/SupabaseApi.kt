@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.StateFlow
 interface SupabaseApi {
     val sessionStatus: StateFlow<SessionStatus>
     fun currentSession(): UserSession? = (sessionStatus.value as? SessionStatus.Authenticated)?.session
+    suspend fun awaitSession(): UserSession? = currentSession()
     suspend fun signIn(email: String, password: String)
     suspend fun signOut()
     suspend fun clearLocalSession()
@@ -27,7 +28,8 @@ interface SupabaseApi {
         category: String?,
         description: String?,
         merchant: String?,
-        date: String
+        date: String,
+        clientId: String
     ): String
     suspend fun recordManualTransfer(
         fromAccount: String,
@@ -35,6 +37,7 @@ interface SupabaseApi {
         amount: Long,
         toAmount: Long?,
         description: String?,
-        date: String
+        date: String,
+        clientId: String
     ): String
 }

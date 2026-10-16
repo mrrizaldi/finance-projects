@@ -7,6 +7,7 @@ import com.mrrizaldi.finance.data.Repository
 import com.mrrizaldi.finance.data.local.FinanceDb
 import com.mrrizaldi.finance.data.remote.SupabaseApi
 import com.mrrizaldi.finance.data.remote.SupabaseApiImpl
+import com.mrrizaldi.finance.sync.Sync
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
@@ -38,7 +39,8 @@ class AppContainer(context: Context) {
     val api: SupabaseApi by lazy { SupabaseApiImpl(supabase) }
 
     val db: FinanceDb = Room.databaseBuilder(appContext, FinanceDb::class.java, "finance.db")
-        .fallbackToDestructiveMigration(true)
+        .addMigrations(FinanceDb.MIGRATION_2_3)
+        .fallbackToDestructiveMigrationFrom(true, 1)
         .build()
 
     val repository by lazy {
@@ -48,7 +50,9 @@ class AppContainer(context: Context) {
             categoryDao = db.categoryDao(),
             transactionDao = db.transactionDao(),
             snapshotDao = db.snapshotDao(),
-            syncMetaDao = db.syncMetaDao()
+            syncMetaDao = db.syncMetaDao(),
+            outboxDao = db.outboxDao(),
+            scheduleFlush = { Sync.flush(appContext) }
         )
     }
 }
