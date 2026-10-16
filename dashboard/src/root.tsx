@@ -25,8 +25,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           name="viewport"
           content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"
         />
-        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F5F0E8" />
-        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#1B4332" />
+        <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F5F7F9" />
+        <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#05080B" />
         <Meta />
         <Links />
       </head>
@@ -39,7 +39,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
-// SPA: dirender saat clientLoader route pertama masih jalan
 export function HydrateFallback() {
   return (
     <div className="flex min-h-screen items-center justify-center text-muted-foreground">
