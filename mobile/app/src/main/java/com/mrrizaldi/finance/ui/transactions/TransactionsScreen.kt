@@ -179,7 +179,7 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
                     }
                 }
                 items.groupBy { it.dateKey }.forEach { (key, rows) ->
-                    item(key = "d-$key") {
+                    item {
                         Column {
                             SectionLabel(dayLabel(key, today, locale), trailing = formatDayTotal(dailyTotal(rows)))
                             GroupedCard(rows) { tx -> TxRow(tx) { detail = tx } }
