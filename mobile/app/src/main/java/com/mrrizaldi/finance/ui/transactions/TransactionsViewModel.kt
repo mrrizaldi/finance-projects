@@ -15,8 +15,20 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
+import com.mrrizaldi.finance.util.RupiahFormat
 import kotlinx.coroutines.launch
 import java.time.YearMonth
+
+internal fun dailyTotal(rows: List<TransactionEntity>): Long = rows.sumOf {
+    when (it.type) {
+        "income" -> it.amount
+        "expense" -> -it.amount
+        else -> 0L
+    }
+}
+
+internal fun formatDayTotal(total: Long): String =
+    if (total > 0) "+" + RupiahFormat.format(total) else RupiahFormat.format(total)
 
 class TransactionsViewModel(private val repo: Repository) : ViewModel() {
     private val _filter = MutableStateFlow(TxFilter(JakartaDate.currentMonth()))

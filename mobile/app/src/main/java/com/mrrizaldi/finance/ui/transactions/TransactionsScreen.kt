@@ -1,9 +1,11 @@
 package com.mrrizaldi.finance.ui.transactions
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -11,21 +13,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,8 +40,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -50,10 +56,15 @@ import com.mrrizaldi.finance.data.local.AccountEntity
 import com.mrrizaldi.finance.data.local.CategoryEntity
 import com.mrrizaldi.finance.data.local.TransactionEntity
 import com.mrrizaldi.finance.ui.components.DropdownField
+import com.mrrizaldi.finance.ui.components.GlassSurface
+import com.mrrizaldi.finance.ui.components.GroupedCard
 import com.mrrizaldi.finance.ui.components.MonthPicker
 import com.mrrizaldi.finance.ui.components.NavBarClearance
 import com.mrrizaldi.finance.ui.components.OfflineChip
+import com.mrrizaldi.finance.ui.components.SectionLabel
 import com.mrrizaldi.finance.ui.components.TxRow
+import com.mrrizaldi.finance.ui.icons.AppIcons
+import com.mrrizaldi.finance.ui.theme.AppType
 import com.mrrizaldi.finance.ui.theme.LocalPalette
 import com.mrrizaldi.finance.util.JakartaDate
 import com.mrrizaldi.finance.util.RupiahFormat
@@ -76,51 +87,104 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
     var detail by remember { mutableStateOf<TransactionEntity?>(null) }
     val locale = LocalConfiguration.current.locales[0]
     val today = JakartaDate.today()
-    val filterActive = filter.type != null || filter.accountId != null || filter.categoryId != null
+    val p = LocalPalette.current
+    val sheetFilterActive = filter.accountId != null || filter.categoryId != null
     val listState = rememberLazyListState()
     LaunchedEffect(Unit) { snapshotFlow { filter }.drop(1).collect { listState.scrollToItem(0) } }
+    val types = listOf<Pair<String?, Int>>(
+        null to R.string.tx_type_all,
+        "expense" to R.string.tx_type_expense,
+        "income" to R.string.tx_type_income,
+        "transfer" to R.string.tx_type_transfer
+    )
 
     Column(Modifier.fillMaxSize()) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            OutlinedTextField(
-                value = search,
-                onValueChange = {
-                    search = it
-                    vm.setSearch(it)
-                },
-                placeholder = { Text(stringResource(R.string.tx_search_hint)) },
-                leadingIcon = { Icon(Icons.Filled.Search, null) },
-                singleLine = true,
-                modifier = Modifier.weight(1f)
+        Column(Modifier.padding(horizontal = 16.dp)) {
+            Text(
+                stringResource(R.string.nav_transactions),
+                style = AppType.screenTitle,
+                modifier = Modifier.padding(top = 8.dp, bottom = 12.dp)
             )
-            TextButton(onClick = { showFilter = true }) {
-                Text(stringResource(R.string.tx_filter) + if (filterActive) " •" else "")
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                GlassSurface(Modifier.weight(1f).height(44.dp), shape = CircleShape) {
+                    Row(
+                        Modifier.fillMaxSize().padding(horizontal = 14.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(AppIcons.Search, null, tint = p.textMute, modifier = Modifier.size(18.dp))
+                        BasicTextField(
+                            value = search,
+                            onValueChange = {
+                                search = it
+                                vm.setSearch(it)
+                            },
+                            singleLine = true,
+                            textStyle = AppType.rowTitle.copy(color = p.textHi),
+                            cursorBrush = SolidColor(p.primary),
+                            modifier = Modifier.weight(1f).padding(start = 8.dp),
+                            decorationBox = { inner ->
+                                Box(contentAlignment = Alignment.CenterStart) {
+                                    if (search.isEmpty()) {
+                                        Text(
+                                            stringResource(R.string.tx_search_hint),
+                                            style = AppType.rowTitle,
+                                            color = p.textMute,
+                                            maxLines = 1
+                                        )
+                                    }
+                                    inner()
+                                }
+                            }
+                        )
+                    }
+                }
+                GlassSurface(Modifier.size(44.dp), shape = CircleShape) {
+                    IconButton(onClick = { showFilter = true }, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            AppIcons.Filter,
+                            stringResource(R.string.tx_filter),
+                            tint = if (sheetFilterActive) p.primary else p.textHi
+                        )
+                    }
+                }
             }
-        }
-        Box(Modifier.padding(horizontal = 16.dp)) { MonthPicker(filter.month, vm::setMonth) }
-        Box(Modifier.padding(horizontal = 16.dp)) {
+            Row(
+                Modifier.padding(top = 4.dp).horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                types.forEach { (value, label) ->
+                    TypeChip(stringResource(label), filter.type == value) {
+                        vm.setFilter(value, filter.accountId, filter.categoryId)
+                    }
+                }
+            }
+            MonthPicker(filter.month, vm::setMonth)
             when (error) {
                 SyncError.Offline -> OfflineChip(lastSuccessAt)
-                is SyncError.Server -> Text(stringResource(R.string.load_error), color = LocalPalette.current.negative)
+                is SyncError.Server -> Text(stringResource(R.string.load_error), color = p.negative)
                 else -> Unit
             }
         }
         PullToRefreshBox(isRefreshing = refreshing, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
-            LazyColumn(Modifier.fillMaxSize(), state = listState) {
+            LazyColumn(
+                Modifier.fillMaxSize(),
+                state = listState,
+                contentPadding = PaddingValues(horizontal = 16.dp)
+            ) {
                 if (items.isEmpty()) {
                     item {
                         Box(Modifier.fillParentMaxSize(), contentAlignment = Alignment.Center) {
-                            Text(stringResource(R.string.tx_empty), color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Text(stringResource(R.string.tx_empty), color = p.textMute)
                         }
                     }
                 }
                 items.groupBy { it.dateKey }.forEach { (key, rows) ->
-                    item(key = "h-$key") { DayHeader(key, today, locale) }
-                    items(rows, key = { it.id }) { tx -> TxRow(tx) { detail = tx } }
+                    item(key = "d-$key") {
+                        Column {
+                            SectionLabel(dayLabel(key, today, locale), trailing = formatDayTotal(dailyTotal(rows)))
+                            GroupedCard(rows) { tx -> TxRow(tx) { detail = tx } }
+                        }
+                    }
                 }
                 item { Spacer(Modifier.navigationBarsPadding().height(NavBarClearance)) }
             }
@@ -132,8 +196,8 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
             filter = filter,
             accounts = accounts,
             categories = categories,
-            onApply = { type, accountId, categoryId ->
-                vm.setFilter(type, accountId, categoryId)
+            onApply = { accountId, categoryId ->
+                vm.setFilter(filter.type, accountId, categoryId)
                 showFilter = false
             },
             onReset = {
@@ -147,19 +211,30 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
 }
 
 @Composable
-private fun DayHeader(key: String, today: LocalDate, locale: Locale) {
+private fun TypeChip(label: String, selected: Boolean, onClick: () -> Unit) {
+    val p = LocalPalette.current
+    Box(Modifier.minimumInteractiveComponentSize(), contentAlignment = Alignment.Center) {
+        Text(
+            label,
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+            color = if (selected) p.bg else p.textHi,
+            modifier = Modifier
+                .clip(CircleShape)
+                .background(if (selected) p.textHi else p.textHi.copy(alpha = 0.07f))
+                .selectable(selected = selected, role = Role.Tab, onClick = onClick)
+                .padding(horizontal = 14.dp, vertical = 8.dp)
+        )
+    }
+}
+
+@Composable
+private fun dayLabel(key: String, today: LocalDate, locale: Locale): String {
     val date = JakartaDate.parseKey(key)
-    val label = when (ChronoUnit.DAYS.between(date, today)) {
+    return when (ChronoUnit.DAYS.between(date, today)) {
         0L -> stringResource(R.string.tx_today)
         1L -> stringResource(R.string.tx_yesterday)
         else -> JakartaDate.formatDay(date, locale)
     }
-    Text(
-        label,
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-    )
 }
 
 @Composable
@@ -167,29 +242,17 @@ private fun FilterSheet(
     filter: TxFilter,
     accounts: List<AccountEntity>,
     categories: List<CategoryEntity>,
-    onApply: (String?, String?, String?) -> Unit,
+    onApply: (String?, String?) -> Unit,
     onReset: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    var type by remember { mutableStateOf(filter.type) }
     var account by remember { mutableStateOf(accounts.firstOrNull { it.id == filter.accountId }) }
     var category by remember { mutableStateOf(categories.firstOrNull { it.id == filter.categoryId }) }
-    val types = listOf<Pair<String?, Int>>(
-        null to R.string.tx_type_all,
-        "expense" to R.string.tx_type_expense,
-        "income" to R.string.tx_type_income,
-        "transfer" to R.string.tx_type_transfer
-    )
     ModalBottomSheet(onDismissRequest = onDismiss) {
         Column(
             Modifier.padding(16.dp).navigationBarsPadding(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Row(Modifier.horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                types.forEach { (value, label) ->
-                    FilterChip(selected = type == value, onClick = { type = value }, label = { Text(stringResource(label)) })
-                }
-            }
             DropdownField(
                 label = stringResource(R.string.tx_filter_account),
                 options = accounts,
@@ -207,7 +270,7 @@ private fun FilterSheet(
             Row(Modifier.fillMaxWidth()) {
                 TextButton(onClick = onReset) { Text(stringResource(R.string.tx_filter_reset)) }
                 Spacer(Modifier.weight(1f))
-                Button(onClick = { onApply(type, account?.id, category?.id) }) {
+                Button(onClick = { onApply(account?.id, category?.id) }) {
                     Text(stringResource(R.string.tx_filter_apply))
                 }
             }

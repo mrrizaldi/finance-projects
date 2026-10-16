@@ -45,6 +45,9 @@ object JakartaDate {
         OffsetDateTime.parse(timestamp).atZoneSameInstant(zone)
             .format(DateTimeFormatter.ofPattern("d MMM yyyy, HH:mm", locale))
 
+    fun formatTime(timestamp: String): String =
+        OffsetDateTime.parse(timestamp).atZoneSameInstant(zone).format(DateTimeFormatter.ofPattern("HH:mm"))
+
     fun formatMillis(epochMillis: Long, locale: Locale): String =
         Instant.ofEpochMilli(epochMillis).atZone(zone)
             .format(DateTimeFormatter.ofPattern("d MMM HH:mm", locale))
