@@ -25,6 +25,7 @@
 
     <string name="offline_chip">Offline · data %1$s</string>
     <string name="offline_never">Offline · belum ada data</string>
+    <string name="load_error">Gagal memuat data</string>
     <string name="month_prev">Bulan sebelumnya</string>
     <string name="month_next">Bulan berikutnya</string>
 

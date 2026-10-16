@@ -25,6 +25,7 @@
 
     <string name="offline_chip">Offline · data %1$s</string>
     <string name="offline_never">Offline · no data yet</string>
+    <string name="load_error">Couldn\'t load data</string>
     <string name="month_prev">Previous month</string>
     <string name="month_next">Next month</string>
 
