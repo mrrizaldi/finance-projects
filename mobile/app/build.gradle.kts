@@ -74,6 +74,7 @@ dependencies {
     implementation(libs.vico.compose.m3)
     implementation(libs.work.runtime.ktx)
     implementation(libs.glance.appwidget)
+    implementation(libs.biometric)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }

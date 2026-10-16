@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mrrizaldi.finance.R
 import com.mrrizaldi.finance.data.SyncError
+import com.mrrizaldi.finance.lock.AppLock
 import com.mrrizaldi.finance.ui.components.GlassSurface
 import com.mrrizaldi.finance.ui.components.GroupDivider
 import com.mrrizaldi.finance.ui.components.GroupedCard
@@ -61,7 +62,7 @@ import java.time.YearMonth
 import kotlin.math.abs
 
 @Composable
-fun HomeScreen(vm: HomeViewModel) {
+fun HomeScreen(vm: HomeViewModel, lock: AppLock) {
     val state by vm.uiState.collectAsStateWithLifecycle()
     val error by vm.error.collectAsStateWithLifecycle()
     val refreshing by vm.refreshing.collectAsStateWithLifecycle()
@@ -116,7 +117,7 @@ fun HomeScreen(vm: HomeViewModel) {
             Spacer(Modifier.navigationBarsPadding().height(NavBarClearance))
         }
     }
-    if (showSettings) SettingsSheet(pendingCount, onLogout = vm::logout, onDismiss = { showSettings = false })
+    if (showSettings) SettingsSheet(pendingCount, lock, onLogout = vm::logout, onDismiss = { showSettings = false })
 }
 
 @Composable

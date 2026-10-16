@@ -1,9 +1,9 @@
 package com.mrrizaldi.finance
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.biometric.BiometricPrompt
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -20,7 +20,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.unit.dp
+import androidx.core.content.ContextCompat
+import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -33,6 +36,8 @@ import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import com.mrrizaldi.finance.auth.LoginScreen
 import com.mrrizaldi.finance.auth.LoginViewModel
+import com.mrrizaldi.finance.lock.APP_LOCK_AUTHENTICATORS
+import com.mrrizaldi.finance.lock.LockScreen
 import com.mrrizaldi.finance.sync.Sync
 import com.mrrizaldi.finance.ui.add.AddScreen
 import com.mrrizaldi.finance.ui.add.AddViewModel
@@ -54,39 +59,71 @@ import io.github.jan.supabase.auth.status.SessionStatus
 
 private const val ADD_ROUTE = "add"
 
-class MainActivity : ComponentActivity() {
+class MainActivity : FragmentActivity() {
+    private lateinit var prompt: BiometricPrompt
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         val container = (application as App).container
+        prompt = BiometricPrompt(
+            this,
+            ContextCompat.getMainExecutor(this),
+            object : BiometricPrompt.AuthenticationCallback() {
+                override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                    container.lock.unlock()
+                }
+            }
+        )
         setContent {
             FinanceTheme {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Root(container)
+                    Root(container, this@MainActivity::askUnlock)
                 }
             }
         }
     }
+
+    private fun askUnlock() {
+        prompt.authenticate(
+            BiometricPrompt.PromptInfo.Builder()
+                .setTitle(getString(R.string.lock_prompt_title))
+                .setAllowedAuthenticators(APP_LOCK_AUTHENTICATORS)
+                .build()
+        )
+    }
 }
 
 @Composable
-private fun Root(container: AppContainer) {
+private fun Root(container: AppContainer, askUnlock: () -> Unit) {
     val status by container.api.sessionStatus.collectAsStateWithLifecycle()
+    val lockedAt by container.lock.lockedAt.collectAsStateWithLifecycle()
+    val gated = lockedAt != null && status !is SessionStatus.NotAuthenticated
     val hazeState = rememberHazeState()
     val context = LocalContext.current
     LaunchedEffect(status) {
-        if (status is SessionStatus.Authenticated) Sync.flush(context)
+        when (status) {
+            is SessionStatus.Authenticated -> Sync.flush(context)
+            is SessionStatus.NotAuthenticated -> container.lock.unlock()
+            else -> Unit
+        }
+    }
+    LaunchedEffect(gated, lockedAt) {
+        if (gated) askUnlock()
     }
     CompositionLocalProvider(LocalHazeState provides hazeState) {
         Box(Modifier.fillMaxSize()) {
             AuroraBackground(Modifier.fillMaxSize().hazeSource(hazeState, zIndex = 0f))
-            when (status) {
-                is SessionStatus.Initializing -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
+            Box(if (gated) Modifier.fillMaxSize().clearAndSetSemantics {} else Modifier.fillMaxSize()) {
+                when (status) {
+                    is SessionStatus.Initializing -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        CircularProgressIndicator()
+                    }
+                    is SessionStatus.NotAuthenticated -> LoginScreen(viewModel { LoginViewModel(container.api) })
+                    else -> MainScaffold(container, hazeState)
                 }
-                is SessionStatus.NotAuthenticated -> LoginScreen(viewModel { LoginViewModel(container.api) })
-                else -> MainScaffold(container, hazeState)
             }
+            if (gated) LockScreen(askUnlock)
         }
     }
 }
@@ -102,7 +139,7 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState) {
             startDestination = Tab.HOME.route,
             modifier = Modifier.fillMaxSize().hazeSource(hazeState, zIndex = 1f).statusBarsPadding()
         ) {
-            composable(Tab.HOME.route) { HomeScreen(viewModel { HomeViewModel(container.repository) }) }
+            composable(Tab.HOME.route) { HomeScreen(viewModel { HomeViewModel(container.repository) }, container.lock) }
             composable(Tab.TRANSACTIONS.route) { TransactionsScreen(viewModel { TransactionsViewModel(container.repository) }) }
             composable(Tab.BALANCES.route) { BalancesScreen(viewModel { BalancesViewModel(container.repository) }) }
             composable(Tab.ANALYTICS.route) { AnalyticsScreen(viewModel { AnalyticsViewModel(container.repository) }) }

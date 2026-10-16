@@ -95,6 +95,10 @@
     <string name="balances_total">Total</string>
 
     <string name="settings_title">Pengaturan</string>
+    <string name="settings_lock">Kunci sidik jari</string>
+    <string name="lock_hint">Terkunci. Buka pakai sidik jari atau PIN HP.</string>
+    <string name="lock_open">Buka</string>
+    <string name="lock_prompt_title">Buka Finance</string>
     <string name="settings_version">Versi %1$s</string>
     <string name="settings_logout">Keluar</string>
     <string name="settings_logout_confirm_title">Keluar dari akun?</string>

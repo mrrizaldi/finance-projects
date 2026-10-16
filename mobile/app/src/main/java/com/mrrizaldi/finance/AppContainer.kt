@@ -8,6 +8,7 @@ import com.mrrizaldi.finance.data.Repository
 import com.mrrizaldi.finance.data.local.FinanceDb
 import com.mrrizaldi.finance.data.remote.SupabaseApi
 import com.mrrizaldi.finance.data.remote.SupabaseApiImpl
+import com.mrrizaldi.finance.lock.AppLock
 import com.mrrizaldi.finance.sync.Sync
 import com.mrrizaldi.finance.widget.BalanceWidget
 import io.github.jan.supabase.SupabaseClient
@@ -39,6 +40,8 @@ class AppContainer(context: Context) {
     }
 
     val api: SupabaseApi by lazy { SupabaseApiImpl(supabase) }
+
+    val lock by lazy { AppLock(appContext) }
 
     val db: FinanceDb = Room.databaseBuilder(appContext, FinanceDb::class.java, "finance.db")
         .addMigrations(FinanceDb.MIGRATION_2_3)

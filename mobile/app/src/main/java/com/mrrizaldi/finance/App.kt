@@ -1,6 +1,7 @@
 package com.mrrizaldi.finance
 
 import android.app.Application
+import androidx.lifecycle.ProcessLifecycleOwner
 import com.mrrizaldi.finance.sync.Sync
 
 class App : Application() {
@@ -11,5 +12,6 @@ class App : Application() {
         super.onCreate()
         container = AppContainer(this)
         Sync.schedulePeriodic(this)
+        ProcessLifecycleOwner.get().lifecycle.addObserver(container.lock)
     }
 }
