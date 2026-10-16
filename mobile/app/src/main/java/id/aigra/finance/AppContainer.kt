@@ -1,7 +1,10 @@
 package id.aigra.finance
 
 import android.content.Context
+import androidx.room.Room
 import id.aigra.finance.auth.SessionStore
+import id.aigra.finance.data.Repository
+import id.aigra.finance.data.local.FinanceDb
 import id.aigra.finance.data.remote.SupabaseApi
 import id.aigra.finance.data.remote.SupabaseApiImpl
 import io.github.jan.supabase.SupabaseClient
@@ -24,4 +27,17 @@ class AppContainer(context: Context) {
     }
 
     val api: SupabaseApi = SupabaseApiImpl(supabase)
+
+    val db: FinanceDb = Room.databaseBuilder(context, FinanceDb::class.java, "finance.db")
+        .fallbackToDestructiveMigration(true)
+        .build()
+
+    val repository = Repository(
+        api = api,
+        accountDao = db.accountDao(),
+        categoryDao = db.categoryDao(),
+        transactionDao = db.transactionDao(),
+        snapshotDao = db.snapshotDao(),
+        syncMetaDao = db.syncMetaDao()
+    )
 }
