@@ -1,6 +1,5 @@
 package com.mrrizaldi.finance.ui.balances
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -11,9 +10,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -27,6 +24,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mrrizaldi.finance.R
 import com.mrrizaldi.finance.data.SyncError
 import com.mrrizaldi.finance.data.local.AccountEntity
+import com.mrrizaldi.finance.ui.components.ColorDot
 import com.mrrizaldi.finance.ui.components.GroupedCard
 import com.mrrizaldi.finance.ui.components.NavBarClearance
 import com.mrrizaldi.finance.ui.components.OfflineChip
@@ -86,7 +84,7 @@ private fun AccountRow(account: AccountEntity) {
         Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Box(Modifier.size(8.dp).background(hexColor(account.color, p.accentLine), CircleShape))
+        ColorDot(hexColor(account.color, p.accentLine), p.textHi, 8.dp)
         Column(Modifier.weight(1f).padding(start = 12.dp)) {
             Text(account.name, style = AppType.rowTitle)
             Text(account.type, style = AppType.rowMeta, color = p.textMute)

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -32,6 +33,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import com.mrrizaldi.finance.ui.theme.AppType
@@ -40,6 +42,11 @@ import com.mrrizaldi.finance.ui.theme.LocalPalette
 
 fun Modifier.glassCapsule(fill: Color, border: Color): Modifier =
     clip(CircleShape).background(fill).border(1.dp, border, CircleShape)
+
+@Composable
+fun ColorDot(color: Color, ring: Color, size: Dp, modifier: Modifier = Modifier) {
+    Box(modifier.size(size).background(color, CircleShape).border(1.dp, ring.copy(alpha = 0.45f), CircleShape))
+}
 
 @Composable
 fun GlassSegmented(options: List<String>, selected: Int, onSelect: (Int) -> Unit, modifier: Modifier = Modifier) {

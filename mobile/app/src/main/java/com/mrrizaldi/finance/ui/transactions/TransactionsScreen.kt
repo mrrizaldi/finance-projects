@@ -67,6 +67,7 @@ import com.mrrizaldi.finance.data.TxFilter
 import com.mrrizaldi.finance.data.local.AccountEntity
 import com.mrrizaldi.finance.data.local.CategoryEntity
 import com.mrrizaldi.finance.data.local.TransactionEntity
+import com.mrrizaldi.finance.ui.components.ColorDot
 import com.mrrizaldi.finance.ui.components.GlassSurface
 import com.mrrizaldi.finance.ui.components.GradientButton
 import com.mrrizaldi.finance.ui.components.GroupedCard
@@ -365,7 +366,7 @@ private fun FilterChip(label: String, dot: Color, selected: Boolean, onClick: ()
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Box(Modifier.size(10.dp).background(dot, CircleShape))
+        ColorDot(dot, fg, 10.dp)
         Text(
             label,
             style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
