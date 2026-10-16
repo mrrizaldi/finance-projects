@@ -14,3 +14,4 @@ dashboard/.env.local
 recap/
 *.tsbuildinfo
 .superpowers/
+.worktrees/
