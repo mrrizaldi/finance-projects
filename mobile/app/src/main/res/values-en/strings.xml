@@ -95,6 +95,16 @@
     <string name="settings_logout_confirm_body">Data stored on this phone will be cleared. Your data on the server stays safe.</string>
 
     <string name="analytics_title">Analytics</string>
+    <string name="analytics_week">Weekly</string>
+    <string name="analytics_month">Monthly</string>
+    <string name="analytics_quarter">Quarterly</string>
+    <string name="analytics_year">Yearly</string>
+    <string name="analytics_prev">Previous period</string>
+    <string name="analytics_next">Next period</string>
+    <string name="analytics_vs">vs %1$s</string>
+    <string name="analytics_trend">Trend</string>
+    <string name="analytics_million">M</string>
+    <string name="analytics_savings">Savings rate</string>
 
     <string name="common_ok">OK</string>
     <string name="common_cancel">Cancel</string>

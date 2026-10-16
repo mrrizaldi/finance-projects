@@ -95,6 +95,16 @@
     <string name="settings_logout_confirm_body">Data yang tersimpan di HP ini akan dihapus. Data di server tetap aman.</string>
 
     <string name="analytics_title">Analytics</string>
+    <string name="analytics_week">Mingguan</string>
+    <string name="analytics_month">Bulanan</string>
+    <string name="analytics_quarter">Kuartal</string>
+    <string name="analytics_year">Tahunan</string>
+    <string name="analytics_prev">Periode sebelumnya</string>
+    <string name="analytics_next">Periode berikutnya</string>
+    <string name="analytics_vs">vs %1$s</string>
+    <string name="analytics_trend">Tren</string>
+    <string name="analytics_million">jt</string>
+    <string name="analytics_savings">Savings rate</string>
 
     <string name="common_ok">OK</string>
     <string name="common_cancel">Batal</string>

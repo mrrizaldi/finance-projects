@@ -71,6 +71,7 @@ dependencies {
     implementation(libs.security.crypto)
     implementation(libs.haze)
     implementation(libs.haze.blur)
+    implementation(libs.vico.compose.m3)
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
 }
