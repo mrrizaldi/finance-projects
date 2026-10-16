@@ -6,11 +6,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -22,6 +20,9 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.mrrizaldi.finance.BuildConfig
 import com.mrrizaldi.finance.R
+import com.mrrizaldi.finance.ui.components.CancelButton
+import com.mrrizaldi.finance.ui.components.DangerButton
+import com.mrrizaldi.finance.ui.components.GlassDialog
 import com.mrrizaldi.finance.ui.components.GroupDivider
 import com.mrrizaldi.finance.ui.components.GroupedCard
 import com.mrrizaldi.finance.ui.theme.AppType
@@ -63,24 +64,21 @@ fun SettingsSheet(onLogout: () -> Unit, onDismiss: () -> Unit) {
         }
     }
     if (confirm) {
-        AlertDialog(
-            onDismissRequest = { confirm = false },
-            confirmButton = {
-                TextButton(
-                    onClick = {
+        GlassDialog(
+            onDismiss = { confirm = false },
+            title = stringResource(R.string.settings_logout_confirm_title),
+            body = stringResource(R.string.settings_logout_confirm_body),
+            actions = {
+                CancelButton(stringResource(R.string.common_cancel), { confirm = false }, Modifier.weight(1f))
+                DangerButton(
+                    stringResource(R.string.settings_logout),
+                    {
                         confirm = false
                         onLogout()
-                    }
-                ) {
-                    Text(stringResource(R.string.settings_logout), color = p.negative)
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { confirm = false }) { Text(stringResource(R.string.common_cancel)) }
-            },
-            title = { Text(stringResource(R.string.settings_logout_confirm_title)) },
-            text = { Text(stringResource(R.string.settings_logout_confirm_body)) },
-            containerColor = p.surface
+                    },
+                    Modifier.weight(1f)
+                )
+            }
         )
     }
 }

@@ -77,6 +77,7 @@
     <string name="add_save">Simpan</string>
     <string name="add_saving">Menyimpan…</string>
     <string name="add_saved">Tersimpan</string>
+    <string name="add_time_title">Pilih jam</string>
     <string name="add_err_amount">Nominal harus lebih dari 0</string>
     <string name="add_err_account">Pilih akun dulu</string>
     <string name="add_err_same_account">Akun asal dan tujuan tidak boleh sama</string>
