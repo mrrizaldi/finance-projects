@@ -39,8 +39,11 @@ import id.aigra.finance.auth.LoginScreen
 import id.aigra.finance.auth.LoginViewModel
 import id.aigra.finance.ui.add.AddScreen
 import id.aigra.finance.ui.add.AddViewModel
+import id.aigra.finance.ui.balances.BalancesScreen
+import id.aigra.finance.ui.balances.BalancesViewModel
 import id.aigra.finance.ui.home.HomeScreen
 import id.aigra.finance.ui.home.HomeViewModel
+import id.aigra.finance.ui.more.MoreScreen
 import id.aigra.finance.ui.theme.FinanceTheme
 import id.aigra.finance.ui.transactions.TransactionsScreen
 import id.aigra.finance.ui.transactions.TransactionsViewModel
@@ -118,13 +121,8 @@ private fun MainScaffold(container: AppContainer) {
             composable(Tab.HOME.route) { HomeScreen(viewModel { HomeViewModel(container.repository) }) }
             composable(Tab.TRANSACTIONS.route) { TransactionsScreen(viewModel { TransactionsViewModel(container.repository) }) }
             composable(Tab.ADD.route) { AddScreen(viewModel { AddViewModel(container.repository) }) }
-            composable(Tab.BALANCES.route) { Placeholder(Tab.BALANCES) }
-            composable(Tab.MORE.route) { Placeholder(Tab.MORE) }
+            composable(Tab.BALANCES.route) { BalancesScreen(viewModel { BalancesViewModel(container.repository) }) }
+            composable(Tab.MORE.route) { MoreScreen(container.repository) }
         }
     }
-}
-
-@Composable
-private fun Placeholder(tab: Tab) {
-    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) { Text(stringResource(tab.label)) }
 }
