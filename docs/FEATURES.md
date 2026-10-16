@@ -460,11 +460,15 @@ Supabase Auth. Signup baru → trigger `on_auth_user_created` → `handle_new_us
 | Telegram requests | `GET /api/admin/telegram-requests` + approve/reject |
 
 Nav link Admin disembunyikan dari non-admin. `profiles` juga simpan `locale` (ID/EN, mig 051) untuk i18n — lihat [§13](#13-internationalization-i18n).
-**Auth pages:** `login`, `register`, `forgot-password`, `reset-password`, `auth/callback`. Guard di `app-layout.tsx` clientLoader (redirect `/login` kalau session null).
+**Auth pages:** `login`, `register`, `forgot-password`, `reset-password`, `auth/callback`. Guard di `app-layout.tsx` clientLoader (redirect `/login` kalau session null, redirect `/reset-password` kalau tanda recovery ada).
+
+**Reset password:** `/forgot-password` → `resetPasswordForEmail(email, { redirectTo: origin + '/auth/callback?type=recovery&next=/reset-password' })`. Tautan email → Supabase `/auth/v1/verify` → `/auth/callback?code=…` (PKCE; klien `@supabase/ssr` menukar `code` sendiri saat init, loader cukup `getSession()`). Callback juga menerima `?token_hash=…&type=recovery` (`verifyOtp`; dipakai e2e, bisa dipakai template email `{{ .TokenHash }}`). Callback menandai recovery (`lib/recovery.ts`, `sessionStorage.recovery=1`) lalu redirect `/reset-password`. Cadangan kalau query hilang atau mendarat di Site URL: listener `PASSWORD_RECOVERY` di `lib/supabase.ts` (dipasang sekali pada klien singleton) menandai + `location.assign('/reset-password')`. Loader `/reset-password` wajib sesi **dan** tanda (selain itu `/`). Sesudah `updateUser` sukses: hapus tanda → `signOut` → `/login?message=password_updated` (LoginForm tampilkan `auth.login.passwordUpdated`). `SIGNED_OUT` juga menghapus tanda.
+
+**Konfigurasi Supabase wajib** (Dashboard → Authentication → URL Configuration): Site URL `https://finance-dashboard.mrrizaldi.com`; Redirect URLs `https://finance-dashboard.mrrizaldi.com/auth/callback**` dan `http://localhost:3000/auth/callback**` (`**`, bukan `*`: query `next=/reset-password` mengandung `/` yang tidak dicakup `*`). Kalau `redirect_to` tidak cocok, Supabase mengarahkan ke Site URL — listener di atas tetap membawa user ke `/reset-password`.
 
 > Status: Phase 1 (RLS + backfill + RPC scope) sudah live. Detail & debt di memory `project_multiuser_phase1`.
 
-📂 **Kode:** `api/src/routes/admin.ts`, `profile.ts` · auth `dashboard/src/routes/{login,register,forgot-password,reset-password,auth-callback}.tsx`, guard `app-layout.tsx` · schema `supabase/migrations/015_auth_and_profiles.sql`, `041`–`048` (RLS/scope/admin) · design doc `docs/superpowers/specs/2026-07-16-multiuser-phase1-db-foundation-design.md`
+📂 **Kode:** `api/src/routes/admin.ts`, `profile.ts` · auth `dashboard/src/routes/{login,register,forgot-password,reset-password,auth-callback}.tsx`, guard `app-layout.tsx` · reset password `dashboard/src/lib/recovery.ts`, `lib/supabase.ts` (listener), `components/auth/{ForgotPasswordForm,ResetPasswordForm,LoginForm}.tsx`, unit `dashboard/tests/unit/{recovery,supabase-client,auth-callback-loader,reset-password-loader}.test.ts` · schema `supabase/migrations/015_auth_and_profiles.sql`, `041`–`048` (RLS/scope/admin) · design doc `docs/superpowers/specs/2026-07-16-multiuser-phase1-db-foundation-design.md`
 
 ---
 
