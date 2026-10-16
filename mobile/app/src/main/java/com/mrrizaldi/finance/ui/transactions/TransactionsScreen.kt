@@ -8,19 +8,25 @@ import androidx.compose.foundation.interaction.collectIsFocusedAsState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -33,6 +39,7 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,6 +52,7 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
@@ -59,10 +67,10 @@ import com.mrrizaldi.finance.data.TxFilter
 import com.mrrizaldi.finance.data.local.AccountEntity
 import com.mrrizaldi.finance.data.local.CategoryEntity
 import com.mrrizaldi.finance.data.local.TransactionEntity
-import com.mrrizaldi.finance.ui.components.DropdownField
 import com.mrrizaldi.finance.ui.components.GlassSurface
 import com.mrrizaldi.finance.ui.components.GradientButton
 import com.mrrizaldi.finance.ui.components.GroupedCard
+import com.mrrizaldi.finance.ui.components.hexColor
 import com.mrrizaldi.finance.ui.components.MonthPicker
 import com.mrrizaldi.finance.ui.components.NavBarClearance
 import com.mrrizaldi.finance.ui.components.OfflineChip
@@ -93,7 +101,7 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
     val locale = LocalConfiguration.current.locales[0]
     val today = JakartaDate.today()
     val p = LocalPalette.current
-    val sheetFilterActive = filter.accountId != null || filter.categoryId != null
+    val sheetFilterCount = activeFilterCount(filter.accountId, filter.categoryId)
     val listState = rememberLazyListState()
     val searchInteraction = remember { MutableInteractionSource() }
     val searchFocused by searchInteraction.collectIsFocusedAsState()
@@ -152,13 +160,31 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
                         )
                     }
                 }
-                GlassSurface(Modifier.size(44.dp), shape = CircleShape) {
-                    IconButton(onClick = { showFilter = true }, modifier = Modifier.fillMaxSize()) {
-                        Icon(
-                            AppIcons.Filter,
-                            stringResource(R.string.tx_filter),
-                            tint = if (sheetFilterActive) p.primary else p.textHi
-                        )
+                Box {
+                    GlassSurface(Modifier.size(44.dp), shape = CircleShape) {
+                        IconButton(onClick = { showFilter = true }, modifier = Modifier.fillMaxSize()) {
+                            Icon(
+                                AppIcons.Filter,
+                                stringResource(R.string.tx_filter),
+                                tint = if (sheetFilterCount > 0) p.primary else p.textHi
+                            )
+                        }
+                    }
+                    if (sheetFilterCount > 0) {
+                        Box(
+                            Modifier
+                                .align(Alignment.TopEnd)
+                                .offset(x = 2.dp, y = (-2).dp)
+                                .size(18.dp)
+                                .background(p.primary, CircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                sheetFilterCount.toString(),
+                                style = MaterialTheme.typography.labelSmall.copy(fontWeight = FontWeight.Bold),
+                                color = p.primaryFg
+                            )
+                        }
                     }
                 }
             }
@@ -262,37 +288,91 @@ private fun FilterSheet(
     onReset: () -> Unit,
     onDismiss: () -> Unit
 ) {
-    var account by remember { mutableStateOf(accounts.firstOrNull { it.id == filter.accountId }) }
-    var category by remember { mutableStateOf(categories.firstOrNull { it.id == filter.categoryId }) }
-    ModalBottomSheet(onDismissRequest = onDismiss, shape = SheetShape, containerColor = LocalPalette.current.bg) {
-        Column(
-            Modifier.padding(16.dp).navigationBarsPadding(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            DropdownField(
-                label = stringResource(R.string.tx_filter_account),
-                options = accounts,
-                selected = account,
-                optionLabel = { it.name },
-                onSelect = { account = it }
+    val p = LocalPalette.current
+    var accountId by remember { mutableStateOf(filter.accountId) }
+    var categoryId by remember { mutableStateOf(filter.categoryId) }
+    val count = activeFilterCount(accountId, categoryId)
+    val forType = categoriesForType(categories, filter.type)
+    val visibleCategories = forType + categories.filter { it.id == categoryId && it !in forType }
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true),
+        shape = SheetShape,
+        containerColor = p.bg
+    ) {
+        Column(Modifier.navigationBarsPadding().padding(bottom = 16.dp)) {
+            Text(
+                stringResource(R.string.tx_filter),
+                style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Bold),
+                modifier = Modifier.padding(horizontal = 20.dp)
             )
-            DropdownField(
-                label = stringResource(R.string.tx_filter_category),
-                options = categories,
-                selected = category,
-                optionLabel = { it.name },
-                onSelect = { category = it }
-            )
-            Row(Modifier.fillMaxWidth().padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                TextButton(onClick = onReset) { Text(stringResource(R.string.tx_filter_reset)) }
+            Column(Modifier.weight(1f, fill = false).verticalScroll(rememberScrollState())) {
+                SectionLabel(stringResource(R.string.tx_filter_account), Modifier.padding(horizontal = 16.dp))
+                LazyRow(
+                    contentPadding = PaddingValues(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(accounts, key = { it.id }) { account ->
+                        FilterChip(account.name, hexColor(account.color, p.textMute), account.id == accountId) {
+                            accountId = if (account.id == accountId) null else account.id
+                        }
+                    }
+                }
+                SectionLabel(stringResource(R.string.tx_filter_category), Modifier.padding(horizontal = 16.dp))
+                FlowRow(
+                    Modifier.padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    visibleCategories.forEach { category ->
+                        FilterChip(category.name, hexColor(category.color, p.textMute), category.id == categoryId) {
+                            categoryId = if (category.id == categoryId) null else category.id
+                        }
+                    }
+                }
+            }
+            Row(
+                Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 24.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = onReset) { Text(stringResource(R.string.tx_filter_reset), color = p.textHi) }
                 Spacer(Modifier.width(12.dp))
                 GradientButton(
-                    text = stringResource(R.string.tx_filter_apply),
-                    onClick = { onApply(account?.id, category?.id) },
+                    text = if (count > 0) {
+                        stringResource(R.string.tx_filter_apply_count, count)
+                    } else {
+                        stringResource(R.string.tx_filter_apply)
+                    },
+                    onClick = { onApply(accountId, categoryId) },
                     modifier = Modifier.weight(1f)
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun FilterChip(label: String, dot: Color, selected: Boolean, onClick: () -> Unit) {
+    val p = LocalPalette.current
+    val fg = if (selected) p.bg else p.textHi
+    Row(
+        Modifier
+            .clip(CircleShape)
+            .background(if (selected) p.textHi else p.textHi.copy(alpha = 0.07f))
+            .selectable(selected = selected, role = Role.Checkbox, onClick = onClick)
+            .heightIn(min = 40.dp)
+            .padding(horizontal = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Box(Modifier.size(10.dp).background(dot, CircleShape))
+        Text(
+            label,
+            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.SemiBold),
+            color = fg,
+            maxLines = 1
+        )
+        if (selected) Icon(AppIcons.Check, null, tint = fg, modifier = Modifier.size(16.dp))
     }
 }
 

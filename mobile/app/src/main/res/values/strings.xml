@@ -46,6 +46,7 @@
     <string name="tx_filter_category">Kategori</string>
     <string name="tx_filter_reset">Reset</string>
     <string name="tx_filter_apply">Terapkan</string>
+    <string name="tx_filter_apply_count">Terapkan (%1$d)</string>
     <string name="tx_detail_title">Detail Transaksi</string>
     <string name="tx_detail_amount">Jumlah</string>
     <string name="tx_detail_type">Tipe</string>

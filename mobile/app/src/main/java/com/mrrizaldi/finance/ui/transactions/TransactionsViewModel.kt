@@ -30,6 +30,12 @@ internal fun dailyTotal(rows: List<TransactionEntity>): Long = rows.sumOf {
 internal fun formatDayTotal(total: Long): String =
     if (total > 0) "+" + RupiahFormat.format(total) else RupiahFormat.format(total)
 
+internal fun activeFilterCount(accountId: String?, categoryId: String?): Int =
+    listOfNotNull(accountId, categoryId).size
+
+internal fun categoriesForType(categories: List<CategoryEntity>, type: String?): List<CategoryEntity> =
+    if (type == "expense" || type == "income") categories.filter { it.type == type || it.type == "both" } else categories
+
 class TransactionsViewModel(private val repo: Repository) : ViewModel() {
     private val _filter = MutableStateFlow(TxFilter(JakartaDate.currentMonth()))
     val filter: StateFlow<TxFilter> = _filter
