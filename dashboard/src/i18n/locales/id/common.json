@@ -264,7 +264,8 @@
       "noAccount": "Belum punya akun?",
       "registerLink": "Daftar",
       "invalidCredentials": "Email atau password salah",
-      "passwordUpdated": "Password berhasil diganti. Silakan masuk lagi."
+      "passwordUpdated": "Password berhasil diganti. Silakan masuk lagi.",
+      "authFailed": "Tautan tidak valid atau sudah kedaluwarsa. Coba lagi."
     },
     "register": {
       "title": "Buat Akun",

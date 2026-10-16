@@ -264,7 +264,8 @@
       "noAccount": "Don't have an account?",
       "registerLink": "Sign up",
       "invalidCredentials": "Wrong email or password",
-      "passwordUpdated": "Password updated. Please sign in again."
+      "passwordUpdated": "Password updated. Please sign in again.",
+      "authFailed": "Link invalid or expired. Please try again."
     },
     "register": {
       "title": "Create Account",

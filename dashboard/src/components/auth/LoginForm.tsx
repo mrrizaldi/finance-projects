@@ -12,6 +12,7 @@ export function LoginForm() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const passwordUpdated = searchParams.get('message') === 'password_updated';
+  const authFailed = searchParams.get('error') === 'auth_failed';
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -54,6 +55,7 @@ export function LoginForm() {
       </CardHeader>
       <CardContent>
         {passwordUpdated && <p className="mb-4 text-sm text-primary">{t('auth.login.passwordUpdated')}</p>}
+        {authFailed && <p className="mb-4 text-sm text-destructive">{t('auth.login.authFailed')}</p>}
         <form onSubmit={handleLogin} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="email">{t('auth.login.email')}</Label>
