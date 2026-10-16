@@ -18,8 +18,6 @@ import 'dayjs/locale/id';
 
 dayjs.locale('id');
 
-// --- Types ---
-
 interface AccountRow {
   id: string;
   name: string;
@@ -42,8 +40,6 @@ interface MonthTx {
   amount: number;
   transaction_date: string;
 }
-
-// --- Helpers ---
 
 function buildDailyData(transactions: MonthTx[], startDate: Dayjs, endDate: Dayjs): DailyDataPoint[] {
   const map = new Map<string, { income: number; expense: number }>();
@@ -89,8 +85,6 @@ function buildBudgetSnapshot(
     .sort((a, b) => b.spent - a.spent)
     .slice(0, 5);
 }
-
-// --- Sub-components ---
 
 function SummaryStatsSection({ summary }: { summary: Summary | null }) {
   if (!summary) return null;
@@ -188,7 +182,6 @@ function BalanceSummaryCard({
   return (
     <SectionCard>
       <div className="grid grid-cols-1 md:grid-cols-[3fr_2fr]">
-        {/* Left: Net worth */}
         <div className="p-4 md:border-r flex flex-col" style={{ borderColor: 'var(--border-faint)' }}>
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -263,7 +256,6 @@ function BalanceSummaryCard({
           </div>
         </div>
 
-        {/* Right: Per-account list */}
         <div className="p-4">
           <p className="label-up mb-3">{i18n.t('page.balancePerAccount')}</p>
           <div className="space-y-2.5">
@@ -447,8 +439,6 @@ function BudgetSnapshotCard({ items, month }: { items: CategoryWithBudget[]; mon
   );
 }
 
-// --- Loader ---
-
 export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
   const url = new URL(request.url);
   const monthParam = url.searchParams.get('month');
@@ -459,12 +449,14 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
   const endDate = dayjs(`${month}-01`).endOf('month');
   const start = startDate.toISOString();
   const end = endDate.toISOString();
+  const startDay = startDate.format('YYYY-MM-DD');
+  const endDay = endDate.format('YYYY-MM-DD');
 
   const supabase = getBrowserClient();
 
   const [summaryRes, accountsRes, txMonthRes, categoryRes, budgetCatsRes, recentTxRes] =
     await Promise.all([
-      supabase.rpc('get_summary', { p_start_date: start, p_end_date: end }),
+      supabase.rpc('get_summary', { p_start_date: startDay, p_end_date: endDay }),
       supabase.from('accounts').select('id, name, balance, is_active, type, color').eq('is_active', true).order('balance', { ascending: false }),
       supabase
         .from('v_transactions')
@@ -473,8 +465,8 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
         .lte('transaction_date', end)
         .neq('type', 'transfer'),
       supabase.rpc('get_category_breakdown', {
-        p_start_date: start,
-        p_end_date: end,
+        p_start_date: startDay,
+        p_end_date: endDay,
         p_type: 'expense',
       }),
       supabase
@@ -507,8 +499,6 @@ export async function clientLoader({ request }: ClientLoaderFunctionArgs) {
     recentTx: (recentTxRes.data ?? []) as VTransaction[],
   };
 }
-
-// --- Page ---
 
 export default function OverviewPage() {
   const { t } = useTranslation();

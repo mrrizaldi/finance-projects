@@ -11,10 +11,13 @@ export function formatRupiah(amount: number): string {
   return `Rp ${amount.toLocaleString('id-ID', { maximumFractionDigits: 0 })}`;
 }
 
+const JAKARTA_TZ = 'Asia/Jakarta';
+const CALENDAR_DATE_FORMAT = 'YYYY-MM-DD';
+
 export function startOfMonth(date?: Date): string {
-  return dayjs(date).startOf('month').toISOString();
+  return dayjs(date).tz(JAKARTA_TZ).startOf('month').format(CALENDAR_DATE_FORMAT);
 }
 
 export function endOfMonth(date?: Date): string {
-  return dayjs(date).endOf('month').toISOString();
+  return dayjs(date).tz(JAKARTA_TZ).endOf('month').format(CALENDAR_DATE_FORMAT);
 }
