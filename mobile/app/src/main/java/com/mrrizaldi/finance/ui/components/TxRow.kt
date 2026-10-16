@@ -56,7 +56,7 @@ fun TxRow(tx: TransactionEntity, onClick: () -> Unit) {
             )
         }
         Text(
-            sign + RupiahFormat.format(tx.amount),
+            signedAmount(sign + RupiahFormat.format(tx.amount)),
             style = AppType.rowAmount,
             color = if (tx.type == "income") p.positive else p.textHi,
             modifier = Modifier.padding(start = 12.dp)

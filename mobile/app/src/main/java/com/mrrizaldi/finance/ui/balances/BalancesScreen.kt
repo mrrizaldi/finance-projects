@@ -31,6 +31,7 @@ import com.mrrizaldi.finance.ui.components.GroupedCard
 import com.mrrizaldi.finance.ui.components.NavBarClearance
 import com.mrrizaldi.finance.ui.components.OfflineChip
 import com.mrrizaldi.finance.ui.components.hexColor
+import com.mrrizaldi.finance.ui.components.signedAmount
 import com.mrrizaldi.finance.ui.theme.AppType
 import com.mrrizaldi.finance.ui.theme.LocalPalette
 import com.mrrizaldi.finance.util.RupiahFormat
@@ -67,7 +68,7 @@ fun BalancesScreen(vm: BalancesViewModel) {
                         color = p.textMute,
                         modifier = Modifier.padding(top = 16.dp)
                     )
-                    Text(RupiahFormat.format(accounts.sumOf { it.balance }), style = AppType.balance, maxLines = 1)
+                    Text(signedAmount(RupiahFormat.format(accounts.sumOf { it.balance })), style = AppType.balance, maxLines = 1)
                 }
             }
             item {
@@ -91,7 +92,7 @@ private fun AccountRow(account: AccountEntity) {
             Text(account.type, style = AppType.rowMeta, color = p.textMute)
         }
         Text(
-            RupiahFormat.format(account.balance),
+            signedAmount(RupiahFormat.format(account.balance)),
             style = AppType.rowAmount,
             color = if (account.balance < 0) p.negative else p.textHi
         )

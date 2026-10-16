@@ -48,6 +48,7 @@ import com.mrrizaldi.finance.ui.components.NavBarClearance
 import com.mrrizaldi.finance.ui.components.OfflineChip
 import com.mrrizaldi.finance.ui.components.SectionLabel
 import com.mrrizaldi.finance.ui.components.TxRow
+import com.mrrizaldi.finance.ui.components.signedAmount
 import com.mrrizaldi.finance.ui.theme.AppType
 import com.mrrizaldi.finance.ui.theme.LocalPalette
 import com.mrrizaldi.finance.util.JakartaDate
@@ -121,7 +122,7 @@ private fun CountUpBalance(month: YearMonth, total: Long) {
         progress.animateTo(1f, tween(durationMillis = 600, easing = FastOutSlowInEasing))
     }
     Text(
-        RupiahFormat.format(if (shownMonth == month) countUpValue(from, to, progress.value) else 0L),
+        signedAmount(RupiahFormat.format(if (shownMonth == month) countUpValue(from, to, progress.value) else 0L)),
         style = AppType.balance,
         maxLines = 1,
         modifier = Modifier.padding(top = 2.dp)

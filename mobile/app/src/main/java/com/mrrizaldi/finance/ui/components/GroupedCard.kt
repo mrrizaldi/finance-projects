@@ -53,6 +53,6 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier, trailing: String? 
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         Text(text.uppercase(), style = AppType.sectionLabel, color = color)
-        if (trailing != null) Text(trailing, style = AppType.sectionLabel, color = color)
+        if (trailing != null) Text(signedAmount(trailing), style = AppType.sectionLabel, color = color)
     }
 }
