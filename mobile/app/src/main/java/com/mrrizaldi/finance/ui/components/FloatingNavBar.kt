@@ -33,7 +33,7 @@ enum class Tab(val route: String, val label: Int, val icon: ImageVector, val act
     HOME("home", R.string.nav_home, AppIcons.Home, AppIcons.HomeActive),
     TRANSACTIONS("transactions", R.string.nav_transactions, AppIcons.List, AppIcons.ListActive),
     BALANCES("balances", R.string.nav_balances, AppIcons.Wallet, AppIcons.WalletActive),
-    MORE("more", R.string.nav_more, AppIcons.Profile, AppIcons.ProfileActive)
+    ANALYTICS("analytics", R.string.nav_analytics, AppIcons.Chart, AppIcons.ChartActive)
 }
 
 val NavBarClearance = 88.dp

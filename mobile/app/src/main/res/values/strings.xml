@@ -14,7 +14,7 @@
     <string name="nav_transactions">Transaksi</string>
     <string name="nav_add">Tambah</string>
     <string name="nav_balances">Saldo</string>
-    <string name="nav_more">Lainnya</string>
+    <string name="nav_analytics">Analytics</string>
 
     <string name="home_total_balance">Total saldo</string>
     <string name="home_income">Masuk</string>
@@ -87,9 +87,13 @@
     <string name="balances_title">Saldo Akun</string>
     <string name="balances_total">Total</string>
 
-    <string name="more_title">Lainnya</string>
-    <string name="more_logout">Keluar</string>
-    <string name="more_version">Versi %1$s</string>
+    <string name="settings_title">Pengaturan</string>
+    <string name="settings_version">Versi %1$s</string>
+    <string name="settings_logout">Keluar</string>
+    <string name="settings_logout_confirm_title">Keluar dari akun?</string>
+    <string name="settings_logout_confirm_body">Data yang tersimpan di HP ini akan dihapus. Data di server tetap aman.</string>
+
+    <string name="analytics_title">Analytics</string>
 
     <string name="common_ok">OK</string>
     <string name="common_cancel">Batal</string>

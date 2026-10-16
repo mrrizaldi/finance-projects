@@ -23,10 +23,7 @@ object AppIcons {
         "M4 7.5A2.5 2.5 0 0 1 6.5 5H18a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H6.5A2.5 2.5 0 0 1 4 16.5z",
         "M20 10h-4a2 2 0 0 0 0 4h4"
     )
-    private val PROFILE = listOf(
-        "M15.5 8a3.5 3.5 0 1 1-7 0a3.5 3.5 0 1 1 7 0",
-        "M5 20c1.2-3.5 4-5 7-5s5.8 1.5 7 5"
-    )
+    private val CHART = listOf("M4 20h16", "M7 16v-4", "M12 16V6", "M17 16V9")
 
     private fun icon(name: String, stroke: Float, paths: List<String>): ImageVector =
         paths.fold(ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f)) { builder, d ->
@@ -45,8 +42,13 @@ object AppIcons {
     val ListActive = icon("list_active", BOLD, LIST)
     val Wallet = icon("wallet", THIN, WALLET)
     val WalletActive = icon("wallet_active", BOLD, WALLET)
-    val Profile = icon("profile", THIN, PROFILE)
-    val ProfileActive = icon("profile_active", BOLD, PROFILE)
+    val Chart = icon("chart", THIN, CHART)
+    val ChartActive = icon("chart_active", BOLD, CHART)
+    val Settings = icon(
+        "settings",
+        THIN,
+        listOf("M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z", "M15 12a3 3 0 1 1-6 0a3 3 0 1 1 6 0")
+    )
     val Plus = icon("plus", BOLD, listOf("M12 5v14M5 12h14"))
     val Filter = icon("filter", THIN, listOf("M4 7h16M7 12h10M10 17h4"))
     val Back = icon("back", BOLD, listOf("M15 5l-7 7 7 7"))

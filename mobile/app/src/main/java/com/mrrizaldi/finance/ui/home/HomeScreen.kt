@@ -18,6 +18,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -49,6 +51,7 @@ import com.mrrizaldi.finance.ui.components.OfflineChip
 import com.mrrizaldi.finance.ui.components.SectionLabel
 import com.mrrizaldi.finance.ui.components.TxRow
 import com.mrrizaldi.finance.ui.components.signedAmount
+import com.mrrizaldi.finance.ui.icons.AppIcons
 import com.mrrizaldi.finance.ui.theme.AppType
 import com.mrrizaldi.finance.ui.theme.LocalPalette
 import com.mrrizaldi.finance.util.JakartaDate
@@ -63,6 +66,7 @@ fun HomeScreen(vm: HomeViewModel) {
     val refreshing by vm.refreshing.collectAsStateWithLifecycle()
     val p = LocalPalette.current
     val locale = LocalConfiguration.current.locales[0]
+    var showSettings by remember { mutableStateOf(false) }
 
     PullToRefreshBox(isRefreshing = refreshing, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
@@ -74,6 +78,9 @@ fun HomeScreen(vm: HomeViewModel) {
                     modifier = Modifier.weight(1f)
                 )
                 MonthMenuButton(state.month, vm::setMonth)
+                IconButton(onClick = { showSettings = true }) {
+                    Icon(AppIcons.Settings, stringResource(R.string.settings_title))
+                }
             }
             CountUpBalance(state.month, state.totalBalance)
             DeltaLine(state.netChange, JakartaDate.formatMonth(state.month, locale))
@@ -106,6 +113,7 @@ fun HomeScreen(vm: HomeViewModel) {
             Spacer(Modifier.navigationBarsPadding().height(NavBarClearance))
         }
     }
+    if (showSettings) SettingsSheet(onLogout = vm::logout, onDismiss = { showSettings = false })
 }
 
 @Composable

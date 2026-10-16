@@ -83,4 +83,8 @@ class HomeViewModel(private val repo: Repository) : ViewModel() {
         month.value = value
         refresh()
     }
+
+    fun logout() {
+        viewModelScope.launch { repo.logout() }
+    }
 }

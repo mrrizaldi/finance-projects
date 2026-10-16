@@ -33,6 +33,8 @@ import com.mrrizaldi.finance.auth.LoginScreen
 import com.mrrizaldi.finance.auth.LoginViewModel
 import com.mrrizaldi.finance.ui.add.AddScreen
 import com.mrrizaldi.finance.ui.add.AddViewModel
+import com.mrrizaldi.finance.ui.analytics.AnalyticsScreen
+import com.mrrizaldi.finance.ui.analytics.AnalyticsViewModel
 import com.mrrizaldi.finance.ui.balances.BalancesScreen
 import com.mrrizaldi.finance.ui.balances.BalancesViewModel
 import com.mrrizaldi.finance.ui.components.AddFab
@@ -41,7 +43,6 @@ import com.mrrizaldi.finance.ui.components.FloatingNavBar
 import com.mrrizaldi.finance.ui.components.Tab
 import com.mrrizaldi.finance.ui.home.HomeScreen
 import com.mrrizaldi.finance.ui.home.HomeViewModel
-import com.mrrizaldi.finance.ui.more.MoreScreen
 import com.mrrizaldi.finance.ui.theme.FinanceTheme
 import com.mrrizaldi.finance.ui.theme.LocalHazeState
 import com.mrrizaldi.finance.ui.transactions.TransactionsScreen
@@ -97,7 +98,7 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState) {
             composable(Tab.HOME.route) { HomeScreen(viewModel { HomeViewModel(container.repository) }) }
             composable(Tab.TRANSACTIONS.route) { TransactionsScreen(viewModel { TransactionsViewModel(container.repository) }) }
             composable(Tab.BALANCES.route) { BalancesScreen(viewModel { BalancesViewModel(container.repository) }) }
-            composable(Tab.MORE.route) { MoreScreen(container.repository) }
+            composable(Tab.ANALYTICS.route) { AnalyticsScreen(viewModel { AnalyticsViewModel(container.repository) }) }
             composable(ADD_ROUTE) {
                 AddScreen(viewModel { AddViewModel(container.repository) }, onBack = { nav.popBackStack() })
             }
