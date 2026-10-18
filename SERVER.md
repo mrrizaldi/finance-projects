@@ -30,10 +30,23 @@ export PATH="$PROTO_HOME/shims:$PROTO_HOME/bin:$PROTO_HOME/tools/node/globals/bi
 - Env vars TIDAK di pm2 dump — finance-bot & finance-api di **`~/dev/finance-project/.env`** (root project server, dibaca via dotenv `../../.env` dari `src/config.ts`). Termasuk Google Sheets creds inline (`GOOGLE_SERVICE_ACCOUNT_EMAIL`/`GOOGLE_PRIVATE_KEY`), Telegram token, Supabase, LLM, n8n, openclaw gateway. `openclaw-monitor` punya `.env` sendiri di folder `detector/` (`MONITOR_BOT_TOKEN`, `TELEGRAM_OWNER_ID`, dst).
 - Restart: `pm2 restart <app>` · Setelah reboot: `pm2 resurrect` lalu cek `pm2 ls`; simpan perubahan dengan `pm2 save`.
 
+## Service (systemd user)
+
+Dicek dengan `systemctl --user list-units --type=service`, bukan pm2.
+
+| Unit | Isi | Catatan |
+|------|-----|---------|
+| `wa-webhook.service` | `~/wa-webhook/server.mjs`, listen `0.0.0.0:3456` | Jembatan n8n → WhatsApp. `POST /send` body `{message, to?}`, shell out ke `openclaw message send --channel whatsapp`. Target default `+6282245168715` (override env `WA_TARGET`). Dari dalam container n8n dipanggil `http://172.17.0.1:3456/send`. |
+| `openclaw-gateway.service` | OpenClaw Gateway | Dipakai openclaw CLI/skill. |
+| `openclaw-llm-forward.service` | bridge `172.17.0.1:18790` → `127.0.0.1:18789` | Supaya container bisa nembak gateway LLM di host. |
+
 ## n8n
 
 - Docker container `n8n` (image `n8nio/n8n`), port `5678`, publik di `https://n8n.mrrizaldi.com`, timezone Asia/Jakarta, data di volume `n8n_data`.
-- **Kelola via n8n MCP** (`n8n_list_workflows`, `n8n_get_workflow`, dst) — API key di `.mcp.json` (exp 6 Agu 2026, regen di n8n UI → Settings → API).
+- **Login UI bukan basic auth.** Env container masih menyimpan `N8N_BASIC_AUTH_USER`/`N8N_BASIC_AUTH_PASSWORD`, tapi n8n di server sudah **v2.14.2** dan var itu tidak dipakai sejak n8n v1 — mencoba login dengannya selalu gagal. Login pakai akun owner di tabel `user` (`global:owner`, email Gmail pribadi). Lupa password: tidak ada SMTP, jadi reset dengan menulis ulang hash bcrypt ke kolom `password` lewat script node di dalam container (modul `sqlite3` + `bcryptjs` tersedia di `/usr/local/lib/node_modules/n8n/node_modules`, jalankan dengan `NODE_PATH` ke situ), lalu `docker restart n8n`.
+- **Kelola via n8n MCP** (`n8n_list_workflows`, `n8n_get_workflow`, dst) — API key di `.mcp.json` (gitignored). Key aktif: label `claude-mcp-2026-10-18`, tanpa expiry, semua scope. Key lama `exp 6 Agu 2026` sudah mati dan bikin semua tool MCP balas `AUTHENTICATION_ERROR`. Regen: UI → Settings → API, atau `POST /rest/api-keys` pakai cookie dari `POST /rest/login`.
+- Tanpa API key yang valid, workflow masih bisa dibaca/ditulis langsung di sqlite `/home/node/.n8n/database.sqlite` (tabel `workflow_entity`, `execution_entity`, `execution_data`). Setelah menulis, **wajib `docker restart n8n`** supaya workflow aktif di-reload dari DB.
+- Notifikasi WhatsApp dari workflow finance lewat `wa-webhook.service` (lihat tabel systemd di atas), bukan node WhatsApp bawaan n8n.
 - Workflow finance (per 9 Jul 2026): Email Parser — BCA, BSI, GoPay aktif; Shopee, Tokopedia, OVO/Dana/ShopeePay nonaktif. Finance Reporter — Daily Brief, Weekly Digest, Monthly Report. Daily Report. (Sisanya — Activity/Wellness Sync, Post-Activity Analysis — bukan finance.)
 
 ## OpenClaw
