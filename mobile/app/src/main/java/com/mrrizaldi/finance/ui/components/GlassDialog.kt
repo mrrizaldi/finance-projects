@@ -19,6 +19,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.Role
@@ -87,26 +88,35 @@ fun GlassDialog(
 }
 
 @Composable
-fun DangerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
+fun DangerButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier, enabled: Boolean = true) {
     val p = LocalPalette.current
-    DialogButton(text, onClick, modifier, p.negativeSoft, p.negative.copy(alpha = 0.35f), p.negative)
+    DialogButton(text, onClick, modifier, p.negativeSoft, p.negative.copy(alpha = 0.35f), p.negative, enabled)
 }
 
 @Composable
 fun CancelButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifier) {
     val p = LocalPalette.current
-    DialogButton(text, onClick, modifier, p.surfaceHi, LocalGlass.current.edge, p.textHi)
+    DialogButton(text, onClick, modifier, p.surfaceHi, LocalGlass.current.edge, p.textHi, true)
 }
 
 @Composable
-private fun DialogButton(text: String, onClick: () -> Unit, modifier: Modifier, fill: Color, edge: Color, color: Color) {
+private fun DialogButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier,
+    fill: Color,
+    edge: Color,
+    color: Color,
+    enabled: Boolean
+) {
     Box(
         modifier
             .height(52.dp)
+            .alpha(if (enabled) 1f else 0.4f)
             .clip(CircleShape)
             .background(fill)
             .border(1.dp, edge, CircleShape)
-            .clickable(role = Role.Button, onClick = onClick),
+            .clickable(enabled = enabled, role = Role.Button, onClick = onClick),
         contentAlignment = Alignment.Center
     ) {
         Text(text, style = AppType.rowTitle.copy(fontWeight = FontWeight.SemiBold), color = color)

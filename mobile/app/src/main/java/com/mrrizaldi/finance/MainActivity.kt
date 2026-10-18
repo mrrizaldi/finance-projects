@@ -143,8 +143,12 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState) {
             startDestination = Tab.HOME.route,
             modifier = Modifier.fillMaxSize().hazeSource(hazeState, zIndex = 1f).statusBarsPadding()
         ) {
-            composable(Tab.HOME.route) { HomeScreen(viewModel { HomeViewModel(container.repository) }, container.lock) }
-            composable(Tab.TRANSACTIONS.route) { TransactionsScreen(viewModel { TransactionsViewModel(container.repository) }) }
+            composable(Tab.HOME.route) {
+                HomeScreen(viewModel { HomeViewModel(container.repository) }, container.lock, onEdit = nav::edit)
+            }
+            composable(Tab.TRANSACTIONS.route) {
+                TransactionsScreen(viewModel { TransactionsViewModel(container.repository) }, onEdit = nav::edit)
+            }
             composable(Tab.BALANCES.route) { BalancesScreen(viewModel { BalancesViewModel(container.repository) }) }
             composable(Tab.ANALYTICS.route) { AnalyticsScreen(viewModel { AnalyticsViewModel(container.repository) }) }
             composable(ADD_ROUTE) {

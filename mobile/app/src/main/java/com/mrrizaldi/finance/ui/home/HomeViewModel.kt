@@ -90,4 +90,18 @@ class HomeViewModel(private val repo: Repository) : ViewModel() {
     fun logout() {
         viewModelScope.launch { repo.logout() }
     }
+
+    private val _deleteError = MutableStateFlow<SyncError?>(null)
+    val deleteError: StateFlow<SyncError?> = _deleteError
+
+    fun delete(id: String) {
+        viewModelScope.launch {
+            val e = repo.deleteTransaction(id).exceptionOrNull() as? SyncError
+            if (e is SyncError.Unauthorized) repo.logout() else _deleteError.value = e
+        }
+    }
+
+    fun clearDeleteError() {
+        _deleteError.value = null
+    }
 }

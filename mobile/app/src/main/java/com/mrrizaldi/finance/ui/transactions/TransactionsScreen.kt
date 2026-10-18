@@ -31,7 +31,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -58,7 +57,6 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mrrizaldi.finance.R
@@ -79,19 +77,19 @@ import com.mrrizaldi.finance.ui.components.MonthPicker
 import com.mrrizaldi.finance.ui.components.NavBarClearance
 import com.mrrizaldi.finance.ui.components.OfflineChip
 import com.mrrizaldi.finance.ui.components.SectionLabel
+import com.mrrizaldi.finance.ui.components.TxDetailActions
 import com.mrrizaldi.finance.ui.components.TxRow
 import com.mrrizaldi.finance.ui.icons.AppIcons
 import com.mrrizaldi.finance.ui.theme.AppType
 import com.mrrizaldi.finance.ui.theme.LocalPalette
 import com.mrrizaldi.finance.util.JakartaDate
-import com.mrrizaldi.finance.util.RupiahFormat
 import kotlinx.coroutines.flow.drop
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 @Composable
-fun TransactionsScreen(vm: TransactionsViewModel) {
+fun TransactionsScreen(vm: TransactionsViewModel, onEdit: (String) -> Unit) {
     val items by vm.items.collectAsStateWithLifecycle()
     val filter by vm.filter.collectAsStateWithLifecycle()
     val accounts by vm.accounts.collectAsStateWithLifecycle()
@@ -100,6 +98,7 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
     val refreshing by vm.refreshing.collectAsStateWithLifecycle()
     val lastSuccessAt by vm.lastSuccessAt.collectAsStateWithLifecycle()
     val outbox by vm.outbox.collectAsStateWithLifecycle()
+    val deleteError by vm.deleteError.collectAsStateWithLifecycle()
     var pending by remember { mutableStateOf<TransactionEntity?>(null) }
     var confirmDelete by remember { mutableStateOf<TransactionEntity?>(null) }
     var search by rememberSaveable { mutableStateOf("") }
@@ -254,7 +253,14 @@ fun TransactionsScreen(vm: TransactionsViewModel) {
             onDismiss = { showFilter = false }
         )
     }
-    detail?.let { DetailSheet(it, locale) { detail = null } }
+    TxDetailActions(
+        detail = detail,
+        deleteError = deleteError,
+        onEdit = onEdit,
+        onDelete = vm::delete,
+        onDismiss = { detail = null },
+        onDismissError = vm::clearDeleteError
+    )
     pending?.let { tx ->
         val error = outbox[tx.id]?.lastError
         GlassDialog(
@@ -424,46 +430,5 @@ private fun FilterChip(label: String, dot: Color, selected: Boolean, onClick: ()
             maxLines = 1
         )
         if (selected) Icon(AppIcons.Check, null, tint = fg, modifier = Modifier.size(16.dp))
-    }
-}
-
-@Composable
-private fun DetailSheet(tx: TransactionEntity, locale: Locale, onDismiss: () -> Unit) {
-    val typeLabel = when (tx.type) {
-        "income" -> stringResource(R.string.tx_type_income)
-        "expense" -> stringResource(R.string.tx_type_expense)
-        "transfer" -> stringResource(R.string.tx_type_transfer)
-        else -> tx.type
-    }
-    val rows = listOf(
-        R.string.tx_detail_amount to RupiahFormat.format(tx.amount),
-        R.string.tx_detail_type to typeLabel,
-        R.string.tx_detail_account to tx.accountName,
-        R.string.tx_detail_to_account to tx.toAccountName,
-        R.string.tx_detail_category to tx.categoryName,
-        R.string.tx_detail_description to tx.description,
-        R.string.tx_detail_merchant to tx.merchant,
-        R.string.tx_detail_date to JakartaDate.formatTimestamp(tx.transactionDate, locale),
-        R.string.tx_detail_source to tx.source,
-        R.string.tx_detail_balance_after to tx.balanceAfter?.let { RupiahFormat.format(it) }
-    )
-    ModalBottomSheet(onDismissRequest = onDismiss, shape = SheetShape, containerColor = LocalPalette.current.bg) {
-        Column(Modifier.padding(16.dp).navigationBarsPadding(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(stringResource(R.string.tx_detail_title), style = MaterialTheme.typography.titleLarge)
-            HorizontalDivider()
-            rows.forEach { (label, value) ->
-                if (value != null) {
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                        Text(stringResource(label), color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        Text(
-                            value,
-                            fontWeight = FontWeight.Medium,
-                            textAlign = TextAlign.End,
-                            modifier = Modifier.padding(start = 16.dp)
-                        )
-                    }
-                }
-            }
-        }
     }
 }

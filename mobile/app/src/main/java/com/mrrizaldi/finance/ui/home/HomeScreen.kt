@@ -42,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mrrizaldi.finance.R
 import com.mrrizaldi.finance.data.SyncError
+import com.mrrizaldi.finance.data.local.TransactionEntity
 import com.mrrizaldi.finance.lock.AppLock
 import com.mrrizaldi.finance.ui.components.GlassSurface
 import com.mrrizaldi.finance.ui.components.GroupDivider
@@ -51,6 +52,7 @@ import com.mrrizaldi.finance.ui.components.NavBarClearance
 import com.mrrizaldi.finance.ui.components.OfflineChip
 import com.mrrizaldi.finance.ui.components.PendingChip
 import com.mrrizaldi.finance.ui.components.SectionLabel
+import com.mrrizaldi.finance.ui.components.TxDetailActions
 import com.mrrizaldi.finance.ui.components.TxRow
 import com.mrrizaldi.finance.ui.components.signedAmount
 import com.mrrizaldi.finance.ui.icons.AppIcons
@@ -62,14 +64,16 @@ import java.time.YearMonth
 import kotlin.math.abs
 
 @Composable
-fun HomeScreen(vm: HomeViewModel, lock: AppLock) {
+fun HomeScreen(vm: HomeViewModel, lock: AppLock, onEdit: (String) -> Unit) {
     val state by vm.uiState.collectAsStateWithLifecycle()
     val error by vm.error.collectAsStateWithLifecycle()
     val refreshing by vm.refreshing.collectAsStateWithLifecycle()
     val pendingCount by vm.pendingCount.collectAsStateWithLifecycle()
     val p = LocalPalette.current
     val locale = LocalConfiguration.current.locales[0]
+    val deleteError by vm.deleteError.collectAsStateWithLifecycle()
     var showSettings by remember { mutableStateOf(false) }
+    var detail by remember { mutableStateOf<TransactionEntity?>(null) }
 
     PullToRefreshBox(isRefreshing = refreshing, onRefresh = vm::refresh, modifier = Modifier.fillMaxSize()) {
         Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 16.dp)) {
@@ -112,12 +116,20 @@ fun HomeScreen(vm: HomeViewModel, lock: AppLock) {
                     Text(stringResource(R.string.tx_empty), color = p.textMute, modifier = Modifier.padding(16.dp))
                 }
             } else {
-                GroupedCard(state.recent) { tx -> TxRow(tx) {} }
+                GroupedCard(state.recent) { tx -> TxRow(tx) { if (!tx.pending) detail = tx } }
             }
             Spacer(Modifier.navigationBarsPadding().height(NavBarClearance))
         }
     }
     if (showSettings) SettingsSheet(pendingCount, lock, onLogout = vm::logout, onDismiss = { showSettings = false })
+    TxDetailActions(
+        detail = detail,
+        deleteError = deleteError,
+        onEdit = onEdit,
+        onDelete = vm::delete,
+        onDismiss = { detail = null },
+        onDismissError = vm::clearDeleteError
+    )
 }
 
 @Composable
