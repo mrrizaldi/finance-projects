@@ -245,6 +245,44 @@ class FakeApi : SupabaseApi {
         )
         return answer(clientId, id)
     }
+
+    val updates = mutableListOf<List<Any?>>()
+    val deletes = mutableListOf<String>()
+
+    override suspend fun updateManualTransaction(
+        id: String,
+        type: String,
+        amount: Long,
+        account: String,
+        toAccount: String?,
+        toAmount: Long?,
+        category: String?,
+        description: String?,
+        merchant: String?,
+        date: String
+    ) {
+        gate()
+        updates += listOf(id, type, amount, account, toAccount, toAmount, category, description, merchant, date)
+        transactions.replaceAll {
+            if (it.id != id) it else it.copy(
+                type = type,
+                amount = amount.toDouble(),
+                transaction_date = date,
+                to_amount = toAmount?.toDouble(),
+                account_id = account,
+                to_account_id = toAccount,
+                category_id = category,
+                description = description,
+                merchant = merchant
+            )
+        }
+    }
+
+    override suspend fun deleteManualTransaction(id: String): Boolean {
+        gate()
+        deletes += id
+        return transactions.removeIf { it.id == id }
+    }
 }
 
 class FakeAccountDao : AccountDao {
@@ -290,6 +328,7 @@ class FakeTransactionDao : TransactionDao {
     }
     override fun observeRecent(limit: Int): Flow<List<TransactionEntity>> =
         data.map { list -> list.sortedByDescending { it.transactionDate }.take(limit) }
+    override suspend fun get(id: String): TransactionEntity? = data.value.firstOrNull { it.id == id }
     override suspend fun deleteRange(start: String, end: String) {
         data.update { list -> list.filterNot { it.dateKey in start..end && !it.pending } }
     }

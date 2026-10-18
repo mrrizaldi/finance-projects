@@ -68,6 +68,9 @@ interface TransactionDao {
     @Query("SELECT * FROM transactions ORDER BY transactionDate DESC LIMIT :limit")
     fun observeRecent(limit: Int): Flow<List<TransactionEntity>>
 
+    @Query("SELECT * FROM transactions WHERE id = :id")
+    suspend fun get(id: String): TransactionEntity?
+
     @Query("DELETE FROM transactions WHERE dateKey BETWEEN :start AND :end AND pending = 0")
     suspend fun deleteRange(start: String, end: String)
 

@@ -40,4 +40,17 @@ interface SupabaseApi {
         date: String,
         clientId: String
     ): String
+    suspend fun updateManualTransaction(
+        id: String,
+        type: String,
+        amount: Long,
+        account: String,
+        toAccount: String?,
+        toAmount: Long?,
+        category: String?,
+        description: String?,
+        merchant: String?,
+        date: String
+    )
+    suspend fun deleteManualTransaction(id: String): Boolean
 }

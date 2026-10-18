@@ -275,6 +275,67 @@ class Repository(
         }
     }
 
+    suspend fun transaction(id: String): TransactionEntity? = transactionDao.get(id)
+
+    suspend fun updateTransaction(
+        id: String,
+        type: String,
+        amount: Long,
+        account: String,
+        toAccount: String?,
+        toAmount: Long?,
+        category: String?,
+        description: String?,
+        merchant: String?,
+        date: LocalDate,
+        time: LocalTime
+    ): Result<Unit> {
+        val timestamp = JakartaDate.toTimestamp(date, time)
+        val old = transactionDao.get(id)
+        val sent = write {
+            api.updateManualTransaction(id, type, amount, account, toAccount, toAmount, category, description, merchant, timestamp)
+        }
+        if (sent.isFailure) return sent
+        val categoryRow = categoryDao.observeActive().first().firstOrNull { it.id == category }
+        old?.let {
+            transactionDao.insertAll(
+                listOf(
+                    it.copy(
+                        type = type,
+                        amount = amount,
+                        transactionDate = timestamp,
+                        dateKey = JakartaDate.dateKey(timestamp),
+                        toAmount = toAmount,
+                        description = description,
+                        merchant = merchant,
+                        categoryId = category,
+                        accountId = account,
+                        toAccountId = toAccount,
+                        categoryName = categoryRow?.name,
+                        categoryColor = categoryRow?.color,
+                        accountName = accountName(account),
+                        toAccountName = toAccount?.let { to -> accountName(to) }
+                    )
+                )
+            )
+        }
+        refreshMonths(listOfNotNull(old?.dateKey, JakartaDate.dateKey(timestamp)))
+        return sent
+    }
+
+    suspend fun deleteTransaction(id: String): Result<Unit> {
+        val old = transactionDao.get(id)
+        val sent = write { api.deleteManualTransaction(id) }
+        if (sent.isFailure) return sent
+        transactionDao.deleteById(id)
+        refreshMonths(listOfNotNull(old?.dateKey))
+        return sent
+    }
+
+    private suspend fun refreshMonths(keys: List<String>) {
+        keys.map { YearMonth.from(JakartaDate.parseKey(it)) }.distinct().forEach { refreshHome(it) }
+    }
+
     suspend fun logout(): Result<Unit> = write {
         if (write { api.signOut() }.isFailure) api.clearLocalSession()
         clearCache()

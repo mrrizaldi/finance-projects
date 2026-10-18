@@ -153,6 +153,35 @@ class SupabaseApiImpl(private val client: SupabaseClient) : SupabaseApi {
             put("p_client_id", clientId)
         }).decodeAs()
 
+    override suspend fun updateManualTransaction(
+        id: String,
+        type: String,
+        amount: Long,
+        account: String,
+        toAccount: String?,
+        toAmount: Long?,
+        category: String?,
+        description: String?,
+        merchant: String?,
+        date: String
+    ) {
+        client.postgrest.rpc("update_manual_transaction", buildJsonObject {
+            put("p_id", id)
+            put("p_type", type)
+            put("p_amount", amount)
+            put("p_account", account)
+            put("p_to_account", toAccount)
+            put("p_to_amount", toAmount)
+            put("p_category", category)
+            put("p_description", description)
+            put("p_merchant", merchant)
+            put("p_date", date)
+        })
+    }
+
+    override suspend fun deleteManualTransaction(id: String): Boolean =
+        client.postgrest.rpc("delete_manual_transaction", buildJsonObject { put("p_id", id) }).decodeAs()
+
     private companion object {
         val TX_COLUMNS = Columns.list(
             "id", "type", "amount", "to_amount", "description", "merchant",
