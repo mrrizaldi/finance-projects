@@ -38,7 +38,7 @@ Sumber: `api/src/routes/transactions-id.ts`, `api/src/lib/balance-math.ts`, `das
 |---|---|---|---|
 | `income`/`expense`/`transfer`, milik user, belum terhapus, `account_id` terisi | ✅ | ✅ | Jalur utama. |
 | Sama, tapi `account_id` NULL (expense cicilan tanpa akun) | ❌ (UI nonaktif) | ✅ | RPC update wajib `p_account`; form Tambah tidak punya mode cicilan. Hapus tidak mengubah saldo (tanpa akun = tanpa efek), sama dengan web. |
-| `is_adjustment = true` | ✅ | ✅ | Paritas web. Flag `is_adjustment`/`adjustment_note` tidak disentuh RPC. Risiko: user tidak melihat bahwa barisnya adjustment selain label "Adjustment" di baris. |
+| `is_adjustment = true` | ❌ | ❌ | **Deviasi dari web.** Adjustment = jangkar saldo sistem reconcile (`docs/RECONCILE.md`); RPC raise `transaksi penyesuaian tidak bisa diubah/dihapus`; UI menonaktifkan kedua tombol seperti baris investasi. |
 | `installment_id` terisi **dan** `account_id` terisi | ✅ | ✅ | Paritas web. `installment_id` tidak disentuh. |
 | Akun investasi (asal atau tujuan) | ✅ | ✅ | Paritas web. Model saldo investasi = nilai instrumen + cash (`memory/project_investment_deferred_bugs.md`); edit/hapus transfer ke akun investasi menggeser `idle_cash`, persis seperti web dan seperti Tambah transfer di app yang sudah mengizinkan akun investasi. |
 | Sumber email/openclaw/telegram | ✅ | ✅ | Paritas web. `source` tidak disentuh. |

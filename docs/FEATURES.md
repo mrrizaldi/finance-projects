@@ -217,6 +217,8 @@ Tipe: `income`, `expense`, `transfer` (+ `investment_gain`/`investment_loss` int
 3. `recalculateForAccounts()` recompute snapshot chronologis.
 4. **DB trigger** `trg_reconcile_transaction_snapshots` juga fire otomatis → auto-heal snapshot (lihat [§4](#4-sistem-saldo--snapshot-advanced)).
 
+**Edit/Hapus (app Android):** RPC atomik `update_manual_transaction` (full-state set) & `delete_manual_transaction` (mig 056, `056_manual_edit_delete_fns.sql`): dalam satu transaksi DB saldo akun lama+baru diubah lewat agregat selisih efek (`transaction_effects`), lalu row ditimpa/di-soft-delete sehingga trigger reconcile mengisi snapshot. Menolak tipe `investment_gain/loss`, baris `is_adjustment` (jangkar saldo reconcile), dan `p_account` NULL; `installment_id`, `source` tidak disentuh. Idempoten: payload sama 2× = delta 0; hapus 2× = `false`. Test: `tests/integration/manual-edit-delete.test.js`. Dashboard masih pakai `PATCH`/`DELETE` di atas.
+
 **Soft delete:** `is_deleted` flag, `v_transactions` & semua RPC analytics skip yang deleted.
 
 **Frontend auto-refresh:** setelah edit/hapus, `TransactionListClient` panggil `useRevalidator().revalidate()` → semua loader aktif re-run → UI langsung sinkron (fix anomali saldo basi).

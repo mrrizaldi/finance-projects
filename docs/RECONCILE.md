@@ -43,6 +43,7 @@ Tiga aturan yang **tidak boleh dilanggar**, kalau dilanggar snapshot langsung ng
 1. **`accounts.balance` = source of truth.** Snapshot selalu di-anchor ke saldo akun *sekarang*, bukan dihitung ulang dari nol. Reconcile menurunkan `opening = balance − Σefek`, lalu jalan maju.
 2. **Reconcile PRESERVE `accounts.balance`.** Fungsi reconcile tidak pernah menambah/mengurangi saldo — di akhir dia nulis balik `balance = opening + Σefek` (nilainya sama). Lihat `040_reconcile_snapshots_use_to_amount.sql:112-118`. Yang **boleh** ubah saldo cuma:
    - RPC atomik `record_manual_entry` / `record_manual_transfer` (`039_atomic_manual_transaction_fns.sql:46`, `:10`)
+   - RPC atomik `update_manual_transaction` / `delete_manual_transaction` (`056_manual_edit_delete_fns.sql`, dipakai app Android): saldo diubah dulu dalam satu `UPDATE accounts` agregat, lalu row ditimpa dengan semua kolom pemicu di SET + snapshot di-NULL-kan → trigger mengisi ulang; baris `is_adjustment` ditolak (jangkar saldo)
    - API `applyBalanceDiffs` di edit/delete (`api/src/routes/transactions-id.ts:16`)
    - insert email dari n8n / RPC investasi
 3. **Urutan kronologis** selalu `ORDER BY transaction_date, created_at, id` (`040...sql:74`). `id` sebagai tie-breaker terakhir biar deterministik.
