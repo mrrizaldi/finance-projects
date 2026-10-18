@@ -15,6 +15,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
@@ -36,28 +38,8 @@ fun ScreenTopBar(
     trailing: (@Composable () -> Unit)? = null
 ) {
     val palette = LocalPalette.current
-    val interaction = remember { MutableInteractionSource() }
     Box(modifier.fillMaxWidth().height(56.dp)) {
-        GlassSurface(
-            Modifier
-                .align(Alignment.CenterStart)
-                .pressScale(interaction)
-                .size(44.dp)
-                .clickable(
-                    interactionSource = interaction,
-                    indication = LocalIndication.current,
-                    role = Role.Button,
-                    onClick = onBack
-                ),
-            shape = CircleShape
-        ) {
-            Icon(
-                AppIcons.Back,
-                stringResource(R.string.common_back),
-                tint = palette.textHi,
-                modifier = Modifier.align(Alignment.Center).size(22.dp)
-            )
-        }
+        TopBarButton(AppIcons.Back, stringResource(R.string.common_back), onBack, Modifier.align(Alignment.CenterStart))
         Text(
             title,
             style = AppType.rowTitle.copy(fontSize = 17.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold),
@@ -69,5 +51,30 @@ fun ScreenTopBar(
         Box(Modifier.align(Alignment.CenterEnd).size(44.dp), contentAlignment = Alignment.Center) {
             trailing?.invoke()
         }
+    }
+}
+
+@Composable
+fun TopBarButton(
+    icon: ImageVector,
+    label: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    tint: Color = LocalPalette.current.textHi
+) {
+    val interaction = remember { MutableInteractionSource() }
+    GlassSurface(
+        modifier
+            .pressScale(interaction)
+            .size(44.dp)
+            .clickable(
+                interactionSource = interaction,
+                indication = LocalIndication.current,
+                role = Role.Button,
+                onClick = onClick
+            ),
+        shape = CircleShape
+    ) {
+        Icon(icon, label, tint = tint, modifier = Modifier.align(Alignment.Center).size(22.dp))
     }
 }

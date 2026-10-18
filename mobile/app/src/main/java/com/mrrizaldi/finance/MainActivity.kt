@@ -27,6 +27,7 @@ import androidx.fragment.app.FragmentActivity
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -58,6 +59,9 @@ import com.mrrizaldi.finance.ui.transactions.TransactionsViewModel
 import io.github.jan.supabase.auth.status.SessionStatus
 
 private const val ADD_ROUTE = "add"
+private const val EDIT_ROUTE = "edit/{id}"
+
+private fun NavHostController.edit(id: String) = navigate("edit/$id") { launchSingleTop = true }
 
 class MainActivity : FragmentActivity() {
     private lateinit var prompt: BiometricPrompt
@@ -146,8 +150,12 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState) {
             composable(ADD_ROUTE) {
                 AddScreen(viewModel { AddViewModel(container.repository) }, onBack = { nav.popBackStack() })
             }
+            composable(EDIT_ROUTE) { entry ->
+                val id = entry.arguments?.getString("id").orEmpty()
+                AddScreen(viewModel { AddViewModel(container.repository, id) }, onBack = { nav.popBackStack() })
+            }
         }
-        if (current != ADD_ROUTE) {
+        if (current != ADD_ROUTE && current != EDIT_ROUTE) {
             FloatingNavBar(
                 current = current,
                 onSelect = { tab ->

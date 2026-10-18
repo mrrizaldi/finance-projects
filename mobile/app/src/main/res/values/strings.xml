@@ -71,6 +71,14 @@
     <string name="pending_delete_body">Transaksi ini belum sampai ke server dan akan hilang dari HP ini.</string>
 
     <string name="add_title">Transaksi baru</string>
+    <string name="edit_title">Edit transaksi</string>
+    <string name="edit_err_offline">Perlu koneksi internet untuk mengubah transaksi</string>
+    <string name="tx_edit">Edit</string>
+    <string name="tx_delete">Hapus</string>
+    <string name="tx_delete_title">Hapus transaksi?</string>
+    <string name="tx_delete_body">%1$s akan dihapus dan saldo akun dikembalikan.</string>
+    <string name="tx_delete_failed">Gagal menghapus</string>
+    <string name="tx_edit_locked">Transaksi ini cuma bisa diubah dari web</string>
     <string name="add_amount">Nominal</string>
     <string name="add_amount_to">Nominal diterima</string>
     <string name="add_same_amount">Sama dengan nominal keluar</string>

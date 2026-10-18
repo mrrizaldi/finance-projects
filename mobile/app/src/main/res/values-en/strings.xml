@@ -71,6 +71,14 @@
     <string name="pending_delete_body">This transaction has not reached the server and will be removed from this phone.</string>
 
     <string name="add_title">New transaction</string>
+    <string name="edit_title">Edit transaction</string>
+    <string name="edit_err_offline">An internet connection is needed to change a transaction</string>
+    <string name="tx_edit">Edit</string>
+    <string name="tx_delete">Delete</string>
+    <string name="tx_delete_title">Delete transaction?</string>
+    <string name="tx_delete_body">%1$s will be deleted and the account balance restored.</string>
+    <string name="tx_delete_failed">Could not delete</string>
+    <string name="tx_edit_locked">This transaction can only be changed from the web</string>
     <string name="add_amount">Amount</string>
     <string name="add_amount_to">Amount received</string>
     <string name="add_same_amount">Same as amount sent</string>

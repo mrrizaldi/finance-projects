@@ -47,14 +47,18 @@ import com.mrrizaldi.finance.ui.components.CancelButton
 import com.mrrizaldi.finance.ui.components.CapsuleButton
 import com.mrrizaldi.finance.ui.components.CapsuleField
 import com.mrrizaldi.finance.ui.components.CheckRow
+import com.mrrizaldi.finance.ui.components.DeleteTransactionDialog
 import com.mrrizaldi.finance.ui.components.DropdownField
 import com.mrrizaldi.finance.ui.components.GlassDialog
 import com.mrrizaldi.finance.ui.components.GlassSegmented
 import com.mrrizaldi.finance.ui.components.GradientButton
 import com.mrrizaldi.finance.ui.components.ScreenTopBar
+import com.mrrizaldi.finance.ui.components.TopBarButton
+import com.mrrizaldi.finance.ui.icons.AppIcons
 import com.mrrizaldi.finance.ui.theme.LocalGlass
 import com.mrrizaldi.finance.ui.theme.LocalPalette
 import com.mrrizaldi.finance.util.JakartaDate
+import com.mrrizaldi.finance.util.RupiahFormat
 import java.time.Instant
 import java.time.LocalTime
 import java.time.ZoneOffset
@@ -70,9 +74,18 @@ fun AddScreen(vm: AddViewModel, onBack: () -> Unit) {
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     val locale = LocalConfiguration.current.locales[0]
+    val done by vm.done.collectAsStateWithLifecycle()
+    val p = LocalPalette.current
     var showDate by remember { mutableStateOf(false) }
     var showTime by remember { mutableStateOf(false) }
+    var confirmDelete by remember { mutableStateOf(false) }
 
+    LaunchedEffect(done) {
+        if (done) {
+            haptic.performHapticFeedback(HapticFeedbackType.Confirm)
+            onBack()
+        }
+    }
     LaunchedEffect(accounts) {
         if (accounts.isNotEmpty() && form.accountId == null) {
             val (from, to) = defaultAccounts(accounts)
@@ -93,7 +106,21 @@ fun AddScreen(vm: AddViewModel, onBack: () -> Unit) {
         contentWindowInsets = WindowInsets(0)
     ) { padding ->
         Column(Modifier.fillMaxSize().padding(padding).imePadding()) {
-            ScreenTopBar(stringResource(R.string.add_title), onBack, Modifier.padding(horizontal = 16.dp))
+            ScreenTopBar(
+                title = stringResource(if (vm.editing) R.string.edit_title else R.string.add_title),
+                onBack = onBack,
+                modifier = Modifier.padding(horizontal = 16.dp),
+                trailing = {
+                    if (vm.editing) {
+                        TopBarButton(
+                            AppIcons.Trash,
+                            stringResource(R.string.tx_delete),
+                            { if (!form.saving) confirmDelete = true },
+                            tint = p.negative
+                        )
+                    }
+                }
+            )
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -185,6 +212,18 @@ fun AddScreen(vm: AddViewModel, onBack: () -> Unit) {
                 Spacer(Modifier.navigationBarsPadding().height(8.dp))
             }
         }
+    }
+
+    if (confirmDelete) {
+        DeleteTransactionDialog(
+            label = form.description,
+            amount = RupiahFormat.parse(form.amount) ?: 0L,
+            onConfirm = {
+                confirmDelete = false
+                vm.delete()
+            },
+            onDismiss = { confirmDelete = false }
+        )
     }
 
     if (showDate) {

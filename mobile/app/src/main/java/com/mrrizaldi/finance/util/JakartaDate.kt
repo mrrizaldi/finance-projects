@@ -17,6 +17,8 @@ object JakartaDate {
 
     fun now(): ZonedDateTime = ZonedDateTime.now(zone)
 
+    fun atJakarta(timestamp: String): ZonedDateTime = OffsetDateTime.parse(timestamp).atZoneSameInstant(zone)
+
     fun today(now: Instant = Instant.now()): LocalDate = now.atZone(zone).toLocalDate()
 
     fun currentMonth(now: Instant = Instant.now()): YearMonth = YearMonth.from(now.atZone(zone))
