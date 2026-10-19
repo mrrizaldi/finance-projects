@@ -23,6 +23,7 @@ Untuk inventori service di server (bot, n8n, openclaw) lihat **`SERVER.md`**. Un
 - [11. Push Notifications](#11-push-notifications)
 - [12. Auth & Multi-User](#12-auth--multi-user)
 - [13. Internationalization (i18n)](#13-internationalization-i18n)
+- [14. Rekonsiliasi Statement](#14-rekonsiliasi-statement)
 - [Lampiran: Peta Endpoint](#lampiran-peta-endpoint-api)
 
 ---
@@ -490,6 +491,23 @@ Status: **selesai** — seluruh UI (auth, home, transaksi, nav, settings, cicila
 📖 **Deep-dive + peta kode + panduan konversi Phase 2:** [`docs/I18N.md`](./I18N.md).
 
 📂 **Kode:** `supabase/migrations/051_locale_and_localized_seed.sql` · `dashboard/src/i18n/*` · `components/auth/RegisterForm.tsx` · `components/settings/SettingsClient.tsx` (LanguageSection) · `routes/app-layout.tsx` · `lib/utils.ts` · `api/src/routes/profile.ts`
+
+---
+
+## 14. Rekonsiliasi Statement
+
+Sedang dibangun. Rancangan lengkap: `docs/superpowers/specs/2026-10-19-rekonsiliasi-statement-design.md`.
+
+**Sudah ada (mig 059, `059_statement_imports.sql`):**
+
+- `statement_imports`: satu upload (PDF atau beberapa screenshot sekaligus) untuk satu akun. `file_sha256` unik per user, jadi file yang sama gak bisa diimpor dua kali. Status `review` → `committed`/`discarded`.
+- `statement_lines`: baris hasil ekstraksi. `fingerprint` unik per import (screenshot tumpang tindih otomatis gak dobel). Kolom `decision` (`match`/`probable`/`new`/`app_dup`/`transfer_pair`/`other_account`/`skip`) + `selected` untuk layar review.
+- `transactions.statement_line_id` (unik kalau terisi) + `source = 'statement_import'`: setiap transaksi hasil rekonsiliasi bisa dilacak ke baris statement asalnya, dan commit dua kali gak bikin dobel.
+- RLS `own_rows` + trigger `set_user_id_on_insert` sama dengan tabel lain. Bucket storage privat `statements` untuk file asli (rencana simpan 90 hari).
+
+**Belum:** parser, matcher, endpoint API, layar Android. Lihat §10 di spec.
+
+📂 **Kode:** `supabase/migrations/059_statement_imports.sql` · test `tests/integration/statement-imports.test.js`
 
 ---
 
