@@ -112,7 +112,7 @@ fun ReceiptScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             val message = state.error ?: state.errorRes?.let { stringResource(it) }
-            message?.let { Text(it, color = p.negative, style = AppType.rowMeta) }
+            if (!state.editing) message?.let { Text(it, color = p.negative, style = AppType.rowMeta) }
             state.notice?.let { Text(it, color = p.textMute, style = AppType.rowMeta) }
             when {
                 state.busy == ReceiptBusy.LOADING -> Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
@@ -131,7 +131,7 @@ fun ReceiptScreen(
                     CapsuleButton(stringResource(R.string.receipt_close), onBack, Modifier.fillMaxWidth())
                 }
                 !state.editing -> EmptyPane(state.transactionId != null, onCamera, onPickFiles, vm::startManual)
-                else -> ReviewPane(state, vm, accounts, categories)
+                else -> ReviewPane(state, message, vm, accounts, categories)
             }
             Spacer(Modifier.navigationBarsPadding().height(8.dp))
         }
@@ -166,7 +166,13 @@ private fun EmptyPane(canTypeManually: Boolean, onCamera: () -> Unit, onPickFile
 }
 
 @Composable
-private fun ReviewPane(state: ReceiptState, vm: ReceiptViewModel, accounts: List<AccountEntity>, categories: List<CategoryEntity>) {
+private fun ReviewPane(
+    state: ReceiptState,
+    message: String?,
+    vm: ReceiptViewModel,
+    accounts: List<AccountEntity>,
+    categories: List<CategoryEntity>
+) {
     val p = LocalPalette.current
     val context = LocalContext.current
     val locale = LocalConfiguration.current.locales[0]
@@ -193,14 +199,16 @@ private fun ReviewPane(state: ReceiptState, vm: ReceiptViewModel, accounts: List
     }
 
     if (state.transactionId == null) {
-        SectionLabel(stringResource(R.string.receipt_match_title))
-        GroupedCard {
-            state.candidates.forEach { candidate ->
-                ChoiceRow(describe(candidate, locale), state.chosenCandidateId == candidate.id && !state.createNew) {
-                    vm.chooseCandidate(candidate.id)
+        if (state.candidates.isNotEmpty()) {
+            SectionLabel(stringResource(R.string.receipt_match_title))
+            GroupedCard {
+                state.candidates.forEach { candidate ->
+                    ChoiceRow(describe(candidate, locale), state.chosenCandidateId == candidate.id && !state.createNew) {
+                        vm.chooseCandidate(candidate.id)
+                    }
                 }
+                ChoiceRow(stringResource(R.string.receipt_new_tx), state.createNew) { vm.chooseCandidate(null) }
             }
-            ChoiceRow(stringResource(R.string.receipt_new_tx), state.createNew) { vm.chooseCandidate(null) }
         }
         if (state.createNew) {
             DropdownField(
@@ -286,6 +294,7 @@ private fun ReviewPane(state: ReceiptState, vm: ReceiptViewModel, accounts: List
             }
         }
     }
+    message?.let { Text(it, color = p.negative, style = AppType.rowMeta) }
     GradientButton(
         stringResource(if (state.busy == ReceiptBusy.SAVING) R.string.receipt_saving else R.string.receipt_save),
         vm::save,
