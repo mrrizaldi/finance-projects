@@ -541,6 +541,8 @@ Adjustment (`is_adjustment`) gak pernah dicocokkan. `auditBalance` menjelaskan s
 
 Eval lokal (screenshot BCA mobile asli Agustus 2026, 10 baris, disimpan di `recap/screenshots/` yang gitignored): 3 dari 3 run membaca 10/10 baris persis (tanggal, nominal, arah), termasuk deskripsi berisi `00000.00`. Dipotong jadi dua gambar yang overlap: tetap 10 baris, 0 dobel. Nama sumber masih lemah ("BANK"/"M-BANKING") karena aplikasi BCA gak menampilkan nama bank; akun tetap dipilih user.
 
+**Batas yang diketahui:** file di bucket `statements` gak ikut terhapus kalau import hilang karena akun atau user dihapus (kaskade DB gak menyentuh Storage). Pembersihan malas di `POST /api/statements` cuma melihat import yang masih ada.
+
 **Belum:** layar Android. Lihat §10 di spec.
 
 📂 **Kode:** `supabase/migrations/059_statement_imports.sql`, `060_commit_statement_import.sql` · `api/src/lib/statement-parser.ts` · `api/src/lib/statement-matcher.ts` · `api/src/lib/statement-import.ts` · `api/src/lib/screenshot-extractor.ts` · route `api/src/routes/statements.ts` · test `tests/integration/statement-imports.test.js`, `statement-commit.test.js`, `api/tests/unit/statement-parser.test.ts`, `api/tests/unit/statement-matcher.test.ts`, `api/tests/unit/screenshot-extractor.test.ts`, e2e `api/tests/api-statements.e2e.test.ts` (butuh `api/.env` + `recap/`, skip di CI; kasus PDF asli di-skip kalau `recap/` gak ada; folder itu gitignored)

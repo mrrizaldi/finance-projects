@@ -51,7 +51,8 @@ Dicek dengan `systemctl --user list-units --type=service`, bukan pm2.
 
 ## OpenClaw
 
-- Skills: `~/.openclaw/skills/` — finance-analyst, finance-assistant, finance-categorizer, finance-reporter (+ WHATSAPP_SETUP.md).
+- Skills: `~/.openclaw/skills/` — finance-analyst, finance-assistant, finance-categorizer, finance-recon, finance-reporter (+ WHATSAPP_SETUP.md). `~/.openclaw` sendiri repo git.
+- `finance-recon` (sejak 19 Okt 2026): wrapper `skills/finance-recon/scripts/mutasi.sh` → `node ~/dev/finance-project/scripts/mutasi.mjs` dengan `MUTASI_ENV_FILE=~/dev/finance-project/api/.env` dan `FINANCE_API_URL=http://localhost:3701`. Parser Python lama (`parse-statement.py`, `reconcile.py`) sudah dihapus. Aturannya salinan skill repo `.claude/skills/rekonsiliasi-mutasi`; kalau yang di repo berubah, salin ulang.
 - Config agent: `~/dev/openclaw-agent-config`.
 
 ## Cara inspeksi dari repo ini
@@ -79,6 +80,7 @@ Jebakan di sisi server:
 - `rsync --delete` wajib dibarengi exclude `.env` dan `.env.*`; tanpa itu secret produksi terhapus. Sesudah rsync skrip memastikan `api/.env`, `dashboard/.env.local`, dan `.env` masih ada, kalau tidak deploy dibatalkan sebelum build.
 - Build dijalankan sebelum `pm2 restart`, jadi build gagal = proses lama tetap jalan.
 - `api/dist` dihapus sebelum `tsc` karena tsc tidak membuang output dari berkas sumber yang sudah dihapus.
+- `scripts/mutasi.mjs` ikut disalin ke `~/dev/finance-project/scripts/` tiap deploy (dipakai `finance-recon` OpenClaw). CLI itu butuh `SUPABASE_JWT_SECRET` dan `OWNER_USER_ID` di `api/.env` server (ditambah 19 Okt 2026, backup `.env.bak-jwt-*`).
 - Rekonsiliasi screenshot (`POST /api/statements` dengan gambar) butuh `GEMINI_API_KEY` di `api/.env` server. Nilainya sama dengan yang dipakai OpenClaw `analyze-file` (`~/.openclaw/gateway.systemd.env`). Tanpa key itu endpoint menjawab 503, upload PDF tetap jalan. Model bisa diganti lewat `GEMINI_STATEMENT_MODEL` (default `gemini-2.5-flash`). Upload PDF butuh `pdftotext` (paket poppler-utils), sudah terpasang.
 
 ## Deploy perubahan bot (edit langsung di server)

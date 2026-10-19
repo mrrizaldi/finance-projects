@@ -91,6 +91,8 @@ echo "--> rsync source"
 for d in dashboard api; do
   rsync "${RSYNC_OPTS[@]}" "$SRC_DIR/$d/" "$APP_DIR/$d/"
 done
+mkdir -p "$APP_DIR/scripts"
+cp "$SRC_DIR/scripts/mutasi.mjs" "$APP_DIR/scripts/mutasi.mjs"
 
 for f in "$APP_DIR/api/.env" "$APP_DIR/dashboard/.env.local" "$APP_DIR/.env"; do
   [ -f "$f" ] || { echo "GAGAL: $f hilang setelah rsync — deploy dibatalkan" >&2; exit 1; }
