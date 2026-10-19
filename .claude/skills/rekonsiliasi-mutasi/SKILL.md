@@ -55,7 +55,7 @@ Baris pertama ringkasan, lalu satu baris JSON per baris statement, lalu temuan a
 | `transfer_pair` | transfer antar akun sendiri yang sudah tercatat | tidak dicentang | cukup dihitung |
 | `probable` | ada kandidat tapi meragukan (beda biaya admin, selisih 3 hari) | tidak dicentang | sebut, tanya: sama atau beda transaksi? |
 | `new` | belum tercatat | dicentang kalau `confidence` ≥ 0,8 | daftar, ini yang akan dicatat |
-| `other_account` | sudah tercatat tapi di akun lain | dicentang | sebut akun lamanya (`matched`), usul dipindah |
+| `other_account` | sudah tercatat tapi di akun lain | dicentang kalau cocoknya kuat (hari sama, deskripsi mirip) | sebut akun lamanya (`matched`), usul dipindah; kalau `selected:false`, tanya dulu apakah memang transaksi yang sama |
 | temuan `app_dup` | catatan app dobel untuk satu baris bank | dicentang kalau nominalnya persis | usul hapus, sebut nominal & deskripsinya |
 | temuan `app_only` | catatan app di periode ini, gak ada di bank | tidak dicentang | tanya, jangan hapus tanpa konfirmasi per baris |
 
