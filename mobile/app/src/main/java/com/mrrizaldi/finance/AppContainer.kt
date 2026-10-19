@@ -62,6 +62,8 @@ class AppContainer(context: Context) {
 
     val receiptUploads = MutableStateFlow<List<UploadFile>>(emptyList())
 
+    val receiptUploadTx = MutableStateFlow<String?>(null)
+
     val sharedUploads = MutableStateFlow<List<UploadFile>>(emptyList())
 
     val lock by lazy { AppLock(appContext) }

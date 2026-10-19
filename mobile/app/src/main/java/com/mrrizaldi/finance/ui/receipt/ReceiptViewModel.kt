@@ -154,6 +154,7 @@ class ReceiptViewModel(
 ) : ViewModel() {
     private val _state = MutableStateFlow(ReceiptState(transactionId = transactionId))
     val state: StateFlow<ReceiptState> = _state.asStateFlow()
+    private var pendingUploads: List<UploadFile> = emptyList()
 
     val accounts: StateFlow<List<AccountEntity>> = accounts.stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
     val categories: StateFlow<List<CategoryEntity>> = categories
@@ -191,11 +192,19 @@ class ReceiptViewModel(
             } catch (e: Exception) {
                 _state.update { failed(it, e) }
             }
+            val queued = pendingUploads
+            pendingUploads = emptyList()
+            upload(queued)
         }
     }
 
     fun upload(files: List<UploadFile>) {
-        if (files.isEmpty() || _state.value.busy != null) return
+        if (files.isEmpty()) return
+        if (_state.value.busy == ReceiptBusy.LOADING) {
+            pendingUploads = files
+            return
+        }
+        if (_state.value.busy != null) return
         if (files.any { it.isPdf() && it.bytes.size > MAX_PDF_BYTES }) {
             _state.update { it.copy(errorRes = R.string.receipt_pdf_too_large, error = null) }
             return

@@ -40,8 +40,10 @@ private class FakeReceiptApi(private val draft: ReceiptDraftDto) : ReceiptApi {
     var failUpload: Exception? = null
     val saves = mutableListOf<SaveCall>()
     val loaded = mutableListOf<String>()
+    var uploadCount = 0
 
     override suspend fun upload(files: List<UploadFile>): ReceiptDraftDto {
+        uploadCount += 1
         failUpload?.let { throw it }
         return draft
     }
@@ -152,6 +154,18 @@ class ReceiptViewModelTest {
         advanceUntilIdle()
         assertEquals(com.mrrizaldi.finance.R.string.receipt_err_processing, model.state.value.errorRes)
         assertNull(model.state.value.error)
+    }
+
+    @Test
+    fun photoArrivingWhileLoadingIsUploadedAfterLoad() = runTest(dispatcher) {
+        val api = FakeReceiptApi(draft)
+        val model = ReceiptViewModel(
+            api, flowOf(emptyList()), flowOf(emptyList()), "tx-old", { id -> parent.takeIf { it.id == id } }, dispatcher
+        ) {}
+        model.upload(listOf(pdf))
+        advanceUntilIdle()
+        assertEquals(1, api.uploadCount)
+        assertEquals("r1", model.state.value.receiptId)
     }
 
     @Test

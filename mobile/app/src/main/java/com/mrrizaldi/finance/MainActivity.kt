@@ -90,6 +90,7 @@ private const val PICK_STATEMENT_FILES = 41
 private const val PICK_RECEIPT_FILES = 42
 private const val CAPTURE_RECEIPT = 43
 private const val CAPTURE_URI_KEY = "captureUri"
+private const val RECEIPT_TX_KEY = "receiptTx"
 private val STATEMENT_MIME_TYPES = arrayOf("application/pdf", "image/*")
 
 private fun NavHostController.edit(id: String) = navigate("edit/$id") { launchSingleTop = true }
@@ -99,11 +100,13 @@ private fun NavHostController.receipt(id: String) = navigate("receipt?tx=$id")
 class MainActivity : FragmentActivity() {
     private lateinit var prompt: BiometricPrompt
     private var captureUri: Uri? = null
+    private var receiptTx: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         captureUri = savedInstanceState?.getString(CAPTURE_URI_KEY)?.let(Uri::parse)
+        receiptTx = savedInstanceState?.getString(RECEIPT_TX_KEY)
         val container = (application as App).container
         prompt = BiometricPrompt(
             this,
@@ -131,6 +134,7 @@ class MainActivity : FragmentActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         captureUri?.let { outState.putString(CAPTURE_URI_KEY, it.toString()) }
+        receiptTx?.let { outState.putString(RECEIPT_TX_KEY, it) }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -163,6 +167,7 @@ class MainActivity : FragmentActivity() {
         if (uris.isEmpty()) return
         val container = (application as App).container
         lifecycleScope.launch {
+            container.receiptUploadTx.value = receiptTx
             container.receiptUploads.value = readUploads(this@MainActivity, uris)
             clearReceiptCache()
         }
@@ -180,9 +185,13 @@ class MainActivity : FragmentActivity() {
 
     private fun pickStatementFiles() = pickDocuments(PICK_STATEMENT_FILES)
 
-    private fun pickReceiptFiles() = pickDocuments(PICK_RECEIPT_FILES)
+    private fun pickReceiptFiles(txId: String?) {
+        receiptTx = txId
+        pickDocuments(PICK_RECEIPT_FILES)
+    }
 
-    private fun captureReceipt() {
+    private fun captureReceipt(txId: String?) {
+        receiptTx = txId
         clearReceiptCache()
         val dir = receiptCacheDir().apply { mkdirs() }
         val uri = FileProvider.getUriForFile(this, "$packageName.files", File(dir, "capture-${System.currentTimeMillis()}.jpg"))
@@ -222,7 +231,7 @@ class MainActivity : FragmentActivity() {
     }
 }
 
-private class Pickers(val statementFiles: () -> Unit, val receiptFiles: () -> Unit, val receiptCamera: () -> Unit)
+private class Pickers(val statementFiles: () -> Unit, val receiptFiles: (String?) -> Unit, val receiptCamera: (String?) -> Unit)
 
 @Composable
 private fun Root(container: AppContainer, askUnlock: () -> Unit, pickers: Pickers) {
@@ -269,6 +278,12 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState, pickers:
     val shared by container.sharedUploads.collectAsStateWithLifecycle()
     LaunchedEffect(shared) {
         if (shared.isNotEmpty()) nav.navigate(STATEMENTS_ROUTE) { launchSingleTop = true }
+    }
+    val pendingReceipt by container.receiptUploads.collectAsStateWithLifecycle()
+    LaunchedEffect(pendingReceipt.isNotEmpty(), current) {
+        if (pendingReceipt.isNotEmpty() && current != null && current != RECEIPT_ROUTE) {
+            nav.navigate(container.receiptUploadTx.value?.let { "receipt?tx=$it" } ?: "receipt")
+        }
     }
     Box(Modifier.fillMaxSize()) {
         NavHost(
@@ -325,8 +340,8 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState, pickers:
                     },
                     uploads = uploads,
                     onUploadsConsumed = { container.receiptUploads.value = emptyList() },
-                    onCamera = pickers.receiptCamera,
-                    onPickFiles = pickers.receiptFiles,
+                    onCamera = { pickers.receiptCamera(txId) },
+                    onPickFiles = { pickers.receiptFiles(txId) },
                     onBack = { nav.popBackStack() },
                     onDone = { if (txId == null) nav.popBackStack(ADD_ROUTE, inclusive = true) else nav.popBackStack() }
                 )
