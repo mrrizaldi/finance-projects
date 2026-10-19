@@ -138,7 +138,7 @@ class ReceiptViewModelTest {
         assertEquals("tx-old", state.transactionId)
         assertEquals("r-old", state.receiptId)
         assertEquals(PARENT_AMOUNT, state.parentAmount)
-        assertEquals("Struk ini sudah pernah dirinci", state.notice)
+        assertEquals(com.mrrizaldi.finance.R.string.receipt_notice_existing, state.noticeRes)
         assertNull(state.error)
         assertTrue(state.exists)
     }

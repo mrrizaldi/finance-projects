@@ -203,8 +203,7 @@
     <string name="receipt_delete">Hapus rincian</string>
     <string name="receipt_delete_title">Hapus rincian?</string>
     <string name="receipt_delete_body">Item dan foto struknya ikut kehapus. Transaksinya tetap ada.</string>
-    <string name="receipt_already">Struk ini udah pernah dirinci.</string>
-    <string name="receipt_close">Tutup</string>
+    <string name="receipt_notice_existing">Struk ini udah pernah dirinci, ini rinciannya</string>
     <string name="receipt_offline">Butuh sinyal buat baca dan nyimpen struk</string>
     <string name="receipt_pdf_too_large">PDF-nya lebih dari 10 MB</string>
     <string name="receipt_no_app">Gak ada app yang bisa buka ini</string>

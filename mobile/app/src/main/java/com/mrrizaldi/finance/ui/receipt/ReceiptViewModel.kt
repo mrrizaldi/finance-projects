@@ -57,8 +57,7 @@ data class ReceiptState(
     val busy: ReceiptBusy? = null,
     val error: String? = null,
     val errorRes: Int? = null,
-    val notice: String? = null,
-    val alreadyItemized: Boolean = false,
+    val noticeRes: Int? = null,
     val done: Boolean = false
 ) {
     private val chosen: ReceiptCandidateDto? get() = candidates.firstOrNull { it.id == chosenCandidateId }
@@ -201,7 +200,7 @@ class ReceiptViewModel(
             _state.update { it.copy(errorRes = R.string.receipt_pdf_too_large, error = null) }
             return
         }
-        _state.update { it.copy(busy = ReceiptBusy.UPLOADING, error = null, errorRes = null, notice = null) }
+        _state.update { it.copy(busy = ReceiptBusy.UPLOADING, error = null, errorRes = null, noticeRes = null) }
         viewModelScope.launch {
             try {
                 val shrunk = withContext(shrinkDispatcher) { files.map(::shrinkForUpload) }
@@ -210,7 +209,7 @@ class ReceiptViewModel(
             } catch (e: StatementApiException) {
                 val existing = e.existingTransactionId
                 if (e.status == CONFLICT && existing != null) {
-                    _state.update { it.copy(busy = null, notice = e.message) }
+                    _state.update { it.copy(busy = null, noticeRes = R.string.receipt_notice_existing) }
                     load(existing)
                 } else {
                     _state.update { failed(it, e, upload = true) }

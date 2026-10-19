@@ -203,8 +203,7 @@
     <string name="receipt_delete">Delete items</string>
     <string name="receipt_delete_title">Delete receipt items?</string>
     <string name="receipt_delete_body">Items and the receipt photo will be deleted. The transaction stays.</string>
-    <string name="receipt_already">This receipt was already itemized.</string>
-    <string name="receipt_close">Close</string>
+    <string name="receipt_notice_existing">This receipt was already itemized — here it is</string>
     <string name="receipt_offline">You need a connection to read and save receipts</string>
     <string name="receipt_pdf_too_large">The PDF is larger than 10 MB</string>
     <string name="receipt_no_app">No app can open this</string>

@@ -115,7 +115,7 @@ fun ReceiptScreen(
         ) {
             val message = state.error ?: state.errorRes?.let { stringResource(it) }
             if (!state.editing) message?.let { Text(it, color = p.negative, style = AppType.rowMeta) }
-            state.notice?.let { Text(it, color = p.textMute, style = AppType.rowMeta) }
+            state.noticeRes?.let { Text(stringResource(it), color = p.textMute, style = AppType.rowMeta) }
             when {
                 state.busy == ReceiptBusy.LOADING -> Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
@@ -127,10 +127,6 @@ fun ReceiptScreen(
                 ) {
                     CircularProgressIndicator()
                     Text(stringResource(R.string.receipt_reading), color = p.textMute)
-                }
-                state.alreadyItemized -> {
-                    Text(stringResource(R.string.receipt_already), style = AppType.rowTitle, color = p.textHi)
-                    CapsuleButton(stringResource(R.string.receipt_close), onBack, Modifier.fillMaxWidth())
                 }
                 !state.editing -> EmptyPane(state.transactionId != null, onCamera, onPickFiles, vm::startManual)
                 else -> ReviewPane(state, message, vm, accounts, categories)
