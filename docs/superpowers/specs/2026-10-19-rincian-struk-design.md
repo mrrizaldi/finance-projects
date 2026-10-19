@@ -146,3 +146,19 @@ Auth Bearer sama dengan `/api/statements` (`requireUser`).
 - Filter daftar transaksi berdasarkan kategori item.
 - Lebih dari satu struk per transaksi (tambah baris ke struk yang sama sebagai gantinya).
 - Rincian untuk pemasukan/transfer.
+
+## 11. Status (19 Okt 2026)
+
+| Fase | Status | Commit |
+|---|---|---|
+| 1. Grid bulan | selesai | `5490f43`, `bb0af89` |
+| 2. Upload ke Tambah | selesai | `a6038e4` |
+| 3. Mig 061/062/064 | selesai | `1d6cd22`, `3cc2b88`, `7ab943d` |
+| 4. Ekstraktor | selesai | `643dc76`, `0975b16` |
+| 5. API | selesai | `4005d12`, `1d98057`, `efd6b7d` |
+| 6. Android layar struk | selesai, uji di HP menunggu | `ffb00db`, `bc3611a`, `60c733f`, `b53a697` |
+| 7. Detail transaksi | selesai, uji di HP menunggu | `651bd43` |
+| 8. Analitik 063/065 | selesai | `e9a127d`, `f3c9894` |
+| 9. Dokumen | selesai | commit dokumen ini (`docs/FEATURES.md` §15) |
+
+Uji end-to-end di HP: lihat commit/catatan berikutnya

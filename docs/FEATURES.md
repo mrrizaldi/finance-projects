@@ -24,6 +24,7 @@ Untuk inventori service di server (bot, n8n, openclaw) lihat **`SERVER.md`**. Un
 - [12. Auth & Multi-User](#12-auth--multi-user)
 - [13. Internationalization (i18n)](#13-internationalization-i18n)
 - [14. Rekonsiliasi Statement](#14-rekonsiliasi-statement)
+- [15. Rincian Struk](#15-rincian-struk)
 - [Lampiran: Peta Endpoint](#lampiran-peta-endpoint-api)
 
 ---
@@ -43,6 +44,8 @@ flowchart TD
     SPA["Dashboard SPA<br/>(React Router v8)"] <--> API["Fastify API<br/>/api/*"]
     API <--> DB
     API --> LLM2["DeepSeek LLM<br/>(categorize / chat / budget)"]
+    Android["App Android<br/>(foto struk)"] --> API
+    API -. struk/mutasi .-> Gemini["Gemini vision"]
 
     subgraph server["🖥️ Home Server (bukan repo ini)"]
         N8N
@@ -55,7 +58,7 @@ flowchart TD
     end
 
     classDef ext fill:#fde,stroke:#c39
-    class Gmail,Sheets,LLM2 ext
+    class Gmail,Sheets,LLM2,Gemini ext
 ```
 
 **Runtime:**
@@ -545,7 +548,9 @@ Eval lokal (screenshot BCA mobile asli Agustus 2026, 10 baris, disimpan di `reca
 
 **Batas yang diketahui:** file di bucket `statements` gak ikut terhapus kalau import hilang karena akun atau user dihapus (kaskade DB gak menyentuh Storage). Pembersihan malas di `POST /api/statements` cuma melihat import yang masih ada.
 
-**Android "Cocokkan mutasi"** (`mobile/.../ui/statements/`, klien `data/remote/StatementApi.kt`): tombol struk di header Home, atau "Bagikan" PDF/gambar dari app lain ke Finance (intent `SEND`/`SEND_MULTIPLE`, `MainActivity` `launchMode=singleTop`). Alurnya: pilih akun dan file, lalu upload ke `POST /api/statements` (Bearer token sesi Supabase, timeout 150 detik). Layar review mengelompokkan baris per kelas dengan centang; centang dan "Catat sebagai baru" langsung `PATCH` (optimistis, dibalikin kalau gagal), lalu "Catat yang dipilih (N)" memanggil commit, dan sesudahnya akun + Home di-refresh. Baris `new` ber-`confidence` < 0,8 gak dicentang. Import yang integritasnya gagal atau sudah committed gak bisa dicatat. Detail teknis dan bukti uji di `mobile/README.md` §Cocokkan mutasi.
+**Android "Cocokkan mutasi"** (`mobile/.../ui/statements/`, klien `data/remote/StatementApi.kt`): tombol "Mutasi bank" di layar Tambah (`ui/add/AddScreen.kt`, dulu ikon di header Home), atau "Bagikan" PDF/gambar dari app lain ke Finance (intent `SEND`/`SEND_MULTIPLE`, `MainActivity` `launchMode=singleTop`, gak berubah). Alurnya: pilih akun dan file, lalu upload ke `POST /api/statements` (Bearer token sesi Supabase, timeout 150 detik). Layar review mengelompokkan baris per kelas dengan centang; centang dan "Catat sebagai baru" langsung `PATCH` (optimistis, dibalikin kalau gagal), lalu "Catat yang dipilih (N)" memanggil commit, dan sesudahnya akun + Home di-refresh. Baris `new` ber-`confidence` < 0,8 gak dicentang. Import yang integritasnya gagal atau sudah committed gak bisa dicatat. Detail teknis dan bukti uji di `mobile/README.md` §Cocokkan mutasi.
+
+**Pemilih bulan Home** (19 Okt 2026): `MonthMenuButton` (`ui/components/MonthPicker.kt:82`) membuka dialog grid 3×4 dengan panah tahun (`MonthGridDialog`, `:100`), menggantikan menu dropdown bulan.
 
 **PDF bank/e-wallet lain** (sejak 19 Okt 2026): PDF yang gak dikenali parser (`unrecognized`) atau gak punya lapisan teks (`empty`, hasil scan) otomatis dibaca Gemini lewat jalur yang sama dengan screenshot (`PDF_VISION_FALLBACK` di `statements.ts`). Gemini juga diminta mengisi `opening_balance`/`closing_balance` kalau dokumen mencantumkannya; untuk satu file, `integrity_ok` dihitung dari saldo itu plus baris (`balancesClose`), kalau saldo gak terbaca `integrity_ok` null. Diuji dengan PDF GoPay sintetis (`api/tests/fixtures/gopay-sintetis-okt-2026.pdf`, 8 baris, saldo Rp 120.000 → Rp 89.300) dan PDF hasil scan screenshot BCA (10 baris).
 
@@ -557,10 +562,65 @@ Eval lokal (screenshot BCA mobile asli Agustus 2026, 10 baris, disimpan di `reca
 
 ---
 
+## 15. Rincian Struk
+
+Rancangan: `docs/superpowers/specs/2026-10-19-rincian-struk-design.md` (status fase di §11), rencana: `docs/superpowers/plans/2026-10-19-rincian-struk.md`. Foto/PDF struk dibaca Gemini jadi baris item berkategori; satu transaksi pengeluaran bisa punya satu rincian, dan analitik kategori ikut terpecah. **Nominal dan saldo transaksi gak pernah berubah karena rincian.**
+
+```mermaid
+flowchart LR
+    App["Android: foto/berkas struk"] --> Up["POST /api/receipts<br/>draft → storage → files → Gemini"]
+    Up --> Rev["layar review struk<br/>(+ kandidat transaksi)"]
+    Rev --> Save["POST /api/receipts/save<br/>RPC save_receipt"]
+    Save --> Tx[("transactions<br/>source='receipt' kalau baru")]
+    Save --> Lines[("receipt_lines")]
+    Lines --> Sl["v_expense_slices"] --> An["get_category_breakdown / get_summary"]
+```
+
+**Entry point Android** (`mobile/app/src/main/java/com/mrrizaldi/finance/`):
+
+- Layar Tambah, tombol "Dari struk": `ui/add/AddScreen.kt:135` (`onReceipt`). Struk dari sini selalu dicocokkan dulu ke transaksi yang ada, baru catat baru kalau user bilang bukan.
+- Detail transaksi, tombol "Rincian struk": `ui/components/TxDetailSheet.kt:140`, tampil kalau `itemizable(tx)` (`:38`: bukan pending, bukan adjustment, tipe `expense`).
+- Layar + state: `ui/receipt/ReceiptScreen.kt`, `ReceiptViewModel.kt` (`ReceiptBusy`, `ReceiptState`). Klien API: `data/remote/ReceiptApi.kt:83`.
+- Kamera dan pemilih berkas di `MainActivity.kt`: `PICK_RECEIPT_FILES`/`CAPTURE_RECEIPT` (`:90-91`), `ACTION_OPEN_DOCUMENT` + `startActivityForResult` (`:172-194`), foto kamera lewat `FileProvider` (`:188`) ke `cacheDir/receipts` yang dibersihkan lagi (`receiptCacheDir`, `:156-159`). Kompres dan koreksi orientasi EXIF dikerjakan di perangkat (`ui/receipt/ImageShrink.kt`), server menerima gambar yang sudah tegak.
+- Alokasi (cermin SQL): `ui/receipt/ReceiptMath.kt:10` `allocate()`, pembulatan sisa terbesar (largest remainder) supaya jumlah irisan pas.
+
+**API** (`api/src/routes/receipts.ts`, terdaftar di `app.ts:74`, semua `requireUser`):
+
+| Endpoint | Isi |
+|---|---|
+| `POST /api/receipts` (`:111`) | Upload gambar/PDF (`bodyLimit` khusus). Urutan aman: buat baris `receipts` berstatus `draft` → upload ke bucket privat `receipts` → insert `receipt_files` → baru panggil Gemini; kalau gagal di tengah, file storage dan draft dibersihkan. Hash `sha256` dihitung per file; struk yang sudah pernah dirinci: **409** + `receipt_id`/`transaction_id`. Respons: baris hasil ekstraksi + kandidat transaksi + URL bertanda tangan. Tiap upload juga memicu pembersihan malas draft > 7 hari (`purgeStaleDrafts`, `:53`, `DRAFT_TTL_DAYS`, `:20`) yang cuma menghapus status `draft`. |
+| `GET /api/receipts/by-transaction/:transactionId` (`:224`) | Rincian tersimpan + file (signed URL 1 jam, `SIGNED_URL_SECONDS`, `:23`). |
+| `POST /api/receipts/save` (`:247`) | RPC `save_receipt`; 404 tidak ditemukan, 409 transaksi sudah punya rincian, 422 validasi gagal. |
+| `DELETE /api/receipts/:id` (`:274`) | Hapus rincian; file storage ikut dihapus. |
+
+File struk **disimpan selamanya** di bucket privat `receipts` (`<user_id>/<receipt>/<nama>`); cuma draft kedaluwarsa dan rincian yang dihapus user yang membuang file.
+
+**Ekstraktor** (`api/src/lib/receipt.ts`): `extractReceipt` (`:167`) memakai `callGeminiChain` dari `screenshot-extractor.ts:198` (rantai model, kuota, dan anggaran waktu sama dengan §14), skema `RECEIPT_SCHEMA`, `RECEIPT_PROMPT_VERSION`. `normalizeReceipt` (`:110`) membulatkan rupiah, memaksa tanda per jenis baris (`item`/`tax`/`service` positif, `discount` negatif, `rounding` boleh negatif), memetakan nama kategori ke id milik user, dan menolak struk tanpa item. `rankCandidates` (`:150`) memeringkat transaksi pengeluaran dengan `scorePair` dari `statement-matcher.ts` (nominal, tanggal ±1 hari, kemiripan merchant), maksimal 3 kandidat (`MAX_CANDIDATES`).
+
+**DB** (`supabase/migrations/`):
+
+- `061_receipts.sql`: tabel `receipts` (`draft`/`saved`), `receipt_files`, `receipt_lines`; RPC `save_receipt` (SECURITY INVOKER, mengikat ke transaksi yang ada atau membuat transaksi baru dengan `source = 'receipt'`); RLS `own_rows`.
+- `062_receipts_rls_harden.sql`: RLS anak (`receipt_lines`, `receipt_files`) memeriksa kepemilikan induk; `save_receipt` memvalidasi baris dan kepemilikan.
+- `063_expense_slices.sql` dan `065_expense_slices_lateral.sql`: view `v_expense_slices` (`security_invoker`, pakai `LATERAL` di 065) dan `get_category_breakdown`/`get_summary` membacanya; total RPC dibulatkan. Dipakai analitik pengeluaran (Home, Analytics, chat AI).
+- `064_receipt_files_path_check.sql`: `CHECK (split_part(path,'/',1) = user_id::text)`, jadi path file wajib di folder pemilik.
+
+**Aturan alokasi:** `alokasi_i = item_i × MIN(total_struk, nominal_induk) / Σitem`, dengan total struk = jumlah semua baris (item + pajak + service + diskon + pembulatan). Pajak, service, diskon, dan pembulatan tersebar proporsional ke item; sisa (`nominal_induk − total_struk`, mis. biaya QRIS) tetap di kategori transaksi induk. Contoh struk resto: makan ±65.400, rumah tangga ±59.000, sisa 12.000 ke induk. Test: `tests/integration/receipts.test.js`, `tests/integration/expense-slices.test.js`, `api/tests/unit/receipt.test.ts`.
+
+**Batas dan di luar lingkup:**
+
+- Belum ada UI rincian di dashboard web, dan belum ada jalur struk lewat OpenClaw/WA/Telegram.
+- Filter kategori di daftar transaksi masih memakai kategori induk, bukan kategori item.
+- Satu struk per transaksi (mau nambah item: ubah rincian yang ada). Cuma pengeluaran; pemasukan/transfer gak punya rincian.
+- Hapus **permanen** transaksi (hard delete) meninggalkan objek di storage; app cuma soft-delete, jadi ini belum kejadian.
+
+📂 **Kode:** `supabase/migrations/061`–`065` · `api/src/routes/receipts.ts` · `api/src/lib/receipt.ts` · `mobile/app/src/main/java/com/mrrizaldi/finance/ui/receipt/`, `ui/add/AddScreen.kt`, `ui/components/TxDetailSheet.kt`, `MainActivity.kt`, `data/remote/ReceiptApi.kt`
+
+---
+
 ## Lampiran: Peta Endpoint API
 
 <details>
-<summary>59 endpoint (klik untuk expand)</summary>
+<summary>63 endpoint (klik untuk expand)</summary>
 
 **Transactions:** `GET /api/transactions`, `PATCH`/`DELETE /api/transactions/:id`, `POST /api/transactions/recalculate`
 **Accounts:** `GET`/`POST /api/accounts`, `PATCH`/`DELETE /api/accounts/:id`, `POST /api/accounts/:id/adjust`
@@ -571,6 +631,7 @@ Eval lokal (screenshot BCA mobile asli Agustus 2026, 10 baris, disimpan di `reca
 **AI:** `POST /api/{categorize,chat,budget/suggest}`
 **Telegram:** `POST /api/telegram/connect-token`, `GET /api/telegram/status`
 **Push:** `GET /api/push/vapid-key`, `POST /api/push/{subscribe,notify}`
+**Receipts:** `POST /api/receipts`, `GET /api/receipts/by-transaction/:transactionId`, `POST /api/receipts/save`, `DELETE /api/receipts/:id`
 **Statements:** `GET`/`POST /api/statements`, `GET /api/statements/:id`, `PATCH /api/statements/:id/lines/:lineId`, `PATCH /api/statements/:id/findings/:transactionId`, `POST /api/statements/:id/{commit,discard}`
 **Profile/Admin:** `PATCH /api/profile`, `GET /api/admin/{users,invites,telegram-requests}`, `POST /api/admin/{invites,users/:id/suspend,telegram-requests/:chatId/approve,telegram-requests/:chatId/reject}`
 
