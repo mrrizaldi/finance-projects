@@ -25,6 +25,7 @@ Sistem otomasi keuangan pribadi (Bahasa Indonesia): parsing email transaksi bank
 - **Cek/edit n8n workflow** → n8n MCP (`n8n_list_workflows`, `n8n_get_workflow`, `n8n_update_partial_workflow`). API key di `.mcp.json`.
 - **Cek/edit bot atau openclaw di server** → `ssh home` (skill `home-server`, tanpa VPN); inventori lengkap (pm2 apps, path, env, cara restart/deploy) di **`SERVER.md`**
 - **Baca setup server secara lokal** → `bash scripts/pull-server.sh` → `.server-pull/` (gitignored): kode kedua bot, openclaw finance skills, export JSON n8n finance workflows
+- **Cocokkan e-statement / screenshot mutasi dari terminal** → `node scripts/mutasi.mjs` (tanpa argumen = bantuan). CLI untuk `/api/statements` produksi; token user dibuat dari `SUPABASE_JWT_SECRET` + `OWNER_USER_ID` di `api/.env` (`MUTASI_USER_ID` untuk user lain, `FINANCE_API_URL` untuk API lokal). Aturan pakainya di skill `.claude/skills/rekonsiliasi-mutasi/`, mesinnya di `docs/FEATURES.md` §14
 - **Operasi database** → Supabase MCP (project `dqvdhkpqyynvwfbuqyzu`) — jangan psql/CLI manual
 - **Histori implementasi & keputusan** → git log
 
