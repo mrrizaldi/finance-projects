@@ -17,6 +17,7 @@ interface SupabaseApi {
     suspend fun countUnreadNotifications(): Int
     suspend fun markAllNotificationsRead()
     suspend fun listTransactions(start: String, end: String, limit: Int, offset: Int): List<TransactionDto>
+    suspend fun firstTransactionDate(): String?
     suspend fun getSummary(start: String, end: String): SummaryDto
     suspend fun getCategoryBreakdown(start: String, end: String, type: String): List<CategoryBreakdownDto>
     suspend fun getPeriodComparison(start: String, end: String, prevStart: String, prevEnd: String): PeriodComparisonDto

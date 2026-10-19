@@ -94,6 +94,10 @@ class FakeApi : SupabaseApi {
         return accounts
     }
 
+    var firstDate: String? = null
+
+    override suspend fun firstTransactionDate(): String? = firstDate
+
     override suspend fun listCategories(): List<CategoryDto> {
         gate()
         return categories

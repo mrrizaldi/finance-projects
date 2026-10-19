@@ -94,7 +94,7 @@ fun HomeScreen(
                     color = p.textMute,
                     modifier = Modifier.weight(1f)
                 )
-                MonthMenuButton(state.month, vm::setMonth)
+                MonthMenuButton(state.month, state.minMonth, vm::setMonth)
                 IconButton(onClick = onInbox) {
                     Box {
                         Icon(AppIcons.Bell, stringResource(R.string.inbox_title))

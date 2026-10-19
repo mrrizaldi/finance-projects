@@ -27,7 +27,8 @@ data class HomeUiState(
     val budgetSpent: Long = 0,
     val budgetLimit: Long = 0,
     val recent: List<TransactionEntity> = emptyList(),
-    val lastSuccessAt: Long? = null
+    val lastSuccessAt: Long? = null,
+    val minMonth: YearMonth? = null
 )
 
 internal fun netChange(current: SummaryDto?, previous: SummaryDto?): Long? =
@@ -49,8 +50,8 @@ class HomeViewModel(private val repo: Repository) : ViewModel() {
         combine(
             combine(repo.accounts(), repo.summary(m), repo.previousSummary(m)) { a, s, ps -> Triple(a, s, ps) },
             combine(repo.categories(), repo.breakdown(m), repo.recent(5)) { c, b, r -> Triple(c, b, r) },
-            repo.lastSuccessAt()
-        ) { (accounts, summary, previous), (categories, breakdown, recent), last ->
+            combine(repo.lastSuccessAt(), repo.firstTransactionMonth()) { l, f -> l to f }
+        ) { (accounts, summary, previous), (categories, breakdown, recent), (last, minMonth) ->
             val budgeted = categories.filter { (it.budgetMonthly ?: 0L) > 0L }
             HomeUiState(
                 month = m,
@@ -63,7 +64,8 @@ class HomeViewModel(private val repo: Repository) : ViewModel() {
                 },
                 budgetLimit = budgeted.sumOf { it.budgetMonthly ?: 0L },
                 recent = recent,
-                lastSuccessAt = last
+                lastSuccessAt = last,
+                minMonth = minMonth
             )
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState(month.value))

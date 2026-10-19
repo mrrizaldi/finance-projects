@@ -17,6 +17,14 @@ class MonthGridTest {
     }
 
     @Test
+    fun `bulan sebelum transaksi pertama redup, null tanpa batas`() {
+        val first = YearMonth.of(2025, 3)
+        assertEquals(MonthCell.BEFORE_FIRST, monthCell(YearMonth.of(2025, 2), current, current, first))
+        assertEquals(MonthCell.NORMAL, monthCell(first, YearMonth.of(2026, 9), current, first))
+        assertEquals(MonthCell.NORMAL, monthCell(YearMonth.of(2019, 1), YearMonth.of(2026, 9), current, null))
+    }
+
+    @Test
     fun `grid tahun berisi 12 bulan berurutan`() {
         val months = yearMonths(2025)
         assertEquals(12, months.size)

@@ -66,10 +66,11 @@ fun MonthPicker(month: YearMonth, onChange: (YearMonth) -> Unit) {
     }
 }
 
-enum class MonthCell { SELECTED, CURRENT, NORMAL, FUTURE }
+enum class MonthCell { SELECTED, CURRENT, NORMAL, FUTURE, BEFORE_FIRST }
 
-internal fun monthCell(cell: YearMonth, selected: YearMonth, current: YearMonth): MonthCell = when {
+internal fun monthCell(cell: YearMonth, selected: YearMonth, current: YearMonth, minMonth: YearMonth? = null): MonthCell = when {
     cell.isAfter(current) -> MonthCell.FUTURE
+    minMonth != null && cell.isBefore(minMonth) -> MonthCell.BEFORE_FIRST
     cell == selected -> MonthCell.SELECTED
     cell == current -> MonthCell.CURRENT
     else -> MonthCell.NORMAL
@@ -79,7 +80,7 @@ internal fun yearMonths(year: Int): List<YearMonth> = (1..MONTHS_IN_YEAR).map { 
 
 
 @Composable
-fun MonthMenuButton(month: YearMonth, onChange: (YearMonth) -> Unit) {
+fun MonthMenuButton(month: YearMonth, minMonth: YearMonth?, onChange: (YearMonth) -> Unit) {
     var open by remember { mutableStateOf(false) }
     IconButton(onClick = { open = true }) {
         Icon(AppIcons.Calendar, stringResource(R.string.month_pick))
@@ -87,6 +88,7 @@ fun MonthMenuButton(month: YearMonth, onChange: (YearMonth) -> Unit) {
     if (open) {
         MonthGridDialog(
             selected = month,
+            minMonth = minMonth,
             onPick = {
                 open = false
                 onChange(it)
@@ -97,12 +99,12 @@ fun MonthMenuButton(month: YearMonth, onChange: (YearMonth) -> Unit) {
 }
 
 @Composable
-private fun MonthGridDialog(selected: YearMonth, onPick: (YearMonth) -> Unit, onDismiss: () -> Unit) {
+private fun MonthGridDialog(selected: YearMonth, minMonth: YearMonth?, onPick: (YearMonth) -> Unit, onDismiss: () -> Unit) {
     val locale = LocalConfiguration.current.locales[0]
     val current = JakartaDate.currentMonth()
     val p = LocalPalette.current
     val glass = LocalGlass.current
-    var year by remember { mutableIntStateOf(selected.year) }
+    var year by remember { mutableIntStateOf(selected.year.coerceIn(minMonth?.year ?: selected.year, current.year)) }
     GlassDialog(
         onDismiss = onDismiss,
         actions = {
@@ -115,7 +117,7 @@ private fun MonthGridDialog(selected: YearMonth, onPick: (YearMonth) -> Unit, on
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            IconButton(onClick = { year -= 1 }) {
+            IconButton(onClick = { year -= 1 }, enabled = minMonth == null || year > minMonth.year) {
                 Icon(Icons.AutoMirrored.Filled.KeyboardArrowLeft, stringResource(R.string.year_prev))
             }
             Text(year.toString(), style = MaterialTheme.typography.titleMedium, color = p.textHi)
@@ -129,7 +131,7 @@ private fun MonthGridDialog(selected: YearMonth, onPick: (YearMonth) -> Unit, on
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 row.forEach { m ->
-                    val state = monthCell(m, selected, current)
+                    val state = monthCell(m, selected, current, minMonth)
                     val label = m.month.getDisplayName(TextStyle.SHORT, locale)
                     Box(
                         Modifier
@@ -143,12 +145,12 @@ private fun MonthGridDialog(selected: YearMonth, onPick: (YearMonth) -> Unit, on
                                     else -> Modifier
                                 }
                             )
-                            .alpha(if (state == MonthCell.FUTURE) FUTURE_ALPHA else 1f)
+                            .alpha(if (state == MonthCell.FUTURE || state == MonthCell.BEFORE_FIRST) FUTURE_ALPHA else 1f)
                             .semantics {
                                 this.selected = state == MonthCell.SELECTED
                                 contentDescription = JakartaDate.formatMonth(m, locale)
                             }
-                            .clickable(enabled = state != MonthCell.FUTURE, role = Role.Button) { onPick(m) },
+                            .clickable(enabled = state != MonthCell.FUTURE && state != MonthCell.BEFORE_FIRST, role = Role.Button) { onPick(m) },
                         contentAlignment = Alignment.Center
                     ) {
                         Text(

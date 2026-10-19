@@ -85,6 +85,12 @@ class SupabaseApiImpl(private val client: SupabaseClient) : SupabaseApi {
             range(offset.toLong(), (offset + limit - 1).toLong())
         }.decodeList()
 
+    override suspend fun firstTransactionDate(): String? =
+        client.from("v_transactions").select(TX_COLUMNS) {
+            order("transaction_date", Order.ASCENDING)
+            limit(1)
+        }.decodeList<TransactionDto>().firstOrNull()?.transaction_date
+
     override suspend fun getSummary(start: String, end: String): SummaryDto =
         client.postgrest.rpc("get_summary", buildJsonObject {
             put("p_start_date", start)

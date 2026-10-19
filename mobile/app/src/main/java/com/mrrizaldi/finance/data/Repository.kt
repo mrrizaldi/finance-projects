@@ -114,6 +114,9 @@ class Repository(
     fun topTransactions(bounds: PeriodBounds): Flow<List<TopTransactionDto>> =
         cached<List<TopTransactionDto>>(analyticsKey("get_top_transactions", bounds)).map { it.orEmpty() }
 
+    fun firstTransactionMonth(): Flow<YearMonth?> =
+        cached<String>(FIRST_TX_KEY).map { it?.let { date -> YearMonth.from(JakartaDate.parseKey(JakartaDate.dateKey(date))) } }
+
     fun lastSuccessAt(): Flow<Long?> = syncMetaDao.observe().map { it?.lastSuccessAt }
 
     private inline fun <reified T> cached(key: String): Flow<T?> =
@@ -129,12 +132,14 @@ class Repository(
         val previous = api.getSummary(JakartaDate.monthStart(previousMonth), JakartaDate.monthEnd(previousMonth))
         val breakdown = api.getCategoryBreakdown(start, end, "expense")
         val rows = fetchMonth(start, end)
+        val first = api.firstTransactionDate()
         accountDao.replaceAll(accounts.map { it.toEntity() })
         categoryDao.replaceAll(categories.map { it.toEntity() })
         snapshotDao.upsert(RpcSnapshot(summaryKey(month), json.encodeToString(summary), clock()))
         snapshotDao.upsert(RpcSnapshot(previousSummaryKey(month), json.encodeToString(previous), clock()))
         snapshotDao.upsert(RpcSnapshot(breakdownKey(month), json.encodeToString(breakdown), clock()))
         transactionDao.replaceRange(start, end, rows)
+        first?.let { snapshotDao.upsert(RpcSnapshot(FIRST_TX_KEY, json.encodeToString(it), clock())) }
     }
 
     suspend fun refreshAnalytics(bounds: PeriodBounds): Result<Unit> = guard {
@@ -443,6 +448,7 @@ class Repository(
 
     private companion object {
         const val PAGE_SIZE = 1000
+        const val FIRST_TX_KEY = "first_transaction_date"
         const val TOP_LIMIT = 5
     }
 }
