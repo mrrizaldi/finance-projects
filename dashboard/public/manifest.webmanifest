@@ -1,7 +1,7 @@
 {
-  "name": "Finance Tracker",
-  "short_name": "Finance",
-  "description": "Personal finance tracking app",
+  "name": "MyWallet",
+  "short_name": "MyWallet",
+  "description": "Pencatat keuangan pribadi",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#F5F7F9",

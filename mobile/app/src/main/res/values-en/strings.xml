@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Finance</string>
+    <string name="app_name">MyWallet</string>
 
     <string name="login_title">Sign in</string>
     <string name="login_email">Email</string>
@@ -109,7 +109,7 @@
     <string name="settings_lock">Fingerprint lock</string>
     <string name="lock_hint">Locked. Unlock with your fingerprint or phone PIN.</string>
     <string name="lock_open">Unlock</string>
-    <string name="lock_prompt_title">Unlock Finance</string>
+    <string name="lock_prompt_title">Unlock MyWallet</string>
     <string name="settings_version">Version %1$s</string>
     <string name="settings_logout">Sign out</string>
     <string name="settings_logout_confirm_title">Sign out?</string>

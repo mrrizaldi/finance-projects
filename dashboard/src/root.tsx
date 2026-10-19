@@ -5,15 +5,17 @@ import '@/i18n';
 import { ThemeProvider } from '@/components/layout/ThemeProvider';
 
 export const meta = () => [
-  { title: 'Finance Tracker' },
-  { name: 'description', content: 'Personal finance tracking app' },
+  { title: 'MyWallet' },
+  { name: 'description', content: 'Pencatat keuangan pribadi' },
   { name: 'apple-mobile-web-app-capable', content: 'yes' },
   { name: 'apple-mobile-web-app-status-bar-style', content: 'black-translucent' },
-  { name: 'apple-mobile-web-app-title', content: 'Finance' },
+  { name: 'apple-mobile-web-app-title', content: 'MyWallet' },
 ];
 
 export const links = () => [
   { rel: 'manifest', href: '/manifest.webmanifest' },
+  { rel: 'icon', href: '/icons/icon.svg', type: 'image/svg+xml' },
+  { rel: 'apple-touch-icon', href: '/icons/icon-192.png' },
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {

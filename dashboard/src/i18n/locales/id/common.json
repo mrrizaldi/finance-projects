@@ -1,6 +1,6 @@
 {
   "app": {
-    "name": "Finance",
+    "name": "MyWallet",
     "subtitle": "Personal Dashboard"
   },
   "common": {
@@ -253,7 +253,7 @@
   },
   "auth": {
     "login": {
-      "title": "Finance Tracker",
+      "title": "MyWallet",
       "subtitle": "Masuk ke akun kamu",
       "email": "Email",
       "emailPlaceholder": "nama@email.com",

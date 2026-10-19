@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Finance</string>
+    <string name="app_name">MyWallet</string>
 
     <string name="login_title">Masuk</string>
     <string name="login_email">Email</string>
@@ -109,7 +109,7 @@
     <string name="settings_lock">Kunci sidik jari</string>
     <string name="lock_hint">Terkunci. Buka pakai sidik jari atau PIN HP.</string>
     <string name="lock_open">Buka</string>
-    <string name="lock_prompt_title">Buka Finance</string>
+    <string name="lock_prompt_title">Buka MyWallet</string>
     <string name="settings_version">Versi %1$s</string>
     <string name="settings_logout">Keluar</string>
     <string name="settings_logout_confirm_title">Keluar dari akun?</string>

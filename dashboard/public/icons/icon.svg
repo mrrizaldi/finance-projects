@@ -1,4 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
-  <rect width="512" height="512" rx="64" fill="#3b82f6"/>
-  <text x="256" y="320" font-family="system-ui" font-size="280" font-weight="bold" fill="white" text-anchor="middle">F</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 108 108">
+  <rect width="108" height="108" rx="24" fill="#008831"/>
+  <path fill="#D9F3DD" d="M40,30 h28 a4,4 0 0 1 4,4 v12 a4,4 0 0 1 -4,4 h-28 a4,4 0 0 1 -4,-4 v-12 a4,4 0 0 1 4,-4 z"/>
+  <path fill="#FFFFFF" d="M34,42 h40 a8,8 0 0 1 8,8 v20 a8,8 0 0 1 -8,8 h-40 a8,8 0 0 1 -8,-8 v-20 a8,8 0 0 1 8,-8 z"/>
+  <path fill="#D9F3DD" d="M64,52 h10 a8,8 0 0 1 0,16 h-10 a8,8 0 0 1 0,-16 z"/>
+  <path fill="#008831" d="M65,60 a4,4 0 1 0 8,0 a4,4 0 1 0 -8,0 z"/>
 </svg>
