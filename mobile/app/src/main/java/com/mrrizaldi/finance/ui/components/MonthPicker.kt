@@ -1,15 +1,15 @@
 package com.mrrizaldi.finance.ui.components
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowLeft
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
@@ -31,6 +31,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.mrrizaldi.finance.R
@@ -40,6 +43,10 @@ import com.mrrizaldi.finance.ui.theme.LocalPalette
 import com.mrrizaldi.finance.util.JakartaDate
 import java.time.YearMonth
 import java.time.format.TextStyle
+
+private const val MONTHS_IN_YEAR = 12
+private const val MONTHS_PER_ROW = 3
+private const val FUTURE_ALPHA = 0.35f
 
 @Composable
 fun MonthPicker(month: YearMonth, onChange: (YearMonth) -> Unit) {
@@ -70,8 +77,6 @@ internal fun monthCell(cell: YearMonth, selected: YearMonth, current: YearMonth)
 
 internal fun yearMonths(year: Int): List<YearMonth> = (1..MONTHS_IN_YEAR).map { YearMonth.of(year, it) }
 
-private const val MONTHS_IN_YEAR = 12
-private const val MONTHS_PER_ROW = 3
 
 @Composable
 fun MonthMenuButton(month: YearMonth, onChange: (YearMonth) -> Unit) {
@@ -129,7 +134,7 @@ private fun MonthGridDialog(selected: YearMonth, onPick: (YearMonth) -> Unit, on
                     Box(
                         Modifier
                             .weight(1f)
-                            .height(44.dp)
+                            .height(48.dp)
                             .clip(CircleShape)
                             .then(
                                 when (state) {
@@ -139,6 +144,10 @@ private fun MonthGridDialog(selected: YearMonth, onPick: (YearMonth) -> Unit, on
                                 }
                             )
                             .alpha(if (state == MonthCell.FUTURE) FUTURE_ALPHA else 1f)
+                            .semantics {
+                                this.selected = state == MonthCell.SELECTED
+                                contentDescription = JakartaDate.formatMonth(m, locale)
+                            }
                             .clickable(enabled = state != MonthCell.FUTURE, role = Role.Button) { onPick(m) },
                         contentAlignment = Alignment.Center
                     ) {
@@ -153,5 +162,3 @@ private fun MonthGridDialog(selected: YearMonth, onPick: (YearMonth) -> Unit, on
         }
     }
 }
-
-private const val FUTURE_ALPHA = 0.35f
