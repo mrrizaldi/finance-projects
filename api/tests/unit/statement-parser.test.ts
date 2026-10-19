@@ -134,7 +134,7 @@ describe('parseStatementText errors', () => {
 
 describe.skipIf(!existsSync(RECAP_DIR))('real e-statements in recap/', () => {
   const pdfs = existsSync(RECAP_DIR)
-    ? readdirSync(RECAP_DIR).flatMap((bank) => readdirSync(join(RECAP_DIR, bank)).map((f) => join(RECAP_DIR, bank, f)))
+    ? readdirSync(RECAP_DIR).flatMap((bank) => readdirSync(join(RECAP_DIR, bank)).filter((f) => f.endsWith('.pdf')).map((f) => join(RECAP_DIR, bank, f)))
     : [];
 
   it.each(pdfs)('%s closes its balance', async (pdf) => {

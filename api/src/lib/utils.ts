@@ -41,3 +41,7 @@ export function jakartaDayStart(date: string): string {
 export function jakartaDayEnd(date: string): string {
   return `${date}T23:59:59.999${JAKARTA_OFFSET}`;
 }
+
+export function todayInJakarta(): string {
+  return dayjs().tz(JAKARTA_TZ).format(CALENDAR_DATE_FORMAT);
+}

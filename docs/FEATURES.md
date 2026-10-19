@@ -394,13 +394,14 @@ flowchart TD
 
 ## 9. Fitur AI (LLM)
 
-Semua pakai DeepSeek (`LLM_API_KEY`/`LLM_BASE_URL`/`LLM_MODEL`, default `deepseek-chat`). Bukan `OPENAI_API_KEY`.
+Fitur teks pakai DeepSeek (`LLM_API_KEY`/`LLM_BASE_URL`/`LLM_MODEL`, default `deepseek-chat`). Bukan `OPENAI_API_KEY`. Baca screenshot pakai Gemini (baris terakhir tabel).
 
 | Fitur | Endpoint | Alur |
 |---|---|---|
 | **Auto-categorize** | `POST /api/categorize` | Kirim deskripsi transaksi + daftar kategori → LLM pilih kategori. |
 | **Finance chat** | `POST /api/chat` | Ambil `get_summary` + `get_category_breakdown` + saldo akun sebagai konteks → LLM jawab pertanyaan keuangan. |
 | **Budget suggest** | `POST /api/budget/suggest` | Histori spending → LLM saran alokasi (lihat [§6](#6-budget)). |
+| **Baca screenshot mutasi** | `POST /api/statements` (gambar) | Pengecualian: pakai **Gemini** (`GEMINI_API_KEY`), bukan DeepSeek, karena butuh model vision. Lihat [§14](#14-rekonsiliasi-statement). |
 
 Semua context di-inject dari DB dulu (grounding), jadi jawaban berbasis data user beneran.
 
@@ -536,9 +537,13 @@ Adjustment (`is_adjustment`) gak pernah dicocokkan. `auditBalance` menjelaskan s
 | `POST /api/statements/:id/commit` | RPC `commit_statement_import`; 404/409/422 dari pesan error |
 | `POST /api/statements/:id/discard` | status `discarded` |
 
-**Belum:** ekstraksi screenshot (Gemini), layar Android. Lihat §10 di spec.
+**Screenshot** (`api/src/lib/screenshot-extractor.ts`): tiap gambar dikirim terpisah ke Gemini (`GEMINI_API_KEY`, model `GEMINI_STATEMENT_MODEL` default `gemini-2.5-flash`, key lewat header `x-goog-api-key`) dengan `responseSchema` JSON dan `temperature: 0`. Prompt (`buildPrompt`) memberi tanggal acuan WIB untuk tahun yang gak kelihatan dan "Hari ini/Kemarin", dan melarang membaca kode referensi di deskripsi sebagai nominal. Baris yang tanggal/nominal/arahnya rusak dibuang (`droppedRows`). Beberapa screenshot digabung dengan kunci tanggal+jam+nominal+arah: jumlah per kunci = **maksimum** antar gambar, bukan jumlah, jadi baris yang muncul di dua screenshot yang tumpang tindih cuma dihitung sekali, sementara dua transaksi kembar di satu screenshot tetap dua. Batasnya: dua transaksi kembar tanpa jam yang masing-masing cuma kelihatan di screenshot berbeda kehitung satu. Baris dengan `confidence` < 0,8 gak dicentang otomatis. Import screenshot: `integrity_ok` null (gak ada saldo), periode = tanggal terawal sampai terakhir, `extractor = vision:<model>@<PROMPT_VERSION>`. Error: 503 key belum diset, 502 Gemini gagal, 422 gak ada baris terbaca.
 
-📂 **Kode:** `supabase/migrations/059_statement_imports.sql`, `060_commit_statement_import.sql` · `api/src/lib/statement-parser.ts` · `api/src/lib/statement-matcher.ts` · `api/src/lib/statement-import.ts` · route `api/src/routes/statements.ts` · test `tests/integration/statement-imports.test.js`, `statement-commit.test.js`, `api/tests/unit/statement-parser.test.ts`, `api/tests/unit/statement-matcher.test.ts`, e2e `api/tests/api-statements.e2e.test.ts` (butuh `api/.env` + `recap/`, skip di CI; kasus PDF asli di-skip kalau `recap/` gak ada; folder itu gitignored)
+Eval lokal (screenshot BCA mobile asli Agustus 2026, 10 baris, disimpan di `recap/screenshots/` yang gitignored): 3 dari 3 run membaca 10/10 baris persis (tanggal, nominal, arah), termasuk deskripsi berisi `00000.00`. Dipotong jadi dua gambar yang overlap: tetap 10 baris, 0 dobel. Nama sumber masih lemah ("BANK"/"M-BANKING") karena aplikasi BCA gak menampilkan nama bank; akun tetap dipilih user.
+
+**Belum:** layar Android. Lihat §10 di spec.
+
+📂 **Kode:** `supabase/migrations/059_statement_imports.sql`, `060_commit_statement_import.sql` · `api/src/lib/statement-parser.ts` · `api/src/lib/statement-matcher.ts` · `api/src/lib/statement-import.ts` · `api/src/lib/screenshot-extractor.ts` · route `api/src/routes/statements.ts` · test `tests/integration/statement-imports.test.js`, `statement-commit.test.js`, `api/tests/unit/statement-parser.test.ts`, `api/tests/unit/statement-matcher.test.ts`, `api/tests/unit/screenshot-extractor.test.ts`, e2e `api/tests/api-statements.e2e.test.ts` (butuh `api/.env` + `recap/`, skip di CI; kasus PDF asli di-skip kalau `recap/` gak ada; folder itu gitignored)
 
 ---
 

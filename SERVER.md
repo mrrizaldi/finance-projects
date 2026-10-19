@@ -79,6 +79,7 @@ Jebakan di sisi server:
 - `rsync --delete` wajib dibarengi exclude `.env` dan `.env.*`; tanpa itu secret produksi terhapus. Sesudah rsync skrip memastikan `api/.env`, `dashboard/.env.local`, dan `.env` masih ada, kalau tidak deploy dibatalkan sebelum build.
 - Build dijalankan sebelum `pm2 restart`, jadi build gagal = proses lama tetap jalan.
 - `api/dist` dihapus sebelum `tsc` karena tsc tidak membuang output dari berkas sumber yang sudah dihapus.
+- Rekonsiliasi screenshot (`POST /api/statements` dengan gambar) butuh `GEMINI_API_KEY` di `api/.env` server. Nilainya sama dengan yang dipakai OpenClaw `analyze-file` (`~/.openclaw/gateway.systemd.env`). Tanpa key itu endpoint menjawab 503, upload PDF tetap jalan. Model bisa diganti lewat `GEMINI_STATEMENT_MODEL` (default `gemini-2.5-flash`). Upload PDF butuh `pdftotext` (paket poppler-utils), sudah terpasang.
 
 ## Deploy perubahan bot (edit langsung di server)
 

@@ -15,6 +15,13 @@ const WEBP_MARKER_OFFSET = 8;
 const startsWith = (buffer: Buffer, magic: Buffer, offset = 0) =>
   buffer.subarray(offset, offset + magic.length).equals(magic);
 
+export function mimeTypeOf(buffer: Buffer): string {
+  if (startsWith(buffer, PDF_MAGIC)) return 'application/pdf';
+  if (startsWith(buffer, PNG_MAGIC)) return 'image/png';
+  if (startsWith(buffer, JPEG_MAGIC)) return 'image/jpeg';
+  return 'image/webp';
+}
+
 export function fileKind(buffer: Buffer): UploadKind | null {
   if (startsWith(buffer, PDF_MAGIC)) return 'pdf';
   if (startsWith(buffer, PNG_MAGIC) || startsWith(buffer, JPEG_MAGIC)) return 'screenshot';

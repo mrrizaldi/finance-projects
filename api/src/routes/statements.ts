@@ -3,17 +3,24 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createServiceClient, requireUser } from '../lib/supabase.js';
-import { parseStatementPdf, StatementParseError } from '../lib/statement-parser.js';
+import { parseStatementPdf, StatementParseError, type StatementRow } from '../lib/statement-parser.js';
+import {
+  DEFAULT_SCREENSHOT_MODEL,
+  extractScreenshots,
+  PROMPT_VERSION,
+  ScreenshotExtractionError,
+} from '../lib/screenshot-extractor.js';
 import { auditBalance, matchStatement, MAX_DAY_GAP, type MatchLine } from '../lib/statement-matcher.js';
 import {
   balanceOnAccount,
   combinedSha256,
   fileKind,
   lineFingerprints,
+  mimeTypeOf,
   toMatchTransaction,
   type TransactionRow,
 } from '../lib/statement-import.js';
-import { jakartaDayEnd, jakartaDayStart, shiftCalendarDate } from '../lib/utils.js';
+import { jakartaDayEnd, jakartaDayStart, shiftCalendarDate, todayInJakarta } from '../lib/utils.js';
 
 const BYTES_PER_MEGABYTE = 1024 * 1024;
 const MAX_UPLOAD_BYTES = 20 * BYTES_PER_MEGABYTE;
@@ -26,10 +33,22 @@ const MS_PER_DAY = 86_400_000;
 const PURGE_BATCH = 20;
 const LIST_LIMIT = 20;
 const STORAGE_BUCKET = 'statements';
+const AUTO_SELECT_MIN_CONFIDENCE = 0.8;
 const TRANSACTION_TYPES = ['income', 'expense', 'transfer'];
 const LINE_DECISIONS = ['match', 'probable', 'new', 'transfer_pair', 'other_account', 'skip'];
 const TRANSACTION_COLUMNS =
   'id, type, amount, to_amount, account_id, to_account_id, transaction_date, description, merchant, is_adjustment';
+
+interface ExtractedStatement {
+  bank: string;
+  rows: Array<StatementRow & { counterparty?: string | null; confidence?: number }>;
+  periodStart: string | null;
+  periodEnd: string | null;
+  openingBalance: number | null;
+  closingBalance: number | null;
+  integrityOk: boolean | null;
+  extractor: string;
+}
 
 interface UploadFile {
   name?: string;
@@ -79,6 +98,41 @@ function parseErrorStatus(error: StatementParseError) {
   return error.code === 'pdftotext_missing' || error.code === 'pdftotext_failed' ? 500 : 422;
 }
 
+function screenshotErrorStatus(error: ScreenshotExtractionError) {
+  if (error.code === 'not_configured') return 503;
+  return error.code === 'model_failed' ? 502 : 422;
+}
+
+async function extractPdf(buffer: Buffer): Promise<ExtractedStatement> {
+  const workDir = await mkdtemp(join(tmpdir(), 'statement-'));
+  try {
+    const pdfPath = join(workDir, 'statement.pdf');
+    await writeFile(pdfPath, buffer);
+    const parsed = await parseStatementPdf(pdfPath);
+    return {
+      bank: parsed.bank, rows: parsed.rows, periodStart: parsed.periodStart, periodEnd: parsed.periodEnd,
+      openingBalance: parsed.openingBalance, closingBalance: parsed.closingBalance, integrityOk: parsed.integrityOk,
+      extractor: `parser:${parsed.bank.toLowerCase()}@1`,
+    };
+  } finally {
+    await rm(workDir, { recursive: true, force: true });
+  }
+}
+
+async function extractImages(buffers: Buffer[]): Promise<ExtractedStatement> {
+  const model = process.env.GEMINI_STATEMENT_MODEL ?? DEFAULT_SCREENSHOT_MODEL;
+  const result = await extractScreenshots(
+    buffers.map((data) => ({ data, mimeType: mimeTypeOf(data) })),
+    todayInJakarta(),
+    { model },
+  );
+  return {
+    bank: result.source, rows: result.rows, periodStart: null, periodEnd: null,
+    openingBalance: null, closingBalance: null, integrityOk: null,
+    extractor: `vision:${model}@${PROMPT_VERSION}`,
+  };
+}
+
 export default async function plugin(app: FastifyInstance) {
   app.post('/api/statements', { bodyLimit: UPLOAD_BODY_LIMIT }, async (request, reply) => {
     const { supabase, user, unauthorized } = await requireUser(request);
@@ -103,7 +157,6 @@ export default async function plugin(app: FastifyInstance) {
     if (kinds.size > 1) return reply.code(400).send({ error: 'Jangan campur PDF dan gambar dalam satu upload' });
     const [kind] = kinds;
     if (kind === 'pdf' && buffers.length > 1) return reply.code(400).send({ error: 'Satu upload cuma boleh satu PDF' });
-    if (kind === 'screenshot') return reply.code(422).send({ error: 'Screenshot belum didukung, kirim e-statement PDF dulu' });
 
     const { data: account } = await supabase.from('accounts').select('id').eq('id', accountId).maybeSingle();
     if (!account) return reply.code(404).send({ error: 'Akun tidak ditemukan' });
@@ -117,25 +170,22 @@ export default async function plugin(app: FastifyInstance) {
       return reply.code(409).send({ error: 'File ini sudah pernah diimpor', import_id: existing.id, status: existing.status });
     }
 
-    const workDir = await mkdtemp(join(tmpdir(), 'statement-'));
-    let parsed;
+    let parsed: ExtractedStatement;
     try {
-      const pdfPath = join(workDir, 'statement.pdf');
-      await writeFile(pdfPath, buffers[0]);
-      parsed = await parseStatementPdf(pdfPath);
+      parsed = kind === 'pdf' ? await extractPdf(buffers[0]) : await extractImages(buffers);
     } catch (error) {
       if (error instanceof StatementParseError) {
         return reply.code(parseErrorStatus(error)).send({ error: error.message, code: error.code });
       }
+      if (error instanceof ScreenshotExtractionError) {
+        return reply.code(screenshotErrorStatus(error)).send({ error: error.message, code: error.code });
+      }
       throw error;
-    } finally {
-      await rm(workDir, { recursive: true, force: true });
     }
 
-    const firstDate = parsed.rows[0].date;
-    const lastDate = parsed.rows[parsed.rows.length - 1].date;
-    const periodStart = parsed.periodStart ?? firstDate;
-    const periodEnd = parsed.periodEnd ?? lastDate;
+    const rowDates = parsed.rows.map((r) => r.date).sort();
+    const periodStart = parsed.periodStart ?? rowDates[0];
+    const periodEnd = parsed.periodEnd ?? rowDates[rowDates.length - 1];
 
     const { data: txRows, error: txError } = await supabase
       .from('transactions')
@@ -177,7 +227,7 @@ export default async function plugin(app: FastifyInstance) {
       .insert({
         account_id: accountId, kind, bank: parsed.bank, period_start: periodStart, period_end: periodEnd,
         opening_balance: parsed.openingBalance, closing_balance: parsed.closingBalance, file_sha256: sha,
-        extractor: `parser:${parsed.bank.toLowerCase()}@1`, integrity_ok: parsed.integrityOk,
+        extractor: parsed.extractor, integrity_ok: parsed.integrityOk,
         app_findings: result.appFindings, audit, user_id: user.id,
       })
       .select('id')
@@ -192,7 +242,9 @@ export default async function plugin(app: FastifyInstance) {
           id: lineIds[i], import_id: imp.id, user_id: user.id, line_no: i + 1, occurred_on: row.date,
           occurred_time: row.time, amount: row.amount, direction: row.direction, description_raw: row.description,
           running_balance: row.balanceAfter, fingerprint: fingerprints[i], decision: decision.decision,
-          selected: decision.selected, matched_transaction_id: decision.matchedTransactionId,
+          counterparty: row.counterparty ?? null, confidence: row.confidence ?? 1,
+          selected: decision.selected && (row.confidence ?? 1) >= AUTO_SELECT_MIN_CONFIDENCE,
+          matched_transaction_id: decision.matchedTransactionId,
         };
       }),
     );
@@ -204,7 +256,7 @@ export default async function plugin(app: FastifyInstance) {
     const service = createServiceClient();
     const paths = files.map((f, i) => `${user.id}/${imp.id}/${safeFileName(f.name, i)}`);
     const uploads = await Promise.all(
-      paths.map((path, i) => service.storage.from(STORAGE_BUCKET).upload(path, buffers[i], { contentType: 'application/pdf' })),
+      paths.map((path, i) => service.storage.from(STORAGE_BUCKET).upload(path, buffers[i], { contentType: mimeTypeOf(buffers[i]) })),
     );
     const stored = paths.filter((_, i) => !uploads[i].error);
     await supabase
