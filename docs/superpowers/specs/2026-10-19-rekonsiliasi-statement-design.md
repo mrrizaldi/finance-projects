@@ -208,3 +208,19 @@ tests/fixtures/statements/
 ## 13. Ditunda: chat AI di layar review
 
 User mau review nanti bisa ngobrol dengan AI ("nomor 3 bukan dobel", kirim screenshot tambahan di tengah percakapan). Ditunda sampai fase 1–7 oke. Rancangan kasar biar data model sekarang gak menghalangi: tabel `recon_messages (import_id, role, content, attachments, tool_calls)`, Gemini Flash dengan function calling yang cuma boleh mengubah `statement_lines` (decision, selected, akun, kategori), commit tetap lewat tombol.
+
+## 14. Status (19 Okt 2026, akhir sesi)
+
+| Fase | Status | Commit |
+|---|---|---|
+| 1 Migrasi tabel | selesai, live | `43233df` (mig 059) |
+| 2 Parser PDF TS | selesai | `7ee6734` |
+| 3 Matcher + audit | selesai, 2 perbaikan dari uji data asli | `10e5016`, `1d32280`, `25c93e0` |
+| 4 RPC commit + API + Bearer | selesai, live | `35771fe` (mig 060), `5e227f6` |
+| 5 Screenshot Gemini | selesai, live | `5f361e7` |
+| 6 Android | selesai, diuji di HP tanpa commit data asli | `1399c24` |
+| 7 Skill + CLI + OpenClaw | selesai, eval 10/10 | `45e9a24`, `63b606d`, `4e8894f`, `7c92c13`; `~/.openclaw` `eb7fb10`, `8632c06` |
+| 8 Bank tambahan | screenshot sudah mencakup Jago/DANA/GoPay/ShopeePay lewat Gemini; parser PDF selain BCA/BSI belum | – |
+| 9 Bersih-bersih dobel lama | belum (sesuai permintaan user: paling akhir) | – |
+
+Belum terbukti: share dari app Galeri/Files di HP (cuma pemilih file yang diuji) dan tombol Catat di HP dengan data asli.
