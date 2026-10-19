@@ -23,6 +23,7 @@ const PURGE_BATCH = 20;
 const SIGNED_URL_SECONDS = 3600;
 const CANDIDATE_DAY_GAP = 1;
 const CHECK_VIOLATION = '23514';
+const UNIQUE_VIOLATION = '23505';
 const STORAGE_BUCKET = 'receipts';
 const TRANSACTION_COLUMNS =
   'id, type, amount, to_amount, account_id, to_account_id, transaction_date, description, merchant, is_adjustment';
@@ -37,20 +38,26 @@ interface UploadFile {
 
 const sha256 = (data: Buffer) => createHash('sha256').update(data).digest('hex');
 
-async function removeReceipt(supabase: any, service: ReturnType<typeof createServiceClient>, id: string) {
+const ownedBy = (userId: string) => (path: string) => path.startsWith(`${userId}/`);
+
+type Service = ReturnType<typeof createServiceClient>;
+
+async function removeReceipt(supabase: any, service: Service, id: string, ownerId: string) {
   const { data: files } = await service.from('receipt_files').select('path').eq('receipt_id', id);
-  if (files?.length) await service.storage.from(STORAGE_BUCKET).remove(files.map((f: { path: string }) => f.path));
-  await supabase.from('receipts').delete().eq('id', id);
+  const paths = (files ?? []).map((f: { path: string }) => f.path).filter(ownedBy(ownerId));
+  const { error } = await supabase.from('receipts').delete().eq('id', id);
+  if (error) throw new Error(`Gagal hapus struk: ${error.message}`);
+  if (paths.length) await service.storage.from(STORAGE_BUCKET).remove(paths);
 }
 
-async function purgeStaleDrafts(service: ReturnType<typeof createServiceClient>) {
+async function purgeStaleDrafts(service: Service) {
   const { data: stale } = await service
     .from('receipts')
-    .select('id')
+    .select('id, user_id')
     .eq('status', 'draft')
     .lt('created_at', new Date(Date.now() - DRAFT_TTL_DAYS * MS_PER_DAY).toISOString())
     .limit(PURGE_BATCH);
-  for (const row of stale ?? []) await removeReceipt(service, service, row.id);
+  for (const row of stale ?? []) await removeReceipt(service, service, row.id, row.user_id);
 }
 
 async function findCandidates(supabase: any, extraction: NormalizedReceipt) {
@@ -89,6 +96,8 @@ function validLines(lines: unknown): boolean {
     && LINE_KINDS.includes((l as { kind: never }).kind)
     && typeof (l as { name: unknown }).name === 'string'
     && Number.isFinite((l as { amount: unknown }).amount)
+    && ((l as { qty?: unknown }).qty == null
+      || (typeof (l as { qty: unknown }).qty === 'number' && (l as { qty: number }).qty > 0 && Number.isFinite((l as { qty: number }).qty)))
     && ((l as { category_id?: unknown }).category_id == null || typeof (l as { category_id: unknown }).category_id === 'string'));
 }
 
@@ -116,12 +125,52 @@ export default async function plugin(app: FastifyInstance) {
     const service = createServiceClient();
     const shas = buffers.map(sha256);
     const { data: known } = await supabase.from('receipt_files').select('receipt_id').in('sha256', shas);
-    for (const receiptId of new Set((known ?? []).map((k: { receipt_id: string }) => k.receipt_id))) {
-      const { data: existing } = await supabase.from('receipts').select('id, status, transaction_id').eq('id', receiptId).maybeSingle();
-      if (existing?.status === 'saved') {
-        return reply.code(409).send({ error: 'Struk ini sudah pernah dirinci', receipt_id: existing.id, transaction_id: existing.transaction_id });
+    const knownIds = [...new Set((known ?? []).map((k: { receipt_id: string }) => k.receipt_id))];
+    const { data: existing } = knownIds.length
+      ? await supabase.from('receipts').select('id, status, transaction_id').in('id', knownIds)
+      : { data: [] };
+    const saved = (existing ?? []).find((r: { status: string }) => r.status === 'saved');
+    if (saved) {
+      return reply.code(409).send({ error: 'Struk ini sudah pernah dirinci', receipt_id: saved.id, transaction_id: saved.transaction_id });
+    }
+    for (const draft of existing ?? []) await removeReceipt(supabase, service, draft.id, user.id);
+
+    const { data: receipt, error: insertError } = await supabase
+      .from('receipts')
+      .insert({ status: 'draft', extractor: 'manual', user_id: user.id })
+      .select('*')
+      .single();
+    if (insertError) throw new Error(`Gagal simpan struk: ${insertError.message}`);
+
+    const uploads = await Promise.all(buffers.map(async (buffer, i) => {
+      const mime = mimeTypeOf(buffer);
+      const path = `${user.id}/${receipt.id}/${i + 1}.${EXTENSIONS[mime]}`;
+      const { error } = await service.storage.from(STORAGE_BUCKET).upload(path, buffer, { contentType: mime });
+      return { path, mime, sha256: shas[i], ok: !error };
+    }));
+    const paths = uploads.map((u) => u.path);
+    const discard = async () => {
+      await service.storage.from(STORAGE_BUCKET).remove(paths);
+      await supabase.from('receipts').delete().eq('id', receipt.id);
+    };
+    if (uploads.some((u) => !u.ok)) {
+      await discard();
+      return reply.code(502).send({ error: 'Gagal menyimpan file struk' });
+    }
+    const { error: filesError } = await supabase.from('receipt_files').insert(
+      uploads.map((u) => ({ receipt_id: receipt.id, user_id: user.id, path: u.path, sha256: u.sha256, mime: u.mime })),
+    );
+    if (filesError) {
+      await discard();
+      if (filesError.code === UNIQUE_VIOLATION) {
+        const { data: dupFiles } = await supabase.from('receipt_files').select('receipt_id').in('sha256', shas);
+        const dupIds = (dupFiles ?? []).map((f: { receipt_id: string }) => f.receipt_id);
+        const { data: dup } = dupIds.length
+          ? await supabase.from('receipts').select('id, transaction_id').in('id', dupIds).limit(1).maybeSingle()
+          : { data: null };
+        return reply.code(409).send({ error: 'Struk ini sedang atau sudah diproses', receipt_id: dup?.id ?? null, transaction_id: dup?.transaction_id ?? null });
       }
-      if (existing) await removeReceipt(supabase, service, existing.id);
+      throw new Error(`Gagal simpan file struk: ${filesError.message}`);
     }
 
     const { data: categories } = await supabase
@@ -143,40 +192,31 @@ export default async function plugin(app: FastifyInstance) {
     const purchasedAt = extraction.purchasedDate
       ? `${extraction.purchasedDate}T${extraction.purchasedTime ?? '12:00'}:00+07:00`
       : null;
-    const { data: receipt, error: insertError } = await supabase
+    const { data: updated, error: updateError } = await supabase
       .from('receipts')
-      .insert({
-        status: 'draft', merchant: extraction.merchant, purchased_at: purchasedAt,
-        printed_total: extraction.printedTotal, extractor: extraction.extractor, user_id: user.id,
+      .update({
+        merchant: extraction.merchant, purchased_at: purchasedAt,
+        printed_total: extraction.printedTotal, extractor: extraction.extractor,
       })
+      .eq('id', receipt.id)
       .select('*')
       .single();
-    if (insertError) throw new Error(`Gagal simpan struk: ${insertError.message}`);
+    if (updateError) throw new Error(`Gagal update struk: ${updateError.message}`);
 
-    const stored = await Promise.all(buffers.map(async (buffer, i) => {
-      const mime = mimeTypeOf(buffer);
-      const path = `${user.id}/${receipt.id}/${i + 1}.${EXTENSIONS[mime]}`;
-      const { error } = await service.storage.from(STORAGE_BUCKET).upload(path, buffer, { contentType: mime });
-      return error ? null : { receipt_id: receipt.id, user_id: user.id, path, sha256: shas[i], mime };
-    }));
-    const fileRows = stored.filter((row) => row !== null);
-    if (fileRows.length) {
-      const { error: filesError } = await supabase.from('receipt_files').insert(fileRows);
-      if (filesError) throw new Error(`Gagal simpan file struk: ${filesError.message}`);
-    }
-    await purgeStaleDrafts(service);
+    const candidates = await findCandidates(supabase, extraction);
+    purgeStaleDrafts(service).catch((error) => request.log.error({ err: error }, 'purge draft struk gagal'));
 
     return reply.code(201).send({
-      receipt,
+      receipt: updated,
       lines: extraction.lines,
       totalOk: totalMatches(extraction.lines, extraction.printedTotal),
-      candidates: await findCandidates(supabase, extraction),
+      candidates,
       extractionError,
     });
   });
 
   app.get('/api/receipts/by-transaction/:transactionId', async (request, reply) => {
-    const { supabase, unauthorized } = await requireUser(request);
+    const { supabase, user, unauthorized } = await requireUser(request);
     if (unauthorized || !supabase) return reply.code(401).send({ error: 'Unauthorized' });
     const { transactionId } = request.params as { transactionId: string };
     const { data: receipt } = await supabase
@@ -186,13 +226,14 @@ export default async function plugin(app: FastifyInstance) {
       .from('receipt_lines').select('kind, name, qty, amount, category_id').eq('receipt_id', receipt.id).order('line_no');
     const { data: files } = await supabase
       .from('receipt_files').select('path, mime').eq('receipt_id', receipt.id).order('created_at');
-    const { data: signed } = files?.length
-      ? await createServiceClient().storage.from(STORAGE_BUCKET).createSignedUrls(files.map((f: { path: string }) => f.path), SIGNED_URL_SECONDS)
+    const ownedFiles = (files ?? []).filter((f: { path: string }) => ownedBy(user.id)(f.path));
+    const { data: signed } = ownedFiles.length
+      ? await createServiceClient().storage.from(STORAGE_BUCKET).createSignedUrls(ownedFiles.map((f: { path: string }) => f.path), SIGNED_URL_SECONDS)
       : { data: [] };
     return {
       receipt,
       lines: (lines ?? []).map((l: { amount: unknown; qty: unknown }) => ({ ...l, amount: Number(l.amount), qty: Number(l.qty) })),
-      files: (files ?? []).flatMap((f: { mime: string }, i: number) =>
+      files: ownedFiles.flatMap((f: { mime: string }, i: number) =>
         signed?.[i]?.signedUrl ? [{ url: signed[i].signedUrl, mime: f.mime }] : []),
     };
   });
@@ -215,7 +256,7 @@ export default async function plugin(app: FastifyInstance) {
     });
     if (error) {
       if (error.code === CHECK_VIOLATION || /check constraint/i.test(error.message)) {
-        return reply.code(400).send({ error: 'Nominal item harus lebih dari 0, diskon harus negatif' });
+        return reply.code(400).send({ error: 'Nominal atau jumlah item gak valid: item > 0, diskon negatif, pajak/service ≥ 0' });
       }
       if (/wajib|harus/.test(error.message)) return reply.code(400).send({ error: error.message });
       const status = /tidak ditemukan/.test(error.message) ? 404 : /sudah punya rincian/.test(error.message) ? 409 : 422;
@@ -225,12 +266,12 @@ export default async function plugin(app: FastifyInstance) {
   });
 
   app.delete('/api/receipts/:id', async (request, reply) => {
-    const { supabase, unauthorized } = await requireUser(request);
+    const { supabase, user, unauthorized } = await requireUser(request);
     if (unauthorized || !supabase) return reply.code(401).send({ error: 'Unauthorized' });
     const { id } = request.params as { id: string };
     const { data: receipt } = await supabase.from('receipts').select('id').eq('id', id).maybeSingle();
     if (!receipt) return reply.code(404).send({ error: 'Struk tidak ditemukan' });
-    await removeReceipt(supabase, createServiceClient(), id);
+    await removeReceipt(supabase, createServiceClient(), id, user.id);
     return { data: { id } };
   });
 }
