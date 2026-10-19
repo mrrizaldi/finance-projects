@@ -505,9 +505,11 @@ Sedang dibangun. Rancangan lengkap: `docs/superpowers/specs/2026-10-19-rekonsili
 - `transactions.statement_line_id` (unik kalau terisi) + `source = 'statement_import'`: setiap transaksi hasil rekonsiliasi bisa dilacak ke baris statement asalnya, dan commit dua kali gak bikin dobel.
 - RLS `own_rows` + trigger `set_user_id_on_insert` sama dengan tabel lain. Bucket storage privat `statements` untuk file asli (rencana simpan 90 hari).
 
-**Belum:** parser, matcher, endpoint API, layar Android. Lihat §10 di spec.
+**Parser PDF** (`api/src/lib/statement-parser.ts`): `pdftotext -layout` lalu aturan per bank, BCA (Rekening Tahapan) dan BSI. Port dari `finance-recon/scripts/parse-statement.py` di server; hasilnya sama persis di 8 PDF `recap/` (250 baris). `integrityOk` = `saldo awal + kredit − debit = saldo akhir` (toleransi Rp 1), dan untuk BCA juga total `MUTASI CR/DB` di blok ringkasan. Beda dari versi Python: arah baris BCA tanpa penanda DB/CR ditebak dari **saldo berjalan** (saldo awal ± baris sebelumnya), bukan saldo tercetak terakhir, supaya baris tanpa kolom saldo gak bikin baris sesudahnya salah arah. Error `StatementParseError` dengan `code`: `pdftotext_missing`, `pdftotext_failed`, `unrecognized`, `empty`.
 
-📂 **Kode:** `supabase/migrations/059_statement_imports.sql` · test `tests/integration/statement-imports.test.js`
+**Belum:** matcher, endpoint API, layar Android. Lihat §10 di spec.
+
+📂 **Kode:** `supabase/migrations/059_statement_imports.sql` · `api/src/lib/statement-parser.ts` · test `tests/integration/statement-imports.test.js`, `api/tests/unit/statement-parser.test.ts` (kasus PDF asli di-skip kalau `recap/` gak ada; folder itu gitignored)
 
 ---
 
