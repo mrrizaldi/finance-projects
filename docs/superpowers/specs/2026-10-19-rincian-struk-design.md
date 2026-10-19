@@ -156,9 +156,11 @@ Auth Bearer sama dengan `/api/statements` (`requireUser`).
 | 3. Mig 061/062/064 | selesai | `1d6cd22`, `3cc2b88`, `7ab943d` |
 | 4. Ekstraktor | selesai | `643dc76`, `0975b16` |
 | 5. API | selesai | `4005d12`, `1d98057`, `efd6b7d` |
-| 6. Android layar struk | selesai, uji di HP menunggu | `ffb00db`, `bc3611a`, `60c733f`, `b53a697` |
-| 7. Detail transaksi | selesai, uji di HP menunggu | `651bd43` |
+| 6. Android layar struk | selesai, diuji di HP | `ffb00db`, `bc3611a`, `60c733f`, `b53a697`, `be48b33` |
+| 7. Detail transaksi | selesai, diuji di HP | `651bd43` |
 | 8. Analitik 063/065 | selesai | `e9a127d`, `f3c9894` |
 | 9. Dokumen | selesai | commit dokumen ini (`docs/FEATURES.md` §15) |
 
-Uji end-to-end di HP: lihat commit/catatan berikutnya
+Uji end-to-end di HP (19 Okt 2026, API `efd6b7d` ter-deploy): struk sintetis resto dibaca benar (merchant, jam, total 124.400, 3 item + 4 penyesuaian bertanda benar, kategori usulan cocok); simpan sebagai transaksi baru (source `receipt`, Cash turun 124.400); ubah kategori item tersimpan; upload ulang → 409 membuka rincian yang ada; transaksi itu muncul sebagai kandidat; kamera → pesan isi manual; mode pesawat → pesan offline di atas tombol Simpan (diperbaiki `be48b33`). Semua data uji dihapus, saldo Cash kembali 135.000, bucket `receipts` kosong.
+
+Catatan terbuka: simpan menunggu refresh home+analitik (~10 dtk) sebelum layar tertutup; setelah simpan dari Tambah, kembali ke form Tambah kosong, bukan Home; pesan error server tetap Bahasa Indonesia di UI Inggris.
