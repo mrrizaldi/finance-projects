@@ -96,14 +96,19 @@ data class StatementViewDto(
 data class CommitResultDto(val inserted: Int, val moved: Int, val deleted: Int)
 
 @Serializable
-private data class ErrorDto(val error: String? = null, val import_id: String? = null)
+private data class ErrorDto(val error: String? = null, val import_id: String? = null, val transaction_id: String? = null)
 
 @Serializable
 private data class DataEnvelope<T>(val data: T)
 
 data class UploadFile(val name: String, val bytes: ByteArray)
 
-class StatementApiException(val status: Int, message: String, val existingImportId: String? = null) : Exception(message)
+class StatementApiException(
+    val status: Int,
+    message: String,
+    val existingImportId: String? = null,
+    val existingTransactionId: String? = null
+) : Exception(message)
 
 interface StatementApi {
     suspend fun upload(accountId: String, files: List<UploadFile>): StatementViewDto
@@ -130,7 +135,7 @@ class StatementApiImpl(
         }
     }
 
-    private suspend fun send(method: HttpMethod, path: String, body: JsonObject? = null): String {
+    internal suspend fun send(method: HttpMethod, path: String, body: JsonObject? = null): String {
         val token = accessToken() ?: throw StatementApiException(UNAUTHORIZED, "Sesi habis, login ulang")
         val response = client.request("$baseUrl$path") {
             this.method = method
@@ -140,7 +145,7 @@ class StatementApiImpl(
         val text = response.bodyAsText()
         if (!response.status.isSuccess()) {
             val error = runCatching { json.decodeFromString<ErrorDto>(text) }.getOrNull()
-            throw StatementApiException(response.status.value, error?.error ?: "HTTP ${response.status.value}", error?.import_id)
+            throw StatementApiException(response.status.value, error?.error ?: "HTTP ${response.status.value}", error?.import_id, error?.transaction_id)
         }
         return text
     }

@@ -6,6 +6,8 @@ import androidx.room.Room
 import com.mrrizaldi.finance.auth.SessionStore
 import com.mrrizaldi.finance.data.Repository
 import com.mrrizaldi.finance.data.local.FinanceDb
+import com.mrrizaldi.finance.data.remote.ReceiptApi
+import com.mrrizaldi.finance.data.remote.ReceiptApiImpl
 import com.mrrizaldi.finance.data.remote.SupabaseApi
 import com.mrrizaldi.finance.data.remote.StatementApi
 import com.mrrizaldi.finance.data.remote.StatementApiImpl
@@ -45,9 +47,15 @@ class AppContainer(context: Context) {
 
     val api: SupabaseApi by lazy { SupabaseApiImpl(supabase) }
 
-    val statements: StatementApi by lazy {
+    private val financeHttp by lazy {
         StatementApiImpl(BuildConfig.FINANCE_API_URL) { api.awaitSession()?.accessToken }
     }
+
+    val statements: StatementApi get() = financeHttp
+
+    val receipts: ReceiptApi by lazy { ReceiptApiImpl(financeHttp::send) }
+
+    val receiptUploads = MutableStateFlow<List<UploadFile>>(emptyList())
 
     val sharedUploads = MutableStateFlow<List<UploadFile>>(emptyList())
 
