@@ -16,6 +16,7 @@ import { createServiceClient } from '../src/lib/supabase.js';
 
 const NOTIF = {
   id: 'notif-1',
+  user_id: 'user-1',
   kind: 'tx_baru',
   title: 'Transaksi Baru',
   body: 'Pengeluaran Rp 15.000 · Makan · BCA',
@@ -70,6 +71,8 @@ describe('POST /api/push/notify', () => {
     expect(payload.title).toBe('Transaksi Baru');
     expect(payload.body).toBe('Pengeluaran Rp 15.000 · Makan · BCA');
     expect(payload.data.url).toBe('/transactions');
+    expect((supabase.from as any).mock.results[0].value.eq).toHaveBeenCalledWith('id', 'notif-1');
+    expect((supabase.from as any).mock.results[1].value.eq).toHaveBeenCalledWith('user_id', 'user-1');
   });
 
   it('url menunjuk inbox untuk kind selain tx_baru', async () => {

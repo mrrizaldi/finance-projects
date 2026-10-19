@@ -19,14 +19,14 @@ export default async function plugin(app: FastifyInstance) {
 
     const { data: notif, error: notifError } = await (adminSupabase as any)
       .from('notifications')
-      .select('id, kind, title, body')
+      .select('id, user_id, kind, title, body')
       .eq('id', record.id)
       .single();
 
     if (notifError || !notif) return reply.code(404).send({ error: 'Notification not found' });
 
     const { data: subs, error: subsError } = await (adminSupabase as any)
-      .from('push_subscriptions').select('endpoint, p256dh, auth').eq('user_id', record.user_id);
+      .from('push_subscriptions').select('endpoint, p256dh, auth').eq('user_id', notif.user_id);
 
     if (subsError || !subs?.length) return { ok: true, sent: 0 };
 
