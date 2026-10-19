@@ -14,28 +14,46 @@ class ReceiptMathTest {
         ReceiptLine("rounding", "Pembulatan", 1.0, -340, null)
     )
 
+    private fun total(parent: Long, category: String, lines: List<ReceiptLine>): Map<String?, Long> {
+        val slices = allocate(parent, category, lines)
+        assertEquals(parent, slices.sumOf { it.amount })
+        return slices.associate { it.categoryId to it.amount }
+    }
+
     @Test
     fun `pajak dan diskon disebar, sisa ke kategori induk`() {
-        val slices = allocate(136400, "shop", resto).associate { it.categoryId to it.amount }
+        val slices = total(136400, "shop", resto)
         assertEquals(mapOf("food" to 65417L, "home" to 58983L, "shop" to 12000L), slices)
     }
 
     @Test
     fun `item tanpa kategori ikut induk dan digabung dengan sisa`() {
         val lines = listOf(ReceiptLine("item", "a", 1.0, 30000, null), ReceiptLine("item", "b", 1.0, 20000, "food"))
-        val slices = allocate(60000, "shop", lines).associate { it.categoryId to it.amount }
+        val slices = total(60000, "shop", lines)
         assertEquals(mapOf("shop" to 40000L, "food" to 20000L), slices)
     }
 
     @Test
     fun `total struk lebih besar dari induk dipotong ke nominal induk`() {
         val lines = listOf(ReceiptLine("item", "a", 1.0, 100000, "food"))
-        assertEquals(listOf(Slice("food", 80000)), allocate(80000, "shop", lines))
+        assertEquals(mapOf<String?, Long>("food" to 80000L), total(80000, "shop", lines))
     }
 
     @Test
     fun `tanpa item semua ke induk`() {
-        assertEquals(listOf(Slice("shop", 50000)), allocate(50000, "shop", emptyList()))
+        assertEquals(mapOf<String?, Long>("shop" to 50000L), total(50000, "shop", emptyList()))
+    }
+
+    @Test
+    fun `pembulatan gak pernah melebihi nominal induk`() {
+        val lines = listOf(
+            ReceiptLine("item", "a", 1.0, 1, "food"),
+            ReceiptLine("item", "b", 1.0, 1, "home"),
+            ReceiptLine("tax", "PB1", 1.0, 1, null)
+        )
+        val slices = total(3, "shop", lines)
+        assertEquals(3L, slices.values.sum())
+        assertEquals(mapOf<String?, Long>("food" to 2L, "home" to 1L), slices)
     }
 
     @Test
