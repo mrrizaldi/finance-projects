@@ -217,8 +217,7 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState, pickStat
                     container.lock,
                     unread,
                     onEdit = nav::edit,
-                    onInbox = { nav.navigate(INBOX_ROUTE) { launchSingleTop = true } },
-                    onStatements = { nav.navigate(STATEMENTS_ROUTE) { launchSingleTop = true } }
+                    onInbox = { nav.navigate(INBOX_ROUTE) { launchSingleTop = true } }
                 )
             }
             composable(Tab.TRANSACTIONS.route) {
@@ -227,7 +226,11 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState, pickStat
             composable(Tab.BALANCES.route) { BalancesScreen(viewModel { BalancesViewModel(container.repository) }) }
             composable(Tab.ANALYTICS.route) { AnalyticsScreen(viewModel { AnalyticsViewModel(container.repository) }) }
             composable(ADD_ROUTE) {
-                AddScreen(viewModel { AddViewModel(container.repository) }, onBack = { nav.popBackStack() })
+                AddScreen(
+                    viewModel { AddViewModel(container.repository) },
+                    onBack = { nav.popBackStack() },
+                    onStatements = { nav.navigate(STATEMENTS_ROUTE) { launchSingleTop = true } }
+                )
             }
             composable(INBOX_ROUTE) { InboxScreen(container.api, onBack = { nav.popBackStack() }) }
             composable(STATEMENTS_ROUTE) {
