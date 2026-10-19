@@ -104,11 +104,16 @@ export interface RawReceipt {
 
 const isLineKind = (value: unknown): value is LineKind => LINE_KINDS.includes(value as LineKind);
 
-export function normalizeReceipt(raw: RawReceipt, categories: CategoryRef[]): NormalizedReceipt {
+const isPlainObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+export function normalizeReceipt(answer: unknown, categories: CategoryRef[]): NormalizedReceipt {
+  const raw: RawReceipt = isPlainObject(answer) ? answer : {};
   const byName = new Map(categories.map((c) => [c.name.trim().toLowerCase(), c.id]));
   const lines: ReceiptLine[] = [];
   for (const line of Array.isArray(raw.lines) ? raw.lines : []) {
-    const value = Number(line.amount);
+    if (!isPlainObject(line)) continue;
+    const value = Math.round(Number(line.amount));
     if (!Number.isFinite(value) || value === 0) continue;
     const declared: LineKind = isLineKind(line.kind) ? line.kind : 'item';
     const kind: LineKind = declared === 'item' && value < 0 ? 'discount' : declared;
@@ -175,7 +180,7 @@ export async function extractReceipt(
     options.models ?? configuredModels(),
     Date.now() + (options.budgetMs ?? GEMINI_TOTAL_BUDGET_MS),
   );
-  const normalized = normalizeReceipt(answer as RawReceipt, categories);
-  if (normalized.lines.length === 0) throw new ScreenshotExtractionError('empty', 'Tidak ada item terbaca dari struk');
+  const normalized = normalizeReceipt(answer, categories);
+  if (!normalized.lines.some((line) => line.kind === 'item')) throw new ScreenshotExtractionError('empty', 'Tidak ada item terbaca dari struk');
   return { ...normalized, extractor: `vision:${model}@${RECEIPT_PROMPT_VERSION}` };
 }

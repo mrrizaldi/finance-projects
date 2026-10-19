@@ -42,6 +42,25 @@ describe('normalizeReceipt', () => {
     expect(result.lines[1].qty).toBe(2);
   });
 
+  it('jawaban bukan objek dan baris bukan objek tidak melempar error', () => {
+    expect(normalizeReceipt(null, categories).lines).toEqual([]);
+    expect(normalizeReceipt([1], categories).lines).toEqual([]);
+    const result = normalizeReceipt({ lines: [null, 5, { kind: 'item', name: 'a', amount: 1000 }] }, categories);
+    expect(result.lines).toHaveLength(1);
+  });
+
+  it('nominal dibulatkan ke rupiah utuh', () => {
+    const result = normalizeReceipt({ lines: [{ kind: 'item', name: 'a', amount: 1000.4 }] }, categories);
+    expect(result.lines[0].amount).toBe(1000);
+  });
+
+  it('tanggal saja tanpa jam, dan format T', () => {
+    const dateOnly = normalizeReceipt({ purchased_at: '2026-09-10', lines: [] }, categories);
+    expect([dateOnly.purchasedDate, dateOnly.purchasedTime]).toEqual(['2026-09-10', null]);
+    const withT = normalizeReceipt({ purchased_at: '2026-09-10T19:42', lines: [] }, categories);
+    expect([withT.purchasedDate, withT.purchasedTime]).toEqual(['2026-09-10', '19:42']);
+  });
+
   it('tanggal rusak dan total kosong jadi null', () => {
     const result = normalizeReceipt({ purchased_at: '2026-02-30', printed_total: null, lines: [] }, categories);
     expect(result.purchasedDate).toBeNull();
@@ -85,9 +104,18 @@ describe('rankCandidates', () => {
       tx('income', 124400, '2026-09-10T12:44:00Z', 'RESTO SEDERHANA', { type: 'income' }),
     ]);
     expect(ranked).toHaveLength(3);
-    expect(ranked[0].id).toBe('exact');
+    expect(ranked.map((r) => r.id)).toEqual(['exact', 'fee', 'other']);
     expect(ranked.map((r) => r.id)).not.toContain('wrong');
     expect(ranked.map((r) => r.id)).not.toContain('adj');
     expect(ranked.map((r) => r.id)).not.toContain('income');
+  });
+
+  it('tanpa jam, nominal persis di hari yang sama tetap pertama', () => {
+    const ranked = rankCandidates({ date: '2026-09-10', time: null, amount: 124400, merchant: 'Resto Sederhana' }, [
+      tx('other', 124400, '2026-09-10T03:00:00Z', 'TOKO LAIN'),
+      tx('exact', 124400, '2026-09-10T12:44:00Z', 'RESTO SEDERHANA'),
+      tx('far', 124400, '2026-09-09T05:00:00Z', null),
+    ]);
+    expect(ranked.map((r) => r.id)).toEqual(['exact', 'other', 'far']);
   });
 });
