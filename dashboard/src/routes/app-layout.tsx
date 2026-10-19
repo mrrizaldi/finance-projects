@@ -34,11 +34,33 @@ export async function clientLoader() {
   } catch {
   }
 
-  return { telegramStatus };
+  let unreadCount = 0;
+  try {
+    const { count } = await supabase
+      .from('notifications')
+      .select('id', { count: 'exact', head: true })
+      .is('read_at', null);
+    unreadCount = count ?? 0;
+  } catch {
+  }
+
+  let pushSubscribed = false;
+  try {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      const reg = await Promise.race([
+        navigator.serviceWorker.ready,
+        new Promise<undefined>((resolve) => setTimeout(resolve, 1500)),
+      ]);
+      pushSubscribed = !!(await reg?.pushManager.getSubscription());
+    }
+  } catch {
+  }
+
+  return { telegramStatus, unreadCount, pushSubscribed };
 }
 
-export function shouldRevalidate() {
-  return false;
+export function shouldRevalidate({ currentUrl }: { currentUrl: URL }) {
+  return currentUrl.pathname === '/notifications';
 }
 
 export default function AppLayout() {

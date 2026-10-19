@@ -1,15 +1,17 @@
 'use client';
 
-import { useNavigate } from 'react-router';
+import { useRouteLoaderData, useNavigate } from 'react-router';
 import { ChevronLeft, ChevronRight, Calendar, Plus, Search } from 'lucide-react';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
 import { useAddTransaction } from '@/lib/add-transaction-context';
+import type { clientLoader as layoutLoader } from '@/routes/app-layout';
 import { NotificationBell } from '@/components/NotificationBell';
 
 dayjs.locale('id');
 
 export function HomeHeader({ month }: { month: string }) {
+  const layout = useRouteLoaderData<typeof layoutLoader>('routes/app-layout');
   const navigate = useNavigate();
   const { openModal } = useAddTransaction();
   const current = dayjs(`${month}-01`);
@@ -23,7 +25,6 @@ export function HomeHeader({ month }: { month: string }) {
 
   return (
     <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-6 md:gap-4">
-      {/* Greeting */}
       <div className="min-w-0">
         <h1 className="text-xl font-bold leading-tight" style={{ color: 'var(--text-hi)' }}>
           Halo, Aldi
@@ -34,9 +35,7 @@ export function HomeHeader({ month }: { month: string }) {
         </p>
       </div>
 
-      {/* Right actions */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        {/* Month navigator */}
         <div
           className="flex items-center rounded-lg"
           style={{ border: '1px solid var(--border-faint)' }}
@@ -72,7 +71,6 @@ export function HomeHeader({ month }: { month: string }) {
           </button>
         </div>
 
-        {/* Tambah Transaksi */}
         <button
           type="button"
           onClick={() => openModal()}
@@ -83,7 +81,6 @@ export function HomeHeader({ month }: { month: string }) {
           Tambah Transaksi
         </button>
 
-        {/* Icon buttons */}
         <button
           className="p-1.5 rounded-lg transition-colors hover:bg-[var(--surface-hi)]"
           style={{ color: 'var(--text-mute)' }}
@@ -92,6 +89,8 @@ export function HomeHeader({ month }: { month: string }) {
           <Search className="h-4 w-4" />
         </button>
         <NotificationBell
+          initialSubscribed={layout?.pushSubscribed}
+          unreadCount={layout?.unreadCount}
           className="p-1.5 rounded-lg transition-colors hover:bg-[var(--surface-hi)]"
           style={{ color: 'var(--text-mute)' }}
         />

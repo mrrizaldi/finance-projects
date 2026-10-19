@@ -531,5 +531,14 @@
     "disableAria": "Turn off notifications",
     "enableAria": "Enable notifications",
     "activeTitle": "Notifications on — click to turn off"
+  },
+  "inbox": {
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "unread": "unread",
+    "kindTxBaru": "Transaction",
+    "kindLaporan": "Report",
+    "kindParseGagal": "Parse failed",
+    "openTransaction": "Open transaction"
   }
 }

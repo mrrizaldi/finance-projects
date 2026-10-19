@@ -20,6 +20,7 @@ export default [
     route('installments', 'routes/installments.tsx'),
     route('investasi', 'routes/investasi.tsx'),
     route('more', 'routes/more.tsx'),
+    route('notifications', 'routes/notifications.tsx'),
     route('settings', 'routes/settings.tsx'),
     route('transactions', 'routes/transactions.tsx'),
   ]),

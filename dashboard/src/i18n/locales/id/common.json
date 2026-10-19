@@ -531,5 +531,14 @@
     "disableAria": "Matikan notifikasi",
     "enableAria": "Aktifkan notifikasi",
     "activeTitle": "Notifikasi aktif — klik untuk matikan"
+  },
+  "inbox": {
+    "title": "Notifikasi",
+    "empty": "Belum ada notifikasi",
+    "unread": "belum dibaca",
+    "kindTxBaru": "Transaksi",
+    "kindLaporan": "Laporan",
+    "kindParseGagal": "Gagal diproses",
+    "openTransaction": "Buka transaksi"
   }
 }

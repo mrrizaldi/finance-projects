@@ -1,29 +1,31 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { Link } from 'react-router';
 import { useTranslation } from 'react-i18next';
 import { Bell, BellOff } from 'lucide-react';
 
-// VAPID key comes as URL-safe base64; pushManager needs a Uint8Array.
 function urlBase64ToUint8Array(base64: string): Uint8Array {
   const padding = '='.repeat((4 - (base64.length % 4)) % 4);
   const raw = atob((base64 + padding).replace(/-/g, '+').replace(/_/g, '/'));
   return Uint8Array.from([...raw].map((c) => c.charCodeAt(0)));
 }
 
-export function NotificationBell({ className, style }: { className?: string; style?: React.CSSProperties }) {
+export function NotificationBell({
+  className,
+  style,
+  initialSubscribed = false,
+  unreadCount = 0,
+}: {
+  className?: string;
+  style?: React.CSSProperties;
+  initialSubscribed?: boolean;
+  unreadCount?: number;
+}) {
   const { t } = useTranslation();
-  const [subscribed, setSubscribed] = useState(false);
+  const [subscribed, setSubscribed] = useState(initialSubscribed);
   const [busy, setBusy] = useState(false);
   const supported = typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window;
-
-  useEffect(() => {
-    if (!supported) return;
-    navigator.serviceWorker.ready
-      .then((reg) => reg.pushManager.getSubscription())
-      .then((sub) => setSubscribed(!!sub))
-      .catch(() => {});
-  }, [supported]);
 
   async function toggle() {
     if (!supported || busy) return;
@@ -75,6 +77,7 @@ export function NotificationBell({ className, style }: { className?: string; sty
 
   const Icon = subscribed ? Bell : BellOff;
   return (
+    <>
     <button
       type="button"
       onClick={toggle}
@@ -86,5 +89,15 @@ export function NotificationBell({ className, style }: { className?: string; sty
     >
       <Icon className="h-4 w-4" />
     </button>
+    <Link
+      to="/notifications"
+      className={className}
+      style={{ ...style, fontSize: 12 }}
+      aria-label={t('inbox.title')}
+      title={t('inbox.title')}
+    >
+      {unreadCount > 0 ? unreadCount : '✉'}
+    </Link>
+    </>
   );
 }

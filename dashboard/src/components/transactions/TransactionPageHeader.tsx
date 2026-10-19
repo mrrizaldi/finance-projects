@@ -1,8 +1,9 @@
 'use client';
 
-import { useNavigate, useLocation, useSearchParams } from 'react-router';
+import { useRouteLoaderData, useNavigate, useLocation, useSearchParams } from 'react-router';
 import { ChevronLeft, ChevronRight, Calendar, Download, Plus, Search } from 'lucide-react';
 import { useAddTransaction } from '@/lib/add-transaction-context';
+import type { clientLoader as layoutLoader } from '@/routes/app-layout';
 import { NotificationBell } from '@/components/NotificationBell';
 import dayjs from 'dayjs';
 import 'dayjs/locale/id';
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export default function TransactionPageHeader({ txCount, estimatedTotal }: Props) {
+  const layout = useRouteLoaderData<typeof layoutLoader>('routes/app-layout');
   const { openModal } = useAddTransaction();
   const navigate = useNavigate();
   const { pathname } = useLocation();
@@ -38,7 +40,6 @@ export default function TransactionPageHeader({ txCount, estimatedTotal }: Props
       className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4 pb-5 mb-6"
       style={{ borderBottom: '1px solid var(--border-faint)' }}
     >
-      {/* Left: title + subtitle */}
       <div className="min-w-0">
         <h1 className="text-xl font-bold" style={{ color: 'var(--text-hi)' }}>
           Transaksi
@@ -49,9 +50,7 @@ export default function TransactionPageHeader({ txCount, estimatedTotal }: Props
         </p>
       </div>
 
-      {/* Right: controls */}
       <div className="flex items-center gap-2 flex-shrink-0">
-        {/* Month navigator */}
         <div
           className="flex items-center rounded-lg"
           style={{ border: '1px solid var(--border-faint)' }}
@@ -84,7 +83,6 @@ export default function TransactionPageHeader({ txCount, estimatedTotal }: Props
           </button>
         </div>
 
-        {/* Export */}
         <button
           className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors hover:bg-[var(--surface-hi)]"
           style={{ color: 'var(--text-mid)', border: '1px solid var(--border-faint)' }}
@@ -93,7 +91,6 @@ export default function TransactionPageHeader({ txCount, estimatedTotal }: Props
           Export
         </button>
 
-        {/* + Tambah */}
         <button
           onClick={() => openModal()}
           className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-semibold transition-colors"
@@ -103,7 +100,6 @@ export default function TransactionPageHeader({ txCount, estimatedTotal }: Props
           Tambah
         </button>
 
-        {/* Icon buttons */}
         <button
           className="p-1.5 rounded-lg transition-colors hover:bg-[var(--surface-hi)]"
           style={{ color: 'var(--text-mute)' }}
@@ -111,6 +107,8 @@ export default function TransactionPageHeader({ txCount, estimatedTotal }: Props
           <Search className="h-4 w-4" />
         </button>
         <NotificationBell
+          initialSubscribed={layout?.pushSubscribed}
+          unreadCount={layout?.unreadCount}
           className="p-1.5 rounded-lg transition-colors hover:bg-[var(--surface-hi)]"
           style={{ color: 'var(--text-mute)' }}
         />
