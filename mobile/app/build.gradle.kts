@@ -14,6 +14,8 @@ val localProps = Properties().apply {
 
 fun prop(name: String): String = localProps.getProperty(name) ?: System.getenv(name) ?: ""
 
+val defaultFinanceApiUrl = "https://finance-dashboard.mrrizaldi.com"
+
 android {
     namespace = "com.mrrizaldi.finance"
     compileSdk = 37
@@ -26,6 +28,7 @@ android {
         versionName = "0.1.0"
         buildConfigField("String", "SUPABASE_URL", "\"${prop("SUPABASE_URL")}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${prop("SUPABASE_ANON_KEY")}\"")
+        buildConfigField("String", "FINANCE_API_URL", "\"${prop("FINANCE_API_URL").ifEmpty { defaultFinanceApiUrl }}\"")
     }
 
     buildFeatures {

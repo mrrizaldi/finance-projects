@@ -145,4 +145,33 @@
     <string name="widget_expense">Spent this month %1$s</string>
     <string name="widget_synced">Synced %1$s</string>
     <string name="widget_never">Not synced yet</string>
+
+    <string name="statements_title">Match statement</string>
+    <string name="statements_intro">Send a PDF e-statement (BCA/BSI) or screenshots of your transaction history. Nothing is recorded until you approve.</string>
+    <string name="statements_account">Account</string>
+    <string name="statements_pick_files">Choose PDF or screenshots</string>
+    <string name="statements_start">Match</string>
+    <string name="statements_reading">Reading… screenshots can take up to 30 seconds</string>
+    <string name="statements_too_large">Files exceed 20 MB in total</string>
+    <string name="statements_open_existing">Open the earlier result</string>
+    <string name="statements_group_new">Not recorded yet (%1$d)</string>
+    <string name="statements_group_other_account">Recorded on another account (%1$d)</string>
+    <string name="statements_group_probable">Needs a look (%1$d)</string>
+    <string name="statements_group_matched">Already recorded (%1$d)</string>
+    <string name="statements_group_skipped">Skipped (%1$d)</string>
+    <string name="statements_group_findings">Odd records in the app (%1$d)</string>
+    <string name="statements_finding_dup">Duplicate record</string>
+    <string name="statements_finding_only">In the app, not in the bank</string>
+    <string name="statements_matched_with">Matches: %1$s</string>
+    <string name="statements_low_confidence">Read with low confidence, check the amount</string>
+    <string name="statements_low_confidence_hint">%1$d rows read with low confidence, left unchecked</string>
+    <string name="statements_mark_new">Record as new</string>
+    <string name="statements_integrity_failed">The statement balance does not add up. Send the original e-statement from your banking app (not a scan, no password).</string>
+    <string name="statements_already_committed">This statement is already recorded</string>
+    <string name="statements_audit_left">Unexplained balance gap: %1$s</string>
+    <string name="statements_commit">Record selected (%1$d)</string>
+    <string name="statements_discard">Discard this result</string>
+    <string name="statements_done">Recorded %1$d new, moved %2$d to this account, removed %3$d duplicates</string>
+    <string name="statements_kind_screenshot">Screenshot</string>
+    <string name="statements_finish">Done</string>
 </resources>

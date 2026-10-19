@@ -545,7 +545,9 @@ Eval lokal (screenshot BCA mobile asli Agustus 2026, 10 baris, disimpan di `reca
 
 **Batas yang diketahui:** file di bucket `statements` gak ikut terhapus kalau import hilang karena akun atau user dihapus (kaskade DB gak menyentuh Storage). Pembersihan malas di `POST /api/statements` cuma melihat import yang masih ada.
 
-**Belum:** layar Android. Lihat §10 di spec.
+**Android "Cocokkan mutasi"** (`mobile/.../ui/statements/`, klien `data/remote/StatementApi.kt`): tombol struk di header Home, atau "Bagikan" PDF/gambar dari app lain ke Finance (intent `SEND`/`SEND_MULTIPLE`, `MainActivity` `launchMode=singleTop`). Alurnya: pilih akun dan file, lalu upload ke `POST /api/statements` (Bearer token sesi Supabase, timeout 150 detik). Layar review mengelompokkan baris per kelas dengan centang; centang dan "Catat sebagai baru" langsung `PATCH` (optimistis, dibalikin kalau gagal), lalu "Catat yang dipilih (N)" memanggil commit, dan sesudahnya akun + Home di-refresh. Baris `new` ber-`confidence` < 0,8 gak dicentang. Import yang integritasnya gagal atau sudah committed gak bisa dicatat. Detail teknis dan bukti uji di `mobile/README.md` §Cocokkan mutasi.
+
+**Belum:** bank PDF selain BCA/BSI (pakai screenshot), bersih-bersih dobel lama (fase 9). Lihat §10 di spec.
 
 📂 **Kode:** `supabase/migrations/059_statement_imports.sql`, `060_commit_statement_import.sql` · `api/src/lib/statement-parser.ts` · `api/src/lib/statement-matcher.ts` · `api/src/lib/statement-import.ts` · `api/src/lib/screenshot-extractor.ts` · route `api/src/routes/statements.ts` · test `tests/integration/statement-imports.test.js`, `statement-commit.test.js`, `api/tests/unit/statement-parser.test.ts`, `api/tests/unit/statement-matcher.test.ts`, `api/tests/unit/screenshot-extractor.test.ts`, e2e `api/tests/api-statements.e2e.test.ts` (butuh `api/.env` + `recap/`, skip di CI; kasus PDF asli di-skip kalau `recap/` gak ada; folder itu gitignored)
 

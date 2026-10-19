@@ -145,4 +145,33 @@
     <string name="widget_expense">Keluar bulan ini %1$s</string>
     <string name="widget_synced">Sinkron %1$s</string>
     <string name="widget_never">Belum sinkron</string>
+
+    <string name="statements_title">Cocokkan mutasi</string>
+    <string name="statements_intro">Kirim e-statement PDF (BCA/BSI) atau screenshot riwayat transaksi. Aku cocokkan sama catatanmu, gak ada yang dicatat sebelum kamu setuju.</string>
+    <string name="statements_account">Akun</string>
+    <string name="statements_pick_files">Pilih PDF atau screenshot</string>
+    <string name="statements_start">Cocokkan</string>
+    <string name="statements_reading">Lagi dibaca… screenshot bisa sampai 30 detik</string>
+    <string name="statements_too_large">Total file lebih dari 20 MB</string>
+    <string name="statements_open_existing">Buka hasil sebelumnya</string>
+    <string name="statements_group_new">Belum kecatat (%1$d)</string>
+    <string name="statements_group_other_account">Kecatat di akun lain (%1$d)</string>
+    <string name="statements_group_probable">Perlu dicek (%1$d)</string>
+    <string name="statements_group_matched">Udah kecatat (%1$d)</string>
+    <string name="statements_group_skipped">Dilewati (%1$d)</string>
+    <string name="statements_group_findings">Catatan app yang janggal (%1$d)</string>
+    <string name="statements_finding_dup">Dobel di catatan</string>
+    <string name="statements_finding_only">Ada di catatan, gak ada di bank</string>
+    <string name="statements_matched_with">Cocok dengan: %1$s</string>
+    <string name="statements_low_confidence">Kurang yakin kebaca, cek nominalnya</string>
+    <string name="statements_low_confidence_hint">%1$d baris kurang yakin kebaca, gak dicentang otomatis</string>
+    <string name="statements_mark_new">Catat sebagai baru</string>
+    <string name="statements_integrity_failed">Saldo statement gak nutup. Kirim e-statement asli dari m-banking (bukan scan, tanpa password).</string>
+    <string name="statements_already_committed">Mutasi ini sudah dicatat</string>
+    <string name="statements_audit_left">Selisih saldo yang belum terjelaskan: %1$s</string>
+    <string name="statements_commit">Catat yang dipilih (%1$d)</string>
+    <string name="statements_discard">Buang hasil ini</string>
+    <string name="statements_done">Tercatat %1$d baru, %2$d dipindah akun, %3$d dobel dihapus</string>
+    <string name="statements_kind_screenshot">Screenshot</string>
+    <string name="statements_finish">Selesai</string>
 </resources>

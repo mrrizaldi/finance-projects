@@ -55,6 +55,7 @@ object AppIcons {
         listOf("M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15z", "M10 21h4")
     )
     val Plus = icon("plus", BOLD, listOf("M12 5v14M5 12h14"))
+    val Receipt = icon("receipt", THIN, listOf("M6 3h12v18l-3-2-3 2-3-2-3 2z", "M9 8h6M9 12h6M9 16h3"))
     val Filter = icon("filter", THIN, listOf("M4 7h16M7 12h10M10 17h4"))
     val Back = icon("back", BOLD, listOf("M15 5l-7 7 7 7"))
     val Trash = icon("trash", THIN, listOf("M5 7h14", "M9 7V4.5h6V7", "M7 7l1 13h8l1-13", "M10 11v5M14 11v5"))

@@ -1,6 +1,10 @@
 package com.mrrizaldi.finance
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import androidx.core.content.IntentCompat
+import androidx.lifecycle.lifecycleScope
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.biometric.BiometricPrompt
@@ -56,6 +60,12 @@ import com.mrrizaldi.finance.ui.components.Tab
 import com.mrrizaldi.finance.ui.home.HomeScreen
 import com.mrrizaldi.finance.ui.home.HomeViewModel
 import com.mrrizaldi.finance.ui.inbox.InboxScreen
+import com.mrrizaldi.finance.ui.statements.StatementScreen
+import com.mrrizaldi.finance.ui.statements.StatementViewModel
+import com.mrrizaldi.finance.ui.statements.readUploads
+import com.mrrizaldi.finance.util.JakartaDate
+import java.time.YearMonth
+import kotlinx.coroutines.launch
 import com.mrrizaldi.finance.ui.theme.FinanceTheme
 import com.mrrizaldi.finance.ui.theme.LocalHazeState
 import com.mrrizaldi.finance.ui.transactions.TransactionsScreen
@@ -65,6 +75,9 @@ import io.github.jan.supabase.auth.status.SessionStatus
 private const val ADD_ROUTE = "add"
 private const val EDIT_ROUTE = "edit/{id}"
 private const val INBOX_ROUTE = "inbox"
+private const val STATEMENTS_ROUTE = "statements"
+private const val PICK_STATEMENT_FILES = 41
+private val STATEMENT_MIME_TYPES = arrayOf("application/pdf", "image/*")
 
 private fun NavHostController.edit(id: String) = navigate("edit/$id") { launchSingleTop = true }
 
@@ -84,13 +97,54 @@ class MainActivity : FragmentActivity() {
                 }
             }
         )
+        acceptShare(intent)
         setContent {
             FinanceTheme {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Root(container, this@MainActivity::askUnlock)
+                    Root(container, this@MainActivity::askUnlock, this@MainActivity::pickStatementFiles)
                 }
             }
         }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        acceptShare(intent)
+    }
+
+    private fun acceptShare(intent: Intent?) {
+        val uris = when (intent?.action) {
+            Intent.ACTION_SEND -> listOfNotNull(IntentCompat.getParcelableExtra(intent, Intent.EXTRA_STREAM, Uri::class.java))
+            Intent.ACTION_SEND_MULTIPLE -> IntentCompat.getParcelableArrayListExtra(intent, Intent.EXTRA_STREAM, Uri::class.java).orEmpty()
+            else -> emptyList()
+        }
+        deliverUploads(uris)
+    }
+
+    private fun deliverUploads(uris: List<Uri>) {
+        if (uris.isEmpty()) return
+        val container = (application as App).container
+        lifecycleScope.launch { container.sharedUploads.value = readUploads(this@MainActivity, uris) }
+    }
+
+    private fun pickStatementFiles() {
+        val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
+            .addCategory(Intent.CATEGORY_OPENABLE)
+            .setType("*/*")
+            .putExtra(Intent.EXTRA_MIME_TYPES, STATEMENT_MIME_TYPES)
+            .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
+        @Suppress("DEPRECATION")
+        startActivityForResult(intent, PICK_STATEMENT_FILES)
+    }
+
+    @Suppress("OVERRIDE_DEPRECATION")
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        @Suppress("DEPRECATION")
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != PICK_STATEMENT_FILES || resultCode != RESULT_OK || data == null) return
+        val clip = data.clipData
+        val uris = if (clip != null) List(clip.itemCount) { clip.getItemAt(it).uri } else listOfNotNull(data.data)
+        deliverUploads(uris)
     }
 
     private fun askUnlock() {
@@ -104,7 +158,7 @@ class MainActivity : FragmentActivity() {
 }
 
 @Composable
-private fun Root(container: AppContainer, askUnlock: () -> Unit) {
+private fun Root(container: AppContainer, askUnlock: () -> Unit, pickStatementFiles: () -> Unit) {
     val status by container.api.sessionStatus.collectAsStateWithLifecycle()
     val lockedAt by container.lock.lockedAt.collectAsStateWithLifecycle()
     val gated = lockedAt != null && status !is SessionStatus.NotAuthenticated
@@ -132,7 +186,7 @@ private fun Root(container: AppContainer, askUnlock: () -> Unit) {
                         CircularProgressIndicator()
                     }
                     is SessionStatus.NotAuthenticated -> LoginScreen(viewModel { LoginViewModel(container.api) })
-                    else -> MainScaffold(container, hazeState)
+                    else -> MainScaffold(container, hazeState, pickStatementFiles)
                 }
             }
             if (gated) LockScreen(askUnlock)
@@ -141,10 +195,14 @@ private fun Root(container: AppContainer, askUnlock: () -> Unit) {
 }
 
 @Composable
-private fun MainScaffold(container: AppContainer, hazeState: HazeState) {
+private fun MainScaffold(container: AppContainer, hazeState: HazeState, pickStatementFiles: () -> Unit) {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val current = backStack?.destination?.route
+    val shared by container.sharedUploads.collectAsStateWithLifecycle()
+    LaunchedEffect(shared) {
+        if (shared.isNotEmpty()) nav.navigate(STATEMENTS_ROUTE) { launchSingleTop = true }
+    }
     Box(Modifier.fillMaxSize()) {
         NavHost(
             nav,
@@ -159,7 +217,8 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState) {
                     container.lock,
                     unread,
                     onEdit = nav::edit,
-                    onInbox = { nav.navigate(INBOX_ROUTE) { launchSingleTop = true } }
+                    onInbox = { nav.navigate(INBOX_ROUTE) { launchSingleTop = true } },
+                    onStatements = { nav.navigate(STATEMENTS_ROUTE) { launchSingleTop = true } }
                 )
             }
             composable(Tab.TRANSACTIONS.route) {
@@ -171,12 +230,26 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState) {
                 AddScreen(viewModel { AddViewModel(container.repository) }, onBack = { nav.popBackStack() })
             }
             composable(INBOX_ROUTE) { InboxScreen(container.api, onBack = { nav.popBackStack() }) }
+            composable(STATEMENTS_ROUTE) {
+                StatementScreen(
+                    viewModel {
+                        StatementViewModel(container.statements, container.repository.accounts()) {
+                            container.repository.refreshAccounts()
+                            container.repository.refreshHome(YearMonth.from(JakartaDate.today()))
+                        }
+                    },
+                    sharedFiles = shared,
+                    onSharedConsumed = { container.sharedUploads.value = emptyList() },
+                    onPickFiles = pickStatementFiles,
+                    onBack = { nav.popBackStack() }
+                )
+            }
             composable(EDIT_ROUTE) { entry ->
                 val id = entry.arguments?.getString("id").orEmpty()
                 AddScreen(viewModel { AddViewModel(container.repository, id) }, onBack = { nav.popBackStack() })
             }
         }
-        if (current != ADD_ROUTE && current != EDIT_ROUTE && current != INBOX_ROUTE) {
+        if (current != ADD_ROUTE && current != EDIT_ROUTE && current != INBOX_ROUTE && current != STATEMENTS_ROUTE) {
             FloatingNavBar(
                 current = current,
                 onSelect = { tab ->

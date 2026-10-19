@@ -67,7 +67,14 @@ import java.time.YearMonth
 import kotlin.math.abs
 
 @Composable
-fun HomeScreen(vm: HomeViewModel, lock: AppLock, unread: Int, onEdit: (String) -> Unit, onInbox: () -> Unit) {
+fun HomeScreen(
+    vm: HomeViewModel,
+    lock: AppLock,
+    unread: Int,
+    onEdit: (String) -> Unit,
+    onInbox: () -> Unit,
+    onStatements: () -> Unit
+) {
     val state by vm.uiState.collectAsStateWithLifecycle()
     val error by vm.error.collectAsStateWithLifecycle()
     val refreshing by vm.refreshing.collectAsStateWithLifecycle()
@@ -88,6 +95,9 @@ fun HomeScreen(vm: HomeViewModel, lock: AppLock, unread: Int, onEdit: (String) -
                     modifier = Modifier.weight(1f)
                 )
                 MonthMenuButton(state.month, vm::setMonth)
+                IconButton(onClick = onStatements) {
+                    Icon(AppIcons.Receipt, stringResource(R.string.statements_title))
+                }
                 IconButton(onClick = onInbox) {
                     Box {
                         Icon(AppIcons.Bell, stringResource(R.string.inbox_title))
