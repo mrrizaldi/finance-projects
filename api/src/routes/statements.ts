@@ -5,7 +5,6 @@ import { join } from 'node:path';
 import { createServiceClient, requireUser } from '../lib/supabase.js';
 import { parseStatementPdf, StatementParseError, type StatementRow } from '../lib/statement-parser.js';
 import {
-  DEFAULT_SCREENSHOT_MODEL,
   extractScreenshots,
   PROMPT_VERSION,
   ScreenshotExtractionError,
@@ -34,6 +33,7 @@ const PURGE_BATCH = 20;
 const LIST_LIMIT = 20;
 const STORAGE_BUCKET = 'statements';
 const AUTO_SELECT_MIN_CONFIDENCE = 0.8;
+const PDF_VISION_FALLBACK: StatementParseError['code'][] = ['unrecognized', 'empty'];
 const TRANSACTION_TYPES = ['income', 'expense', 'transfer'];
 const LINE_DECISIONS = ['match', 'probable', 'new', 'transfer_pair', 'other_account', 'skip'];
 const TRANSACTION_COLUMNS =
@@ -108,7 +108,11 @@ async function extractPdf(buffer: Buffer): Promise<ExtractedStatement> {
   try {
     const pdfPath = join(workDir, 'statement.pdf');
     await writeFile(pdfPath, buffer);
-    const parsed = await parseStatementPdf(pdfPath);
+    const parsed = await parseStatementPdf(pdfPath).catch((error: unknown) => {
+      if (error instanceof StatementParseError && PDF_VISION_FALLBACK.includes(error.code)) return null;
+      throw error;
+    });
+    if (!parsed) return extractWithVision([buffer]);
     return {
       bank: parsed.bank, rows: parsed.rows, periodStart: parsed.periodStart, periodEnd: parsed.periodEnd,
       openingBalance: parsed.openingBalance, closingBalance: parsed.closingBalance, integrityOk: parsed.integrityOk,
@@ -119,17 +123,15 @@ async function extractPdf(buffer: Buffer): Promise<ExtractedStatement> {
   }
 }
 
-async function extractImages(buffers: Buffer[]): Promise<ExtractedStatement> {
-  const model = process.env.GEMINI_STATEMENT_MODEL ?? DEFAULT_SCREENSHOT_MODEL;
+async function extractWithVision(buffers: Buffer[]): Promise<ExtractedStatement> {
   const result = await extractScreenshots(
     buffers.map((data) => ({ data, mimeType: mimeTypeOf(data) })),
     todayInJakarta(),
-    { model },
   );
   return {
     bank: result.source, rows: result.rows, periodStart: null, periodEnd: null,
-    openingBalance: null, closingBalance: null, integrityOk: null,
-    extractor: `vision:${model}@${PROMPT_VERSION}`,
+    openingBalance: result.openingBalance, closingBalance: result.closingBalance, integrityOk: result.integrityOk,
+    extractor: `vision:${result.modelsUsed.join('+')}@${PROMPT_VERSION}`,
   };
 }
 
@@ -163,8 +165,9 @@ export default async function plugin(app: FastifyInstance) {
 
     const sha = combinedSha256(buffers);
     const { data: existing } = await supabase
-      .from('statement_imports').select('id, status').eq('file_sha256', sha).maybeSingle();
+      .from('statement_imports').select('id, status, file_paths').eq('file_sha256', sha).maybeSingle();
     if (existing?.status === 'discarded') {
+      if (existing.file_paths?.length) await createServiceClient().storage.from(STORAGE_BUCKET).remove(existing.file_paths);
       await supabase.from('statement_imports').delete().eq('id', existing.id);
     } else if (existing) {
       return reply.code(409).send({ error: 'File ini sudah pernah diimpor', import_id: existing.id, status: existing.status });
@@ -172,7 +175,7 @@ export default async function plugin(app: FastifyInstance) {
 
     let parsed: ExtractedStatement;
     try {
-      parsed = kind === 'pdf' ? await extractPdf(buffers[0]) : await extractImages(buffers);
+      parsed = kind === 'pdf' ? await extractPdf(buffers[0]) : await extractWithVision(buffers);
     } catch (error) {
       if (error instanceof StatementParseError) {
         return reply.code(parseErrorStatus(error)).send({ error: error.message, code: error.code });

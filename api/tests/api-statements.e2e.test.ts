@@ -1,5 +1,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { existsSync, readFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { buildApp } from '../src/app.js';
 import { createServiceClient } from '../src/lib/supabase.js';
@@ -111,7 +114,7 @@ const SAMPLE_SHOT = fileURLToPath(new URL('../../recap/screenshots/bca-mobile-20
 const SHOT_ROWS = 10;
 const MATCHED_FEE = 15000;
 const ON_OTHER_WALLET = 33500;
-const GEMINI_TEST_TIMEOUT_MS = 90_000;
+const GEMINI_TEST_TIMEOUT_MS = 150_000;
 
 describe.skipIf(!HAS_ENV || !process.env.GEMINI_API_KEY || !existsSync(SAMPLE_SHOT))('statements API screenshot end to end', () => {
   let app: Awaited<ReturnType<typeof buildApp>>;
@@ -187,4 +190,90 @@ describe.skipIf(!HAS_ENV || !process.env.GEMINI_API_KEY || !existsSync(SAMPLE_SH
     const [gopay] = await rest(`/accounts?id=eq.${gopayId}&select=balance`);
     expect(Number(gopay.balance)).toBe(0);
   });
+});
+
+const SYNTHETIC_GOPAY_PDF = fileURLToPath(new URL('./fixtures/gopay-sintetis-okt-2026.pdf', import.meta.url));
+const GOPAY_EXPECTED = [
+  ['2026-10-01', 'credit', 50000], ['2026-10-02', 'debit', 27000], ['2026-10-03', 'debit', 12500],
+  ['2026-10-05', 'debit', 20000], ['2026-10-06', 'debit', 20500], ['2026-10-08', 'credit', 3000],
+  ['2026-10-10', 'debit', 18700], ['2026-10-12', 'credit', 15000],
+];
+const GOPAY_OPENING = 120000;
+const GOPAY_CLOSING = 89300;
+
+describe.skipIf(!HAS_ENV || !process.env.GEMINI_API_KEY)('statements API: PDF the parser does not know goes to Gemini', () => {
+  let app: Awaited<ReturnType<typeof buildApp>>;
+  let user: { userId: string; jwt: string; cleanup: () => Promise<void> };
+  let accountId: string;
+  const importIds: string[] = [];
+
+  beforeAll(async () => {
+    process.env.DISABLE_AUTH = 'false';
+    const helpers = await import('../../tests/integration/helpers/users.js');
+    user = await helpers.createTestUser(`stmt-pdfv-${Date.now()}@example.com`);
+    const res = await fetch(`${SB_URL}/rest/v1/accounts`, {
+      method: 'POST',
+      headers: { apikey: ANON_KEY!, Authorization: `Bearer ${user.jwt}`, 'Content-Type': 'application/json', Prefer: 'return=representation' },
+      body: JSON.stringify({ name: 'TEST_PDFV_GOPAY', type: 'ewallet', balance: 0, is_active: false }),
+    });
+    [{ id: accountId }] = await res.json();
+    app = await buildApp();
+  });
+
+  afterAll(async () => {
+    await app?.close();
+    const service = createServiceClient();
+    for (const id of importIds) {
+      const { data } = await service.from('statement_imports').select('file_paths').eq('id', id).single();
+      if (data?.file_paths?.length) await service.storage.from('statements').remove(data.file_paths);
+    }
+    await user?.cleanup();
+  });
+
+  const upload = async (path: string, name: string) => {
+    const res = await app.inject({
+      method: 'POST',
+      url: '/api/statements',
+      headers: { authorization: `Bearer ${user.jwt}` },
+      payload: { account_id: accountId, files: [{ name, content_base64: readFileSync(path).toString('base64') }] },
+    });
+    const body = res.json();
+    if (body.import) importIds.push(body.import.id);
+    return { status: res.statusCode, body };
+  };
+
+  it('reads a GoPay style PDF row by row and checks its balances', async () => {
+    const { status, body } = await upload(SYNTHETIC_GOPAY_PDF, 'gopay.pdf');
+    expect(status).toBe(201);
+    expect(body.import.kind).toBe('pdf');
+    expect(body.import.extractor).toMatch(/^vision:gemini.*@2$/);
+    expect(body.import.integrity_ok).not.toBe(false);
+    if (body.import.opening_balance !== null) expect(body.import.opening_balance).toBe(GOPAY_OPENING);
+    if (body.import.closing_balance !== null) expect(body.import.closing_balance).toBe(GOPAY_CLOSING);
+    const got = body.lines.map((l: any) => [l.occurred_on, l.direction, Number(l.amount)]).sort();
+    expect(got).toEqual([...GOPAY_EXPECTED].sort());
+  }, GEMINI_TEST_TIMEOUT_MS);
+
+  it('re-uploading a discarded file replaces it and removes the old stored file', async () => {
+    const first = importIds[0];
+    const service = createServiceClient();
+    const { data: before } = await service.from('statement_imports').select('file_paths').eq('id', first).single();
+    const discard = await app.inject({ method: 'POST', url: `/api/statements/${first}/discard`, headers: { authorization: `Bearer ${user.jwt}` } });
+    expect(discard.statusCode).toBe(200);
+    const { status, body } = await upload(SYNTHETIC_GOPAY_PDF, 'gopay.pdf');
+    expect(status).toBe(201);
+    expect(body.import.id).not.toBe(first);
+    const [folder, importFolder] = before!.file_paths[0].split('/');
+    const { data: left } = await service.storage.from('statements').list(`${folder}/${importFolder}`);
+    expect(left).toEqual([]);
+  }, GEMINI_TEST_TIMEOUT_MS);
+
+  it.skipIf(!existsSync(SAMPLE_SHOT))('reads a scanned PDF with no text layer', async () => {
+    const scanned = join(tmpdir(), `scan-${Date.now()}.pdf`);
+    execFileSync('magick', [SAMPLE_SHOT, scanned]);
+    const { status, body } = await upload(scanned, 'scan.pdf');
+    expect(status).toBe(201);
+    expect(body.import.extractor).toMatch(/^vision:/);
+    expect(body.lines).toHaveLength(SHOT_ROWS);
+  }, GEMINI_TEST_TIMEOUT_MS);
 });

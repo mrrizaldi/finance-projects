@@ -82,7 +82,7 @@ Jebakan di sisi server:
 - Build dijalankan sebelum `pm2 restart`, jadi build gagal = proses lama tetap jalan.
 - `api/dist` dihapus sebelum `tsc` karena tsc tidak membuang output dari berkas sumber yang sudah dihapus.
 - `scripts/mutasi.mjs` ikut disalin ke `~/dev/finance-project/scripts/` tiap deploy (dipakai `finance-recon` OpenClaw). CLI itu butuh `SUPABASE_JWT_SECRET` dan `OWNER_USER_ID` di `api/.env` server (ditambah 19 Okt 2026, backup `.env.bak-jwt-*`).
-- Rekonsiliasi screenshot (`POST /api/statements` dengan gambar) butuh `GEMINI_API_KEY` di `api/.env` server. Nilainya sama dengan yang dipakai OpenClaw `analyze-file` (`~/.openclaw/gateway.systemd.env`). Tanpa key itu endpoint menjawab 503, upload PDF tetap jalan. Model bisa diganti lewat `GEMINI_STATEMENT_MODEL` (default `gemini-2.5-flash`). Upload PDF butuh `pdftotext` (paket poppler-utils), sudah terpasang.
+- Rekonsiliasi screenshot (`POST /api/statements` dengan gambar) butuh `GEMINI_API_KEY` di `api/.env` server. Nilainya sama dengan yang dipakai OpenClaw `analyze-file` (`~/.openclaw/gateway.systemd.env`). Tanpa key itu endpoint menjawab 503, upload PDF tetap jalan. Rantai model lewat `GEMINI_STATEMENT_MODEL` (dipisah koma, default `gemini-3.8-flash,gemini-2.5-flash,gemini-3.5-flash-lite`); key masih free tier, ~20 permintaan/hari per model (lihat FEATURES §14). Upload PDF butuh `pdftotext` (paket poppler-utils), sudah terpasang.
 
 ## Deploy perubahan bot (edit langsung di server)
 

@@ -147,7 +147,7 @@
     <string name="widget_never">Belum sinkron</string>
 
     <string name="statements_title">Cocokkan mutasi</string>
-    <string name="statements_intro">Kirim e-statement PDF (BCA/BSI) atau screenshot riwayat transaksi. Aku cocokkan sama catatanmu, gak ada yang dicatat sebelum kamu setuju.</string>
+    <string name="statements_intro">Kirim e-statement PDF (bank atau e-wallet apa saja) atau screenshot riwayat transaksi. Aku cocokkan sama catatanmu, gak ada yang dicatat sebelum kamu setuju.</string>
     <string name="statements_account">Akun</string>
     <string name="statements_pick_files">Pilih PDF atau screenshot</string>
     <string name="statements_start">Cocokkan</string>

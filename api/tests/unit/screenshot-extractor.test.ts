@@ -1,6 +1,9 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import {
+  balancesClose,
   buildPrompt,
+  configuredModels,
+  DEFAULT_SCREENSHOT_MODELS,
   extractScreenshots,
   mergeScreenshotRows,
   normalizeRawRows,
@@ -74,7 +77,7 @@ describe('extractScreenshots', () => {
       .mockResolvedValueOnce(geminiReply({ source: 'DANA', rows: [{ date: '2026-10-02', description: 'Tokopedia', amount: 27000, direction: 'debit', confidence: 0.95 }] }))
       .mockResolvedValueOnce(geminiReply({ source: 'GOPAY', rows: [] }));
     vi.stubGlobal('fetch', fetchMock);
-    const result = await extractScreenshots([image, image, image], '2026-10-19', { apiKey: 'k', model: 'm' });
+    const result = await extractScreenshots([image, image, image], '2026-10-19', { apiKey: 'k', models: ['m'] });
     expect(result.source).toBe('DANA');
     expect(result.rows).toHaveLength(1);
     const [url, init] = fetchMock.mock.calls[0];
@@ -83,17 +86,72 @@ describe('extractScreenshots', () => {
     expect(init.headers['x-goog-api-key']).toBe('k');
   });
 
-  it('reports model HTTP errors and non JSON answers', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('quota', { status: 429 })));
-    await expect(extractScreenshots([image], '2026-10-19', { apiKey: 'k' })).rejects.toMatchObject({ code: 'model_failed' });
+  it('falls back to the next model on quota, overload, missing model or timeout', async () => {
+    const timeout = Object.assign(new Error('t'), { name: 'TimeoutError' });
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response('quota', { status: 429 }))
+      .mockRejectedValueOnce(timeout)
+      .mockResolvedValueOnce(geminiReply({ source: 'BCA', rows: [{ date: '2026-08-04', description: 'x', amount: 7000, direction: 'debit', confidence: 1 }] }));
+    vi.stubGlobal('fetch', fetchMock);
+    const result = await extractScreenshots([image], '2026-10-19', { apiKey: 'k', models: ['a', 'b', 'c'] });
+    expect(fetchMock.mock.calls.map(([url]) => String(url).split('/').pop())).toEqual(['a:generateContent', 'b:generateContent', 'c:generateContent']);
+    expect(result.modelsUsed).toEqual(['c']);
+  });
+
+  it('does not fall back on a request error, and reports when every model failed', async () => {
+    const badRequest = vi.fn().mockImplementation(async () => new Response('bad', { status: 400 }));
+    vi.stubGlobal('fetch', badRequest);
+    await expect(extractScreenshots([image], '2026-10-19', { apiKey: 'k', models: ['a', 'b'] })).rejects.toMatchObject({ code: 'model_failed' });
+    expect(badRequest).toHaveBeenCalledTimes(1);
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => new Response('busy', { status: 503 })));
+    await expect(extractScreenshots([image], '2026-10-19', { apiKey: 'k', models: ['a', 'b'] })).rejects.toThrow(/a 503.*b 503/);
+  });
+
+  it('reads the model chain from GEMINI_STATEMENT_MODEL', () => {
+    vi.stubEnv('GEMINI_STATEMENT_MODEL', ' x , y ');
+    expect(configuredModels()).toEqual(['x', 'y']);
+    vi.stubEnv('GEMINI_STATEMENT_MODEL', '');
+    expect(configuredModels()).toEqual(DEFAULT_SCREENSHOT_MODELS);
+    vi.unstubAllEnvs();
+  });
+
+  it('reports non JSON answers', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(
       new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: 'bukan json' }] } }] }), { status: 200 }),
     ));
     await expect(extractScreenshots([image], '2026-10-19', { apiKey: 'k' })).rejects.toBeInstanceOf(ScreenshotExtractionError);
   });
 
+  it('checks balances for a single PDF and ignores them across several images', async () => {
+    const pdfRows = [
+      { date: '2026-10-01', description: 'Top up', amount: 50000, direction: 'credit', confidence: 1 },
+      { date: '2026-10-02', description: 'GoFood', amount: 27000, direction: 'debit', confidence: 1 },
+    ];
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(geminiReply({ source: 'GOPAY', opening_balance: 10000, closing_balance: 33000, rows: pdfRows })));
+    const single = await extractScreenshots([image], '2026-10-19', { apiKey: 'k' });
+    expect(single).toMatchObject({ openingBalance: 10000, closingBalance: 33000, integrityOk: true });
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(geminiReply({ source: 'GOPAY', opening_balance: 10000, closing_balance: 99000, rows: pdfRows })));
+    expect((await extractScreenshots([image], '2026-10-19', { apiKey: 'k' })).integrityOk).toBe(false);
+
+    vi.stubGlobal('fetch', vi.fn().mockImplementation(async () => geminiReply({ source: 'GOPAY', opening_balance: 10000, closing_balance: 33000, rows: pdfRows })));
+    expect(await extractScreenshots([image, image], '2026-10-19', { apiKey: 'k' })).toMatchObject({ openingBalance: null, integrityOk: null });
+
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(geminiReply({ source: 'GOPAY', opening_balance: 'sepuluh ribu', closing_balance: null, rows: pdfRows })));
+    expect((await extractScreenshots([image], '2026-10-19', { apiKey: 'k' })).integrityOk).toBeNull();
+  });
+
   it('says so when nothing usable was read', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(geminiReply({ source: 'BCA', rows: [] })));
     await expect(extractScreenshots([image], '2026-10-19', { apiKey: 'k' })).rejects.toMatchObject({ code: 'empty' });
+  });
+});
+
+describe('balancesClose', () => {
+  it('compares opening plus net movement with closing to the rupiah', () => {
+    const rows = [row('2026-10-01', 1500.5, 'credit'), row('2026-10-02', 500, 'debit')];
+    expect(balancesClose(rows, 1000, 2000.5)).toBe(true);
+    expect(balancesClose(rows, 1000, 2002)).toBe(false);
+    expect(balancesClose(rows, null, 2000.5)).toBeNull();
   });
 });

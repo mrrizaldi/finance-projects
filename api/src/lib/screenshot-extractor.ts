@@ -1,4 +1,4 @@
-import type { StatementDirection, StatementRow } from './statement-parser.js';
+import { INTEGRITY_TOLERANCE_RUPIAH, roundCents, type StatementDirection, type StatementRow } from './statement-parser.js';
 
 export interface ScreenshotRow extends StatementRow {
   counterparty: string | null;
@@ -12,8 +12,12 @@ export interface ScreenshotImage {
 
 export interface ScreenshotExtraction {
   source: string;
+  modelsUsed: string[];
   rows: ScreenshotRow[];
   droppedRows: number;
+  openingBalance: number | null;
+  closingBalance: number | null;
+  integrityOk: boolean | null;
 }
 
 export class ScreenshotExtractionError extends Error {
@@ -22,10 +26,11 @@ export class ScreenshotExtractionError extends Error {
   }
 }
 
-export const DEFAULT_SCREENSHOT_MODEL = 'gemini-2.5-flash';
-export const PROMPT_VERSION = 1;
+export const DEFAULT_SCREENSHOT_MODELS = ['gemini-3.8-flash', 'gemini-2.5-flash', 'gemini-3.5-flash-lite'];
+const RETRYABLE_STATUS = new Set([404, 429, 500, 503]);
+export const PROMPT_VERSION = 2;
 const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
-const GEMINI_TIMEOUT_MS = 120_000;
+const GEMINI_TIMEOUT_MS = 45_000;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const CLOCK_TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 const UNKNOWN_SOURCE = 'UNKNOWN';
@@ -34,6 +39,8 @@ const RESPONSE_SCHEMA = {
   type: 'OBJECT',
   properties: {
     source: { type: 'STRING' },
+    opening_balance: { type: 'NUMBER', nullable: true },
+    closing_balance: { type: 'NUMBER', nullable: true },
     rows: {
       type: 'ARRAY',
       items: {
@@ -56,7 +63,7 @@ const RESPONSE_SCHEMA = {
 
 export function buildPrompt(referenceDate: string): string {
   return [
-    'Kamu membaca screenshot riwayat transaksi dari aplikasi m-banking atau e-wallet Indonesia.',
+    'Kamu membaca screenshot riwayat transaksi atau e-statement PDF (bisa beberapa halaman) dari bank atau e-wallet Indonesia.',
     'Kembalikan setiap transaksi yang terlihat utuh sebagai satu baris JSON sesuai skema.',
     '',
     'Aturan:',
@@ -72,6 +79,8 @@ export function buildPrompt(referenceDate: string): string {
     '- counterparty: nama merchant/penerima/pengirim yang paling bermakna (mis. "PENS MART", "FABIOLA TASYA NATA"), null kalau tidak ada.',
     '- Lewati: transaksi gagal/dibatalkan/pending, baris saldo, judul bulan, iklan, baris yang terpotong sampai nominalnya tidak terbaca.',
     '- confidence: 0 sampai 1. Di bawah 0.8 kalau ada digit nominal, tanggal, atau arah yang kamu tidak yakin.',
+    '- opening_balance dan closing_balance: saldo awal dan saldo akhir periode kalau dokumen mencantumkannya, sebagai angka rupiah; null kalau tidak ada. Jangan dihitung sendiri.',
+    '- Ringkasan bulanan tanpa rincian per transaksi bukan baris transaksi.',
     '- Jangan mengarang baris. Kalau tidak ada transaksi, kembalikan rows kosong.',
   ].join('\n');
 }
@@ -135,7 +144,16 @@ export function mergeScreenshotRows(perImage: ScreenshotRow[][]): ScreenshotRow[
     .sort((a, b) => b.date.localeCompare(a.date) || (b.time ?? '').localeCompare(a.time ?? ''));
 }
 
-async function extractOne(image: ScreenshotImage, referenceDate: string, apiKey: string, model: string) {
+type GeminiAnswer = { source?: unknown; rows?: RawRow[]; opening_balance?: unknown; closing_balance?: unknown };
+
+class RetryableModelError extends Error {}
+
+export function configuredModels(): string[] {
+  const fromEnv = (process.env.GEMINI_STATEMENT_MODEL ?? '').split(',').map((m) => m.trim()).filter(Boolean);
+  return fromEnv.length > 0 ? fromEnv : DEFAULT_SCREENSHOT_MODELS;
+}
+
+async function callModel(image: ScreenshotImage, referenceDate: string, apiKey: string, model: string): Promise<GeminiAnswer> {
   const res = await fetch(`${GEMINI_ENDPOINT}/${model}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
@@ -150,29 +168,48 @@ async function extractOne(image: ScreenshotImage, referenceDate: string, apiKey:
       }],
       generationConfig: { responseMimeType: 'application/json', responseSchema: RESPONSE_SCHEMA, temperature: 0 },
     }),
+  }).catch((error: Error) => {
+    if (error.name === 'TimeoutError' || error.name === 'AbortError') throw new RetryableModelError(`${model} timeout`);
+    throw error;
   });
   if (!res.ok) {
-    throw new ScreenshotExtractionError('model_failed', `Gemini ${res.status}: ${(await res.text()).slice(0, 200)}`);
+    const message = `${model} ${res.status}: ${(await res.text()).slice(0, 200)}`;
+    if (RETRYABLE_STATUS.has(res.status)) throw new RetryableModelError(message);
+    throw new ScreenshotExtractionError('model_failed', `Gemini ${message}`);
   }
   const body = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
   const text = body.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
   try {
-    return JSON.parse(text) as { source?: unknown; rows?: RawRow[] };
+    return JSON.parse(text) as GeminiAnswer;
   } catch {
     throw new ScreenshotExtractionError('model_failed', 'Jawaban Gemini bukan JSON yang valid');
   }
 }
 
+async function extractOne(image: ScreenshotImage, referenceDate: string, apiKey: string, models: string[]) {
+  const failures: string[] = [];
+  for (const model of models) {
+    try {
+      return { model, answer: await callModel(image, referenceDate, apiKey, model) };
+    } catch (error) {
+      if (!(error instanceof RetryableModelError)) throw error;
+      failures.push(error.message);
+    }
+  }
+  throw new ScreenshotExtractionError('model_failed', `Semua model Gemini gagal: ${failures.join(' | ')}`);
+}
+
 export async function extractScreenshots(
   images: ScreenshotImage[],
   referenceDate: string,
-  options: { apiKey?: string; model?: string } = {},
+  options: { apiKey?: string; models?: string[] } = {},
 ): Promise<ScreenshotExtraction> {
   const apiKey = options.apiKey ?? process.env.GEMINI_API_KEY;
   if (!apiKey) throw new ScreenshotExtractionError('not_configured', 'GEMINI_API_KEY belum di-set di server');
-  const model = options.model ?? process.env.GEMINI_STATEMENT_MODEL ?? DEFAULT_SCREENSHOT_MODEL;
+  const models = options.models ?? configuredModels();
 
-  const answers = await Promise.all(images.map((image) => extractOne(image, referenceDate, apiKey, model)));
+  const results = await Promise.all(images.map((image) => extractOne(image, referenceDate, apiKey, models)));
+  const answers = results.map((r) => r.answer);
   let dropped = 0;
   const perImage = answers.map((answer) => {
     const normalized = normalizeRawRows(Array.isArray(answer.rows) ? answer.rows : []);
@@ -180,9 +217,31 @@ export async function extractScreenshots(
     return normalized.rows;
   });
   const rows = mergeScreenshotRows(perImage);
-  if (rows.length === 0) throw new ScreenshotExtractionError('empty', 'Tidak ada transaksi terbaca dari screenshot');
+  if (rows.length === 0) throw new ScreenshotExtractionError('empty', 'Tidak ada transaksi terbaca dari file');
 
   const sources = answers.map((a) => (typeof a.source === 'string' ? a.source.trim().toUpperCase() : '')).filter(Boolean);
   const source = sources.sort((a, b) => sources.filter((s) => s === b).length - sources.filter((s) => s === a).length)[0];
-  return { source: source ?? UNKNOWN_SOURCE, rows, droppedRows: dropped };
+  const [single] = answers;
+  const opening = answers.length === 1 ? finiteOrNull(single.opening_balance) : null;
+  const closing = answers.length === 1 ? finiteOrNull(single.closing_balance) : null;
+  return {
+    source: source ?? UNKNOWN_SOURCE,
+    modelsUsed: [...new Set(results.map((r) => r.model))],
+    rows,
+    droppedRows: dropped,
+    openingBalance: opening,
+    closingBalance: closing,
+    integrityOk: balancesClose(rows, opening, closing),
+  };
+}
+
+function finiteOrNull(value: unknown): number | null {
+  const number = typeof value === 'number' ? value : Number.NaN;
+  return Number.isFinite(number) ? number : null;
+}
+
+export function balancesClose(rows: StatementRow[], opening: number | null, closing: number | null): boolean | null {
+  if (opening === null || closing === null) return null;
+  const net = rows.reduce((sum, r) => sum + (r.direction === 'credit' ? r.amount : -r.amount), 0);
+  return Math.abs(roundCents(opening + net) - closing) < INTEGRITY_TOLERANCE_RUPIAH;
 }

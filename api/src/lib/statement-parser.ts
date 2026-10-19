@@ -46,7 +46,7 @@ export class StatementParseError extends Error {
 
 const PDFTOTEXT_TIMEOUT_MS = 120_000;
 const PDFTOTEXT_MAX_BUFFER_BYTES = 32 * 1024 * 1024;
-const INTEGRITY_TOLERANCE_RUPIAH = 1;
+export const INTEGRITY_TOLERANCE_RUPIAH = 1;
 export const CENTS_PER_RUPIAH = 100;
 const MAX_CONTINUATION_LENGTH = 120;
 const MONTH_ABBREV_LENGTH = 3;
@@ -298,7 +298,7 @@ export function parseStatementText(text: string): ParsedStatement {
   let parsed: Omit<ParsedStatement, 'totals' | 'integrityOk'>;
   if (BCA_SIGNATURE.test(upper)) parsed = parseBca(text);
   else if (BSI_SIGNATURE.test(upper)) parsed = parseBsi(text);
-  else throw new StatementParseError('unrecognized', 'format e-statement tidak dikenali (yang didukung: BCA, BSI)');
+  else throw new StatementParseError('unrecognized', 'format e-statement bukan BCA/BSI, dibaca lewat Gemini');
 
   if (parsed.rows.length === 0) {
     throw new StatementParseError('empty', `tidak ada baris transaksi terbaca dari ${parsed.bank}, cek apakah PDF-nya ter-password atau hasil scan`);
