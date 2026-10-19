@@ -31,6 +31,8 @@ const RETRYABLE_STATUS = new Set([404, 429, 500, 503]);
 export const PROMPT_VERSION = 2;
 const GEMINI_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
 const GEMINI_TIMEOUT_MS = 45_000;
+export const GEMINI_TOTAL_BUDGET_MS = 85_000;
+const MIN_ATTEMPT_MS = 5_000;
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const CLOCK_TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 const UNKNOWN_SOURCE = 'UNKNOWN';
@@ -153,11 +155,17 @@ export function configuredModels(): string[] {
   return fromEnv.length > 0 ? fromEnv : DEFAULT_SCREENSHOT_MODELS;
 }
 
-async function callModel(image: ScreenshotImage, referenceDate: string, apiKey: string, model: string): Promise<GeminiAnswer> {
+async function callModel(
+  image: ScreenshotImage,
+  referenceDate: string,
+  apiKey: string,
+  model: string,
+  timeoutMs: number,
+): Promise<GeminiAnswer> {
   const res = await fetch(`${GEMINI_ENDPOINT}/${model}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
-    signal: AbortSignal.timeout(GEMINI_TIMEOUT_MS),
+    signal: AbortSignal.timeout(timeoutMs),
     body: JSON.stringify({
       contents: [{
         role: 'user',
@@ -186,11 +194,16 @@ async function callModel(image: ScreenshotImage, referenceDate: string, apiKey: 
   }
 }
 
-async function extractOne(image: ScreenshotImage, referenceDate: string, apiKey: string, models: string[]) {
+async function extractOne(image: ScreenshotImage, referenceDate: string, apiKey: string, models: string[], deadline: number) {
   const failures: string[] = [];
   for (const model of models) {
+    const remaining = deadline - Date.now();
+    if (remaining < MIN_ATTEMPT_MS) {
+      failures.push(`${model} dilewati, waktu habis`);
+      break;
+    }
     try {
-      return { model, answer: await callModel(image, referenceDate, apiKey, model) };
+      return { model, answer: await callModel(image, referenceDate, apiKey, model, Math.min(GEMINI_TIMEOUT_MS, remaining)) };
     } catch (error) {
       if (!(error instanceof RetryableModelError)) throw error;
       failures.push(error.message);
@@ -202,13 +215,14 @@ async function extractOne(image: ScreenshotImage, referenceDate: string, apiKey:
 export async function extractScreenshots(
   images: ScreenshotImage[],
   referenceDate: string,
-  options: { apiKey?: string; models?: string[] } = {},
+  options: { apiKey?: string; models?: string[]; budgetMs?: number } = {},
 ): Promise<ScreenshotExtraction> {
   const apiKey = options.apiKey ?? process.env.GEMINI_API_KEY;
   if (!apiKey) throw new ScreenshotExtractionError('not_configured', 'GEMINI_API_KEY belum di-set di server');
   const models = options.models ?? configuredModels();
 
-  const results = await Promise.all(images.map((image) => extractOne(image, referenceDate, apiKey, models)));
+  const deadline = Date.now() + (options.budgetMs ?? GEMINI_TOTAL_BUDGET_MS);
+  const results = await Promise.all(images.map((image) => extractOne(image, referenceDate, apiKey, models, deadline)));
   const answers = results.map((r) => r.answer);
   let dropped = 0;
   const perImage = answers.map((answer) => {

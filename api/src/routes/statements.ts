@@ -100,7 +100,7 @@ function parseErrorStatus(error: StatementParseError) {
 
 function screenshotErrorStatus(error: ScreenshotExtractionError) {
   if (error.code === 'not_configured') return 503;
-  return error.code === 'model_failed' ? 502 : 422;
+  return error.code === 'model_failed' ? 424 : 422;
 }
 
 async function extractPdf(buffer: Buffer): Promise<ExtractedStatement> {

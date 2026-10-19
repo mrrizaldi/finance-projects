@@ -107,6 +107,18 @@ describe('extractScreenshots', () => {
     await expect(extractScreenshots([image], '2026-10-19', { apiKey: 'k', models: ['a', 'b'] })).rejects.toThrow(/a 503.*b 503/);
   });
 
+  it('stops trying further models once the total time budget is used up', async () => {
+    const hang = vi.fn().mockImplementation((_url: string, init: RequestInit) => new Promise((_resolve, reject) => {
+      init.signal?.addEventListener('abort', () => reject(Object.assign(new Error('t'), { name: 'TimeoutError' })));
+    }));
+    vi.stubGlobal('fetch', hang);
+    const started = Date.now();
+    await expect(extractScreenshots([image], '2026-10-19', { apiKey: 'k', models: ['a', 'b', 'c'], budgetMs: 5_500 }))
+      .rejects.toThrow(/a timeout.*b dilewati/);
+    expect(hang).toHaveBeenCalledTimes(1);
+    expect(Date.now() - started).toBeLessThan(5_000 + 1_500);
+  }, 10_000);
+
   it('reads the model chain from GEMINI_STATEMENT_MODEL', () => {
     vi.stubEnv('GEMINI_STATEMENT_MODEL', ' x , y ');
     expect(configuredModels()).toEqual(['x', 'y']);
