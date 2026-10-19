@@ -12,6 +12,7 @@ class App : Application() {
         super.onCreate()
         container = AppContainer(this)
         Sync.schedulePeriodic(this)
+        Sync.scheduleNotifications(this)
         ProcessLifecycleOwner.get().lifecycle.addObserver(container.lock)
     }
 }

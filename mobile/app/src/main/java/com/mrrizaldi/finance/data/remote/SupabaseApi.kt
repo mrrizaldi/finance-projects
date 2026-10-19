@@ -13,6 +13,8 @@ interface SupabaseApi {
     suspend fun clearLocalSession()
     suspend fun listAccounts(): List<AccountDto>
     suspend fun listCategories(): List<CategoryDto>
+    suspend fun listNotifications(since: String, limit: Int, ascending: Boolean = true): List<NotificationDto>
+    suspend fun markNotificationsRead(ids: List<String>)
     suspend fun listTransactions(start: String, end: String, limit: Int, offset: Int): List<TransactionDto>
     suspend fun getSummary(start: String, end: String): SummaryDto
     suspend fun getCategoryBreakdown(start: String, end: String, type: String): List<CategoryBreakdownDto>

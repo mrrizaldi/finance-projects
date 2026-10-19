@@ -17,6 +17,7 @@ import com.mrrizaldi.finance.data.remote.CategoryBreakdownDto
 import com.mrrizaldi.finance.data.remote.CategoryDto
 import com.mrrizaldi.finance.data.remote.DailySpendingDto
 import com.mrrizaldi.finance.data.remote.MonthlyTrendDto
+import com.mrrizaldi.finance.data.remote.NotificationDto
 import com.mrrizaldi.finance.data.remote.PeriodComparisonDto
 import com.mrrizaldi.finance.data.remote.SavingsRateDto
 import com.mrrizaldi.finance.data.remote.SummaryDto
@@ -73,6 +74,8 @@ class FakeApi : SupabaseApi {
     }
 
     override suspend fun signIn(email: String, password: String) {}
+    override suspend fun listNotifications(since: String, limit: Int, ascending: Boolean): List<NotificationDto> = emptyList()
+    override suspend fun markNotificationsRead(ids: List<String>) {}
     var signOutFailure: Exception? = null
 
     override suspend fun signOut() {

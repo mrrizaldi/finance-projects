@@ -49,6 +49,11 @@ object AppIcons {
         THIN,
         listOf("M12 3l7.8 4.5v9L12 21l-7.8-4.5v-9z", "M15 12a3 3 0 1 1-6 0a3 3 0 1 1 6 0")
     )
+    val Bell = icon(
+        "bell",
+        THIN,
+        listOf("M6 17V11a6 6 0 0 1 12 0v6l1.5 2h-15z", "M10 21h4")
+    )
     val Plus = icon("plus", BOLD, listOf("M12 5v14M5 12h14"))
     val Filter = icon("filter", THIN, listOf("M4 7h16M7 12h10M10 17h4"))
     val Back = icon("back", BOLD, listOf("M15 5l-7 7 7 7"))

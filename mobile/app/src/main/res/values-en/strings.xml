@@ -103,6 +103,8 @@
     <string name="balances_title">Account Balances</string>
     <string name="balances_total">Total</string>
 
+    <string name="inbox_title">Notifications</string>
+    <string name="inbox_empty">No notifications yet</string>
     <string name="settings_title">Settings</string>
     <string name="settings_lock">Fingerprint lock</string>
     <string name="lock_hint">Locked. Unlock with your fingerprint or phone PIN.</string>

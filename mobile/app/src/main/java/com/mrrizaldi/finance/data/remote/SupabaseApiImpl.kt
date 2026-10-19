@@ -53,6 +53,20 @@ class SupabaseApiImpl(private val client: SupabaseClient) : SupabaseApi {
             order("sort_order", Order.ASCENDING)
         }.decodeList()
 
+    override suspend fun listNotifications(since: String, limit: Int, ascending: Boolean): List<NotificationDto> =
+        client.from("notifications").select(Columns.list("id", "kind", "title", "body", "created_at", "read_at")) {
+            filter { gt("created_at", since) }
+            order("created_at", if (ascending) Order.ASCENDING else Order.DESCENDING)
+            limit(limit.toLong())
+        }.decodeList()
+
+    override suspend fun markNotificationsRead(ids: List<String>) {
+        if (ids.isEmpty()) return
+        client.from("notifications").update(buildJsonObject { put("read_at", JakartaDate.now().toOffsetDateTime().toString()) }) {
+            filter { isIn("id", ids) }
+        }
+    }
+
     override suspend fun listTransactions(start: String, end: String, limit: Int, offset: Int): List<TransactionDto> =
         client.from("v_transactions").select(TX_COLUMNS) {
             filter {

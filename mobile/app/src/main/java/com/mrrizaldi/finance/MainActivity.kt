@@ -52,6 +52,7 @@ import com.mrrizaldi.finance.ui.components.FloatingNavBar
 import com.mrrizaldi.finance.ui.components.Tab
 import com.mrrizaldi.finance.ui.home.HomeScreen
 import com.mrrizaldi.finance.ui.home.HomeViewModel
+import com.mrrizaldi.finance.ui.inbox.InboxScreen
 import com.mrrizaldi.finance.ui.theme.FinanceTheme
 import com.mrrizaldi.finance.ui.theme.LocalHazeState
 import com.mrrizaldi.finance.ui.transactions.TransactionsScreen
@@ -60,6 +61,7 @@ import io.github.jan.supabase.auth.status.SessionStatus
 
 private const val ADD_ROUTE = "add"
 private const val EDIT_ROUTE = "edit/{id}"
+private const val INBOX_ROUTE = "inbox"
 
 private fun NavHostController.edit(id: String) = navigate("edit/$id") { launchSingleTop = true }
 
@@ -107,7 +109,10 @@ private fun Root(container: AppContainer, askUnlock: () -> Unit) {
     val context = LocalContext.current
     LaunchedEffect(status) {
         when (status) {
-            is SessionStatus.Authenticated -> Sync.flush(context)
+            is SessionStatus.Authenticated -> {
+                Sync.flush(context)
+                Sync.pollNotificationsNow(context)
+            }
             is SessionStatus.NotAuthenticated -> container.lock.unlock()
             else -> Unit
         }
@@ -144,7 +149,12 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState) {
             modifier = Modifier.fillMaxSize().hazeSource(hazeState, zIndex = 1f).statusBarsPadding()
         ) {
             composable(Tab.HOME.route) {
-                HomeScreen(viewModel { HomeViewModel(container.repository) }, container.lock, onEdit = nav::edit)
+                HomeScreen(
+                    viewModel { HomeViewModel(container.repository) },
+                    container.lock,
+                    onEdit = nav::edit,
+                    onInbox = { nav.navigate(INBOX_ROUTE) { launchSingleTop = true } }
+                )
             }
             composable(Tab.TRANSACTIONS.route) {
                 TransactionsScreen(viewModel { TransactionsViewModel(container.repository) }, onEdit = nav::edit)
@@ -154,12 +164,13 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState) {
             composable(ADD_ROUTE) {
                 AddScreen(viewModel { AddViewModel(container.repository) }, onBack = { nav.popBackStack() })
             }
+            composable(INBOX_ROUTE) { InboxScreen(container.api, onBack = { nav.popBackStack() }) }
             composable(EDIT_ROUTE) { entry ->
                 val id = entry.arguments?.getString("id").orEmpty()
                 AddScreen(viewModel { AddViewModel(container.repository, id) }, onBack = { nav.popBackStack() })
             }
         }
-        if (current != ADD_ROUTE && current != EDIT_ROUTE) {
+        if (current != ADD_ROUTE && current != EDIT_ROUTE && current != INBOX_ROUTE) {
             FloatingNavBar(
                 current = current,
                 onSelect = { tab ->

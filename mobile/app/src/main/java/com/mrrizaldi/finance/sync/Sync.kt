@@ -20,6 +20,7 @@ import java.time.Duration
 object Sync {
     private const val FLUSH = "flush-outbox"
     private const val REFRESH = "refresh-home"
+    private const val NOTIF = "poll-notifications"
 
     private val online = Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build()
 
@@ -36,6 +37,19 @@ object Sync {
             .setConstraints(online)
             .build()
         WorkManager.getInstance(context).enqueueUniquePeriodicWork(REFRESH, ExistingPeriodicWorkPolicy.KEEP, request)
+    }
+
+    fun pollNotificationsNow(context: Context) {
+        val request = OneTimeWorkRequestBuilder<NotifPollWorker>().setConstraints(online).build()
+        WorkManager.getInstance(context).enqueueUniqueWork("$NOTIF-now", ExistingWorkPolicy.KEEP, request)
+    }
+
+    fun scheduleNotifications(context: Context) {
+        val request = PeriodicWorkRequestBuilder<NotifPollWorker>(Duration.ofMinutes(15))
+            .setConstraints(online)
+            .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, Duration.ofMinutes(5))
+            .build()
+        WorkManager.getInstance(context).enqueueUniquePeriodicWork(NOTIF, ExistingPeriodicWorkPolicy.KEEP, request)
     }
 }
 

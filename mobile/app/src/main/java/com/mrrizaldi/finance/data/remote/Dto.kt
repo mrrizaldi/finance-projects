@@ -1,5 +1,6 @@
 package com.mrrizaldi.finance.data.remote
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
@@ -116,4 +117,14 @@ data class TopTransactionDto(
     val merchant: String? = null,
     val category_name: String? = null,
     val category_color: String? = null
+)
+
+@Serializable
+data class NotificationDto(
+    val id: String,
+    val kind: String,
+    val title: String,
+    val body: String,
+    @SerialName("created_at") val createdAt: String,
+    @SerialName("read_at") val readAt: String? = null,
 )
