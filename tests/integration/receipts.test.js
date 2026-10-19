@@ -42,6 +42,7 @@ try {
     const txRes = await otherApi('/rpc/record_manual_entry', { method: 'POST', body: JSON.stringify({ p_account: otherAccount.id, p_type: 'expense', p_amount: 20000, p_category: otherCategory.id, p_date: '2026-09-12T12:00:00+07:00' }) });
     const otherTx = await txRes.json();
     const saved = await (await otherApi('/rpc/save_receipt', { method: 'POST', body: JSON.stringify({ p_receipt: null, p_transaction: otherTx, p_new: null, p_lines: [{ kind: 'item', name: 'Milik lain', qty: 1, amount: 20000, category_id: null }] }) })).json();
+    if (!saved.receipt_id) throw new Error(`setup struk user lain gagal: ${JSON.stringify(saved)}`);
     otherCache = { otherTx, otherReceipt: saved.receipt_id };
     return otherCache;
   };
