@@ -91,9 +91,8 @@ Auth Bearer sama dengan `/api/statements` (`requireUser`).
   4. Cek total: Σbaris vs printed_total → `totalOk`.
   5. Kandidat: transaksi expense user (bukan adjustment/terhapus, belum punya receipt saved) dengan tanggal ±1 hari dari `purchased_at`, diskor pakai `scorePair` dari `statement-matcher.ts` (nominal = basis struk, selisih ≤ `FEE_TOLERANCE_RUPIAH` tetap kandidat). Maksimal 3, urut skor.
   6. Respon: `{receipt, lines, totalOk, candidates, extractionError?}`. Gemini gagal semua → receipt draft tetap dibuat, `lines = []`, `extractionError` diisi, app membuka editor kosong.
-- `POST /api/receipts/manual` → draft kosong tanpa file (rincian ketik manual dari detail transaksi).
-- `GET /api/receipts/by-transaction/:transactionId` → `{receipt, lines, allocations, files: [{signedUrl, mime}]}` (signed URL 1 jam). 404 kalau belum ada.
-- `PUT /api/receipts/:id` → panggil `save_receipt`.
+- `GET /api/receipts/by-transaction/:transactionId` → `{receipt, lines, files: [{url, mime}]}` (signed URL 1 jam). 404 kalau belum ada. Alokasi dihitung app sendiri (rumus §4).
+- `POST /api/receipts/save` `{receipt_id, transaction_id, new_transaction, lines}` → panggil `save_receipt`. `receipt_id: null` = rincian ketik manual tanpa file.
 - `DELETE /api/receipts/:id` → hapus file bucket + `delete_receipt`.
 
 ## 6. Android
@@ -104,8 +103,8 @@ Auth Bearer sama dengan `/api/statements` (`requireUser`).
   - Dari detail transaksi: transaksi target sudah tetap, gak ada kandidat.
   - Daftar baris item: nama, nominal, kategori (dropdown, "ikut induk" boleh), hapus; tombol tambah baris. Baris pajak/service/diskon/pembulatan di grup terpisah, tetap bisa diedit.
   - Kaki: Σ alokasi per kategori ringkas, sisa yang jatuh ke kategori induk, tombol **Simpan rincian**. Butuh sinyal, tidak lewat outbox (alasan sama dengan statement dan edit/hapus).
-- **Detail transaksi** (`TxDetailSheet`): bagian Rincian dimuat saat sheet dibuka (online). Ada → daftar item + kategori + alokasi, tombol **Lihat struk** (buka signed URL lewat intent), **Ubah rincian**, **Hapus rincian**. Belum ada → **Tambah rincian** (foto/PDF atau ketik manual). Offline → teks "Rincian butuh sinyal". Transaksi yang gak memenuhi §3 → bagian ini gak tampil.
-- Kompres gambar sebelum upload: sisi terpanjang 1600 px, JPEG kualitas 80. PDF dikirim apa adanya (tolak > 10 MB di app).
+- **Detail transaksi** (`TxDetailSheet`): tombol **Rincian struk** untuk transaksi yang memenuhi §3, membuka `RECEIPT_ROUTE` dengan `transactionId`. Layar itu memuat rincian (butuh sinyal): ada → item + kategori + alokasi, **Lihat struk** (signed URL lewat intent), ubah, **Hapus rincian**; belum ada → foto/PDF atau **Ketik manual**.
+- Kompres gambar sebelum upload: sisi terpanjang 1600 px, JPEG kualitas 80. Rotasi EXIF diabaikan (butuh dependency baru; Gemini tetap bisa membaca foto miring). PDF dikirim apa adanya (tolak > 10 MB di app).
 - Setelah simpan/hapus: refresh home + analitik (pola `refreshHome` yang sama dengan statement).
 - Semua string UI lewat `strings.xml` ID + EN (`docs/I18N.md`).
 
