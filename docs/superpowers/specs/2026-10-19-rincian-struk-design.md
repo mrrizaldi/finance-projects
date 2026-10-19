@@ -51,15 +51,15 @@ receipt_lines
 
 ### RPC `save_receipt(p_receipt_id uuid, p_transaction_id uuid, p_new_transaction jsonb, p_lines jsonb)`
 
-Atomik, `SECURITY DEFINER`, cek kepemilikan pakai `auth.uid()`:
+Atomik, `SECURITY INVOKER` (RLS tabel yang menjaga kepemilikan; mig 062 menambah cek kepemilikan induk di policy), `search_path` dikunci:
 
 1. Tepat satu dari `p_transaction_id` / `p_new_transaction` terisi.
-2. `p_new_transaction` (account_id, amount, category_id, merchant, description, transaction_date) → insert transaksi expense lewat jalur insert yang sama dengan `commit_statement_import` (trigger saldo yang ada), `source = 'receipt'` (CHECK `source` ditambah nilai ini), `verified = true`.
+2. `p_new_transaction` (account_id, amount, category_id, merchant, description, transaction_date) → insert transaksi expense lewat `record_manual_entry` (saldo akun diperbarui di situ, idempoten dengan `p_client_id` = id struk sejak mig 066), lalu `source = 'receipt'` (CHECK `source` ditambah nilai ini). Akun wajib, nominal > 0, kategori harus milik user bertipe expense/both (mig 062).
 3. Validasi transaksi target (pemilik, expense, bukan adjustment/terhapus) dan belum punya receipt lain yang `saved`.
 4. Hapus semua `receipt_lines` lama receipt itu, insert `p_lines` baru, set `transaction_id`, `status = 'saved'`.
 5. Kembalikan id transaksi.
 
-`delete_receipt(p_receipt_id)` hapus receipt (cascade); API yang hapus file di bucket.
+Hapus rincian tidak lewat RPC: API menghapus baris `receipts` dengan client user (RLS, cascade ke baris dan file), lalu objek storage dengan service role.
 
 ## 4. Aturan analitik
 
@@ -84,27 +84,27 @@ kategori_i = COALESCE(line.category_id, induk.category_id)
 
 Auth Bearer sama dengan `/api/statements` (`requireUser`).
 
-- `POST /api/receipts` (multipart; 1–5 gambar atau 1 PDF ≤ 10 MB):
-  1. sha256 tiap file; ada yang sudah tersimpan milik user → `409 {receiptId, transactionId}` (app membuka rincian itu).
+- `POST /api/receipts` (JSON `{files: [{name, content_base64}]}` seperti `/api/statements`; 1–5 gambar atau 1 PDF ≤ 10 MB):
+  1. sha256 tiap file; ada yang sudah tersimpan milik user → `409 {error, receipt_id, transaction_id}` (app membuka rincian itu).
   2. Upload ke bucket, buat receipt `draft`.
-  3. Ekstrak dengan Gemini: pakai ulang rantai model, batas waktu 85 dtk, dan pola `fetch` + `responseSchema` dari `screenshot-extractor.ts`, prompt + skema baru (`receipt-extractor.ts`). Output: merchant, tanggal-jam, baris (kind, name, qty, amount, category_name usulan dari daftar kategori expense user yang dikirim di prompt), printed_total.
+  3. Ekstrak dengan Gemini: pakai ulang rantai model, batas waktu 85 dtk, dan pola `fetch` + `responseSchema` dari `screenshot-extractor.ts`, prompt + skema baru (`api/src/lib/receipt.ts`). Output: merchant, tanggal-jam, baris (kind, name, qty, amount, category_name usulan dari daftar kategori expense user yang dikirim di prompt), printed_total.
   4. Cek total: Σbaris vs printed_total → `totalOk`.
   5. Kandidat: transaksi expense user (bukan adjustment/terhapus, belum punya receipt saved) dengan tanggal ±1 hari dari `purchased_at`, diskor pakai `scorePair` dari `statement-matcher.ts` (nominal = basis struk, selisih ≤ `FEE_TOLERANCE_RUPIAH` tetap kandidat). Maksimal 3, urut skor.
   6. Respon: `{receipt, lines, totalOk, candidates, extractionError?}`. Gemini gagal semua → receipt draft tetap dibuat, `lines = []`, `extractionError` diisi, app membuka editor kosong.
 - `GET /api/receipts/by-transaction/:transactionId` → `{receipt, lines, files: [{url, mime}]}` (signed URL 1 jam). 404 kalau belum ada. Alokasi dihitung app sendiri (rumus §4).
 - `POST /api/receipts/save` `{receipt_id, transaction_id, new_transaction, lines}` → panggil `save_receipt`. `receipt_id: null` = rincian ketik manual tanpa file.
-- `DELETE /api/receipts/:id` → hapus file bucket + `delete_receipt`.
+- `DELETE /api/receipts/:id` → hapus baris (RLS) lalu file bucket.
 
 ## 6. Android
 
-- **Route `RECEIPT_ROUTE`** (`receipt?transactionId=` atau dari Tambah). Layar review:
+- **Route `RECEIPT_ROUTE`** (`receipt?tx=<id>` dari detail, `receipt` dari Tambah). Layar review:
   - Header: merchant, tanggal, total struk, lencana total gak cocok kalau `totalOk = false`.
   - Dari Tambah: daftar kandidat (yang skornya tertinggi sudah terpilih) + opsi "Bukan, catat sebagai transaksi baru". Pilih baru → field akun (wajib), nominal (default total struk), kategori induk (default kategori item dengan alokasi terbesar).
   - Dari detail transaksi: transaksi target sudah tetap, gak ada kandidat.
   - Daftar baris item: nama, nominal, kategori (dropdown, "ikut induk" boleh), hapus; tombol tambah baris. Baris pajak/service/diskon/pembulatan di grup terpisah, tetap bisa diedit.
   - Kaki: Σ alokasi per kategori ringkas, sisa yang jatuh ke kategori induk, tombol **Simpan rincian**. Butuh sinyal, tidak lewat outbox (alasan sama dengan statement dan edit/hapus).
 - **Detail transaksi** (`TxDetailSheet`): tombol **Rincian struk** untuk transaksi yang memenuhi §3, membuka `RECEIPT_ROUTE` dengan `transactionId`. Layar itu memuat rincian (butuh sinyal): ada → item + kategori + alokasi, **Lihat struk** (signed URL lewat intent), ubah, **Hapus rincian**; belum ada → foto/PDF atau **Ketik manual**.
-- Kompres gambar sebelum upload: sisi terpanjang 1600 px, JPEG kualitas 80. Rotasi EXIF diabaikan (butuh dependency baru; Gemini tetap bisa membaca foto miring). PDF dikirim apa adanya (tolak > 10 MB di app).
+- Kompres gambar sebelum upload: sisi terpanjang 1600 px, JPEG kualitas 80. Rotasi EXIF dikoreksi di HP pakai `android.media.ExifInterface` bawaan framework (tanpa dependency baru). PDF dikirim apa adanya (tolak > 10 MB di app).
 - Setelah simpan/hapus: refresh home + analitik (pola `refreshHome` yang sama dengan statement).
 - Semua string UI lewat `strings.xml` ID + EN (`docs/I18N.md`).
 
@@ -115,7 +115,7 @@ Auth Bearer sama dengan `/api/statements` (`requireUser`).
 | Offline saat upload/simpan | pesan "butuh sinyal", data form tetap |
 | Gemini gagal semua / kuota habis | editor kosong, bisa isi manual, file tetap tersimpan |
 | File sama di-upload lagi | buka rincian yang sudah ada |
-| Transaksi target sudah punya rincian | RPC menolak, app membuka rincian yang ada |
+| Transaksi target sudah punya rincian | RPC menolak (409), app menampilkan pesannya; dari detail transaksi rincian yang ada sudah dimuat duluan |
 | Transaksi dihapus setelah rincian dibuat | soft-delete: rincian tetap di DB, gak ikut analitik karena induknya terfilter |
 | Draft ditinggal | dihapus malas setelah 7 hari |
 
@@ -123,8 +123,8 @@ Auth Bearer sama dengan `/api/statements` (`requireUser`).
 
 1. Grid bulan (Android).
 2. Upload pindah ke layar Tambah, ikon Home dihapus (Android).
-3. Migrasi 061: tabel, bucket, RLS, `source = 'receipt'`, RPC `save_receipt` + `delete_receipt`; test integrasi (RLS, replace baris, tolak transaksi non-expense, tolak receipt kedua, insert transaksi baru lewat jalur saldo).
-4. `receipt-extractor.ts` (prompt, skema, normalisasi) + unit test dengan fixture struk yang disamarkan.
+3. Migrasi 061: tabel, bucket, RLS, `source = 'receipt'`, RPC `save_receipt` (+ mig 062 perketat RLS, 064 cek path file, 066 idempoten); test integrasi (RLS, replace baris, tolak transaksi non-expense, tolak receipt kedua, insert transaksi baru lewat jalur saldo).
+4. `api/src/lib/receipt.ts` (prompt, skema, normalisasi, ranking kandidat) + unit test dengan fixture struk yang disamarkan.
 5. Route `/api/receipts*` + pencarian kandidat + test.
 6. Android: layar review struk + alur dari Tambah (uji di HP).
 7. Android: rincian di detail transaksi (lihat/tambah/ubah/hapus/lihat struk, uji di HP).
