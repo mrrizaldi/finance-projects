@@ -135,11 +135,15 @@ export default async function plugin(app: FastifyInstance) {
     const { data: existing } = knownIds.length
       ? await supabase.from('receipts').select('id, status, transaction_id').in('id', knownIds)
       : { data: [] };
-    const saved = (existing ?? []).find((r: { status: string }) => r.status === 'saved');
-    if (saved) {
-      return reply.code(409).send({ error: 'Struk ini sudah pernah dirinci', receipt_id: saved.id, transaction_id: saved.transaction_id });
+    for (const saved of (existing ?? []).filter((r: { status: string }) => r.status === 'saved')) {
+      const { data: alive } = saved.transaction_id
+        ? await supabase.from('transactions').select('id').eq('id', saved.transaction_id).eq('is_deleted', false).maybeSingle()
+        : { data: null };
+      if (alive) {
+        return reply.code(409).send({ error: 'Struk ini sudah pernah dirinci', receipt_id: saved.id, transaction_id: saved.transaction_id });
+      }
     }
-    for (const draft of existing ?? []) await removeReceipt(supabase, service, draft.id, user.id);
+    for (const old of existing ?? []) await removeReceipt(supabase, service, old.id, user.id);
 
     const { data: receipt, error: insertError } = await supabase
       .from('receipts')
@@ -228,10 +232,12 @@ export default async function plugin(app: FastifyInstance) {
     const { data: receipt } = await supabase
       .from('receipts').select('*').eq('transaction_id', transactionId).eq('status', 'saved').maybeSingle();
     if (!receipt) return reply.code(404).send({ error: 'Belum ada rincian' });
-    const { data: lines } = await supabase
+    const { data: lines, error: linesError } = await supabase
       .from('receipt_lines').select('kind, name, qty, amount, category_id').eq('receipt_id', receipt.id).order('line_no');
-    const { data: files } = await supabase
+    const { data: files, error: filesError } = await supabase
       .from('receipt_files').select('path, mime').eq('receipt_id', receipt.id).order('created_at');
+    if (linesError) throw new Error(`Gagal baca rincian: ${linesError.message}`);
+    if (filesError) throw new Error(`Gagal baca file struk: ${filesError.message}`);
     const ownedFiles = (files ?? []).filter((f: { path: string }) => ownedBy(user.id)(f.path));
     const { data: signed } = ownedFiles.length
       ? await createServiceClient().storage.from(STORAGE_BUCKET).createSignedUrls(ownedFiles.map((f: { path: string }) => f.path), SIGNED_URL_SECONDS)

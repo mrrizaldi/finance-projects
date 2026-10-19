@@ -151,6 +151,25 @@ describe.skipIf(!HAS_ENV)('receipts API end to end', () => {
     expect(await rest(`/receipts?id=eq.${oldId}&select=id`)).toHaveLength(0);
   }, UPLOAD_TEST_TIMEOUT_MS);
 
+  it('struk tersimpan di transaksi terhapus: upload ulang file yang sama → 201, bukan 409', async () => {
+    const draft = await asUser('POST', '/api/receipts', { files: [{ name: 'a.png', content_base64: PNG_1PX }] });
+    expect(draft.statusCode).toBe(201);
+    const savedId = draft.json().receipt.id;
+    const save = await asUser('POST', '/api/receipts/save', {
+      receipt_id: savedId, transaction_id: null,
+      new_transaction: { account_id: accountId, type: 'expense', amount: 1000, category_id: categoryId, merchant: 'TEST_HAPUS', transaction_date: new Date().toISOString() },
+      lines: [{ kind: 'item', name: 'Permen', qty: 1, amount: 1000, category_id: categoryId }],
+    });
+    expect(save.statusCode).toBe(200);
+    const deadTx = save.json().data.transaction_id;
+    await rest('/rpc/delete_manual_transaction', { method: 'POST', body: JSON.stringify({ p_id: deadTx }) });
+    const again = await asUser('POST', '/api/receipts', { files: [{ name: 'b.png', content_base64: PNG_1PX }] });
+    expect(again.statusCode).toBe(201);
+    expect(again.json().receipt.id).not.toBe(savedId);
+    expect(await rest(`/receipts?id=eq.${savedId}&select=id`)).toHaveLength(0);
+    receiptId = again.json().receipt.id;
+  }, UPLOAD_TEST_TIMEOUT_MS);
+
   it('file bukan gambar/PDF ditolak 415', async () => {
     const res = await asUser('POST', '/api/receipts', { files: [{ name: 'x.txt', content_base64: Buffer.from('halo bukan gambar').toString('base64') }] });
     expect(res.statusCode).toBe(415);
