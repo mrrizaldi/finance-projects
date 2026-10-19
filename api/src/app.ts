@@ -31,6 +31,7 @@ import profileRoutes from './routes/profile.js';
 import pushVapidKeyRoutes from './routes/push-vapid-key.js';
 import pushSubscribeRoutes from './routes/push-subscribe.js';
 import pushNotifyRoutes from './routes/push-notify.js';
+import receiptsRoutes from './routes/receipts.js';
 import statementsRoutes from './routes/statements.js';
 import telegramRoutes from './routes/telegram.js';
 import transactionsRoutes from './routes/transactions.js';
@@ -70,6 +71,7 @@ export async function buildApp() {
   await app.register(pushVapidKeyRoutes);
   await app.register(pushSubscribeRoutes);
   await app.register(pushNotifyRoutes);
+  await app.register(receiptsRoutes);
   await app.register(statementsRoutes);
   await app.register(telegramRoutes);
   await app.register(transactionsRoutes);
