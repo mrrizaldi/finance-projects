@@ -33,6 +33,9 @@
     <string name="month_prev">Bulan sebelumnya</string>
     <string name="month_next">Bulan berikutnya</string>
     <string name="month_pick">Pilih bulan</string>
+    <string name="month_this">Bulan ini</string>
+    <string name="year_prev">Tahun sebelumnya</string>
+    <string name="year_next">Tahun berikutnya</string>
 
     <string name="tx_search_hint">Cari deskripsi atau merchant</string>
     <string name="tx_filter">Filter</string>

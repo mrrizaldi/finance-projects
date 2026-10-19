@@ -33,6 +33,9 @@
     <string name="month_prev">Previous month</string>
     <string name="month_next">Next month</string>
     <string name="month_pick">Pick month</string>
+    <string name="month_this">This month</string>
+    <string name="year_prev">Previous year</string>
+    <string name="year_next">Next year</string>
 
     <string name="tx_search_hint">Search description or merchant</string>
     <string name="tx_filter">Filter</string>
