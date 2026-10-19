@@ -89,7 +89,7 @@ import java.time.temporal.ChronoUnit
 import java.util.Locale
 
 @Composable
-fun TransactionsScreen(vm: TransactionsViewModel, onEdit: (String) -> Unit) {
+fun TransactionsScreen(vm: TransactionsViewModel, onEdit: (String) -> Unit, onReceipt: (String) -> Unit) {
     val items by vm.items.collectAsStateWithLifecycle()
     val filter by vm.filter.collectAsStateWithLifecycle()
     val accounts by vm.accounts.collectAsStateWithLifecycle()
@@ -257,6 +257,7 @@ fun TransactionsScreen(vm: TransactionsViewModel, onEdit: (String) -> Unit) {
         detail = detail,
         deleteError = deleteError,
         onEdit = onEdit,
+        onReceipt = onReceipt,
         onDelete = vm::delete,
         onDismiss = { detail = null },
         onDismissError = vm::clearDeleteError

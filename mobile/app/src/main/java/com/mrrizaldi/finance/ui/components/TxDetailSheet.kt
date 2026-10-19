@@ -35,6 +35,8 @@ private val SheetShape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp)
 
 internal fun deletable(tx: TransactionEntity): Boolean = !tx.pending && !tx.isAdjustment && tx.type in ManualTypes
 
+internal fun itemizable(tx: TransactionEntity): Boolean = !tx.pending && !tx.isAdjustment && tx.type == "expense"
+
 internal fun editable(tx: TransactionEntity): Boolean = deletable(tx) && tx.accountId != null
 
 @Composable
@@ -42,6 +44,7 @@ fun TxDetailActions(
     detail: TransactionEntity?,
     deleteError: SyncError?,
     onEdit: (String) -> Unit,
+    onReceipt: (String) -> Unit,
     onDelete: (String) -> Unit,
     onDismiss: () -> Unit,
     onDismissError: () -> Unit
@@ -55,6 +58,10 @@ fun TxDetailActions(
             onEdit = {
                 onDismiss()
                 onEdit(tx.id)
+            },
+            onReceipt = {
+                onDismiss()
+                onReceipt(tx.id)
             },
             onDelete = {
                 onDismiss()
@@ -82,6 +89,7 @@ private fun TxDetailSheet(
     tx: TransactionEntity,
     locale: Locale,
     onEdit: () -> Unit,
+    onReceipt: () -> Unit,
     onDelete: () -> Unit,
     onDismiss: () -> Unit
 ) {
@@ -128,6 +136,9 @@ private fun TxDetailSheet(
                     color = p.textMute,
                     modifier = Modifier.padding(top = 8.dp)
                 )
+            }
+            if (itemizable(tx)) {
+                CapsuleButton(stringResource(R.string.receipt_title), onReceipt, Modifier.fillMaxWidth().padding(top = 8.dp))
             }
             Row(Modifier.fillMaxWidth().padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 DangerButton(stringResource(R.string.tx_delete), onDelete, Modifier.weight(1f), enabled = deletable(tx))

@@ -72,6 +72,7 @@ fun HomeScreen(
     lock: AppLock,
     unread: Int,
     onEdit: (String) -> Unit,
+    onReceipt: (String) -> Unit,
     onInbox: () -> Unit
 ) {
     val state by vm.uiState.collectAsStateWithLifecycle()
@@ -141,6 +142,7 @@ fun HomeScreen(
         detail = detail,
         deleteError = deleteError,
         onEdit = onEdit,
+        onReceipt = onReceipt,
         onDelete = vm::delete,
         onDismiss = { detail = null },
         onDismissError = vm::clearDeleteError

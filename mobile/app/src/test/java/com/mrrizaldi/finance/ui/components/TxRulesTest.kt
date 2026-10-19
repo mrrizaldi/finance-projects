@@ -19,6 +19,16 @@ class TxRulesTest {
         )
 
     @Test
+    fun `rincian struk cuma buat pengeluaran terkirim non-adjustment`() {
+        assertTrue(itemizable(tx("expense")))
+        assertTrue(itemizable(tx("expense", accountId = null)))
+        assertFalse(itemizable(tx("income")))
+        assertFalse(itemizable(tx("transfer")))
+        assertFalse(itemizable(tx("expense", pending = true)))
+        assertFalse(itemizable(tx("expense", adjustment = true)))
+    }
+
+    @Test
     fun `edit dan hapus cuma buat income expense transfer non-adjustment yang sudah terkirim`() {
         assertTrue(editable(tx("expense")))
         assertTrue(editable(tx("income")))

@@ -94,6 +94,8 @@ private val STATEMENT_MIME_TYPES = arrayOf("application/pdf", "image/*")
 
 private fun NavHostController.edit(id: String) = navigate("edit/$id") { launchSingleTop = true }
 
+private fun NavHostController.receipt(id: String) = navigate("receipt?tx=$id")
+
 class MainActivity : FragmentActivity() {
     private lateinit var prompt: BiometricPrompt
     private var captureUri: Uri? = null
@@ -282,11 +284,12 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState, pickers:
                     container.lock,
                     unread,
                     onEdit = nav::edit,
+                    onReceipt = nav::receipt,
                     onInbox = { nav.navigate(INBOX_ROUTE) { launchSingleTop = true } }
                 )
             }
             composable(Tab.TRANSACTIONS.route) {
-                TransactionsScreen(viewModel { TransactionsViewModel(container.repository) }, onEdit = nav::edit)
+                TransactionsScreen(viewModel { TransactionsViewModel(container.repository) }, onEdit = nav::edit, onReceipt = nav::receipt)
             }
             composable(Tab.BALANCES.route) { BalancesScreen(viewModel { BalancesViewModel(container.repository) }) }
             composable(Tab.ANALYTICS.route) { AnalyticsScreen(viewModel { AnalyticsViewModel(container.repository) }) }
