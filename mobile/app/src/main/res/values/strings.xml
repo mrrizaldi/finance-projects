@@ -149,7 +149,7 @@
     <string name="widget_synced">Sinkron %1$s</string>
     <string name="widget_never">Belum sinkron</string>
 
-    <string name="add_from_statement">Cocokkan mutasi bank</string>
+    <string name="add_from_statement">Mutasi bank</string>
     <string name="statements_title">Cocokkan mutasi</string>
     <string name="statements_intro">Kirim e-statement PDF (bank atau e-wallet apa saja) atau screenshot riwayat transaksi. Aku cocokkan sama catatanmu, gak ada yang dicatat sebelum kamu setuju.</string>
     <string name="statements_account">Akun</string>
@@ -178,4 +178,33 @@
     <string name="statements_done">Tercatat %1$d baru, %2$d dipindah akun, %3$d dobel dihapus</string>
     <string name="statements_kind_screenshot">Screenshot</string>
     <string name="statements_finish">Selesai</string>
+    <string name="add_from_receipt">Dari struk</string>
+    <string name="receipt_title">Rincian struk</string>
+    <string name="receipt_intro">Foto struknya atau pilih PDF/foto dari galeri. Aku baca itemnya, kamu tinggal cek.</string>
+    <string name="receipt_camera">Foto struk</string>
+    <string name="receipt_pick">Pilih foto atau PDF</string>
+    <string name="receipt_manual">Ketik manual</string>
+    <string name="receipt_reading">Lagi dibaca… bisa sampai 30 detik</string>
+    <string name="receipt_total_mismatch">Jumlah baris beda sama total di struk, cek lagi ya</string>
+    <string name="receipt_extract_failed">Struknya gak kebaca otomatis, isi manual ya</string>
+    <string name="receipt_view_file">Lihat struk</string>
+    <string name="receipt_match_title">Kayaknya udah kecatat:</string>
+    <string name="receipt_new_tx">Bukan, catat sebagai transaksi baru</string>
+    <string name="receipt_items">Item</string>
+    <string name="receipt_item_name">Nama item</string>
+    <string name="receipt_adjustments">Pajak, service, diskon</string>
+    <string name="receipt_follow_parent">Ikut kategori transaksi</string>
+    <string name="receipt_uncategorized">Tanpa kategori</string>
+    <string name="receipt_add_item">Tambah item</string>
+    <string name="receipt_remove_item">Hapus item</string>
+    <string name="receipt_allocation">Masuk ke kategori</string>
+    <string name="receipt_save">Simpan rincian</string>
+    <string name="receipt_saving">Menyimpan…</string>
+    <string name="receipt_delete">Hapus rincian</string>
+    <string name="receipt_delete_title">Hapus rincian?</string>
+    <string name="receipt_delete_body">Item dan foto struknya ikut kehapus. Transaksinya tetap ada.</string>
+    <string name="receipt_already">Struk ini udah pernah dirinci.</string>
+    <string name="receipt_close">Tutup</string>
+    <string name="receipt_offline">Butuh sinyal buat baca dan nyimpen struk</string>
+    <string name="receipt_pdf_too_large">PDF-nya lebih dari 10 MB</string>
 </resources>

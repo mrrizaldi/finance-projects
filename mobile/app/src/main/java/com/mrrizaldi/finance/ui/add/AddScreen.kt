@@ -65,7 +65,7 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 @Composable
-fun AddScreen(vm: AddViewModel, onBack: () -> Unit, onStatements: () -> Unit = {}) {
+fun AddScreen(vm: AddViewModel, onBack: () -> Unit, onStatements: () -> Unit = {}, onReceipt: () -> Unit = {}) {
     val form by vm.form.collectAsStateWithLifecycle()
     val accounts by vm.accounts.collectAsStateWithLifecycle()
     val categories by vm.categories.collectAsStateWithLifecycle()
@@ -131,7 +131,10 @@ fun AddScreen(vm: AddViewModel, onBack: () -> Unit, onStatements: () -> Unit = {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 if (!vm.editing) {
-                    CapsuleButton(stringResource(R.string.add_from_statement), onStatements, Modifier.fillMaxWidth())
+                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        CapsuleButton(stringResource(R.string.add_from_receipt), onReceipt, Modifier.weight(1f))
+                        CapsuleButton(stringResource(R.string.add_from_statement), onStatements, Modifier.weight(1f))
+                    }
                 }
                 GlassSegmented(
                     options = listOf(

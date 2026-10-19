@@ -3,6 +3,8 @@ package com.mrrizaldi.finance
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.provider.MediaStore
+import androidx.core.content.FileProvider
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.activity.compose.setContent
@@ -35,6 +37,8 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
+import androidx.navigation.navArgument
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -60,10 +64,13 @@ import com.mrrizaldi.finance.ui.components.Tab
 import com.mrrizaldi.finance.ui.home.HomeScreen
 import com.mrrizaldi.finance.ui.home.HomeViewModel
 import com.mrrizaldi.finance.ui.inbox.InboxScreen
+import com.mrrizaldi.finance.ui.receipt.ReceiptScreen
+import com.mrrizaldi.finance.ui.receipt.ReceiptViewModel
 import com.mrrizaldi.finance.ui.statements.StatementScreen
 import com.mrrizaldi.finance.ui.statements.StatementViewModel
 import com.mrrizaldi.finance.ui.statements.readUploads
 import com.mrrizaldi.finance.util.JakartaDate
+import java.io.File
 import java.time.YearMonth
 import kotlinx.coroutines.launch
 import com.mrrizaldi.finance.ui.theme.FinanceTheme
@@ -76,17 +83,23 @@ private const val ADD_ROUTE = "add"
 private const val EDIT_ROUTE = "edit/{id}"
 private const val INBOX_ROUTE = "inbox"
 private const val STATEMENTS_ROUTE = "statements"
+private const val RECEIPT_ROUTE = "receipt?tx={tx}"
 private const val PICK_STATEMENT_FILES = 41
+private const val PICK_RECEIPT_FILES = 42
+private const val CAPTURE_RECEIPT = 43
+private const val CAPTURE_URI_KEY = "captureUri"
 private val STATEMENT_MIME_TYPES = arrayOf("application/pdf", "image/*")
 
 private fun NavHostController.edit(id: String) = navigate("edit/$id") { launchSingleTop = true }
 
 class MainActivity : FragmentActivity() {
     private lateinit var prompt: BiometricPrompt
+    private var captureUri: Uri? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
+        captureUri = savedInstanceState?.getString(CAPTURE_URI_KEY)?.let(Uri::parse)
         val container = (application as App).container
         prompt = BiometricPrompt(
             this,
@@ -101,10 +114,19 @@ class MainActivity : FragmentActivity() {
         setContent {
             FinanceTheme {
                 Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-                    Root(container, this@MainActivity::askUnlock, this@MainActivity::pickStatementFiles)
+                    Root(
+                        container,
+                        this@MainActivity::askUnlock,
+                        Pickers(this@MainActivity::pickStatementFiles, this@MainActivity::pickReceiptFiles, this@MainActivity::captureReceipt)
+                    )
                 }
             }
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        captureUri?.let { outState.putString(CAPTURE_URI_KEY, it.toString()) }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -127,24 +149,52 @@ class MainActivity : FragmentActivity() {
         lifecycleScope.launch { container.sharedUploads.value = readUploads(this@MainActivity, uris) }
     }
 
-    private fun pickStatementFiles() {
+    private fun deliverReceiptUploads(uris: List<Uri>) {
+        if (uris.isEmpty()) return
+        val container = (application as App).container
+        lifecycleScope.launch { container.receiptUploads.value = readUploads(this@MainActivity, uris) }
+    }
+
+    private fun pickDocuments(requestCode: Int) {
         val intent = Intent(Intent.ACTION_OPEN_DOCUMENT)
             .addCategory(Intent.CATEGORY_OPENABLE)
             .setType("*/*")
             .putExtra(Intent.EXTRA_MIME_TYPES, STATEMENT_MIME_TYPES)
             .putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true)
         @Suppress("DEPRECATION")
-        startActivityForResult(intent, PICK_STATEMENT_FILES)
+        startActivityForResult(intent, requestCode)
+    }
+
+    private fun pickStatementFiles() = pickDocuments(PICK_STATEMENT_FILES)
+
+    private fun pickReceiptFiles() = pickDocuments(PICK_RECEIPT_FILES)
+
+    private fun captureReceipt() {
+        val dir = File(cacheDir, "receipts").apply { mkdirs() }
+        val uri = FileProvider.getUriForFile(this, "$packageName.files", File(dir, "capture-${System.currentTimeMillis()}.jpg"))
+        captureUri = uri
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
+            .putExtra(MediaStore.EXTRA_OUTPUT, uri)
+            .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
+        @Suppress("DEPRECATION")
+        startActivityForResult(intent, CAPTURE_RECEIPT)
+    }
+
+    private fun pickedUris(data: Intent?): List<Uri> {
+        val clip = data?.clipData
+        return if (clip != null) List(clip.itemCount) { clip.getItemAt(it).uri } else listOfNotNull(data?.data)
     }
 
     @Suppress("OVERRIDE_DEPRECATION")
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         @Suppress("DEPRECATION")
         super.onActivityResult(requestCode, resultCode, data)
-        if (requestCode != PICK_STATEMENT_FILES || resultCode != RESULT_OK || data == null) return
-        val clip = data.clipData
-        val uris = if (clip != null) List(clip.itemCount) { clip.getItemAt(it).uri } else listOfNotNull(data.data)
-        deliverUploads(uris)
+        if (resultCode != RESULT_OK) return
+        when (requestCode) {
+            PICK_STATEMENT_FILES -> deliverUploads(pickedUris(data))
+            PICK_RECEIPT_FILES -> deliverReceiptUploads(pickedUris(data))
+            CAPTURE_RECEIPT -> captureUri?.let { deliverReceiptUploads(listOf(it)) }
+        }
     }
 
     private fun askUnlock() {
@@ -157,8 +207,10 @@ class MainActivity : FragmentActivity() {
     }
 }
 
+private class Pickers(val statementFiles: () -> Unit, val receiptFiles: () -> Unit, val receiptCamera: () -> Unit)
+
 @Composable
-private fun Root(container: AppContainer, askUnlock: () -> Unit, pickStatementFiles: () -> Unit) {
+private fun Root(container: AppContainer, askUnlock: () -> Unit, pickers: Pickers) {
     val status by container.api.sessionStatus.collectAsStateWithLifecycle()
     val lockedAt by container.lock.lockedAt.collectAsStateWithLifecycle()
     val gated = lockedAt != null && status !is SessionStatus.NotAuthenticated
@@ -186,7 +238,7 @@ private fun Root(container: AppContainer, askUnlock: () -> Unit, pickStatementFi
                         CircularProgressIndicator()
                     }
                     is SessionStatus.NotAuthenticated -> LoginScreen(viewModel { LoginViewModel(container.api) })
-                    else -> MainScaffold(container, hazeState, pickStatementFiles)
+                    else -> MainScaffold(container, hazeState, pickers)
                 }
             }
             if (gated) LockScreen(askUnlock)
@@ -195,7 +247,7 @@ private fun Root(container: AppContainer, askUnlock: () -> Unit, pickStatementFi
 }
 
 @Composable
-private fun MainScaffold(container: AppContainer, hazeState: HazeState, pickStatementFiles: () -> Unit) {
+private fun MainScaffold(container: AppContainer, hazeState: HazeState, pickers: Pickers) {
     val nav = rememberNavController()
     val backStack by nav.currentBackStackEntryAsState()
     val current = backStack?.destination?.route
@@ -229,7 +281,34 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState, pickStat
                 AddScreen(
                     viewModel { AddViewModel(container.repository) },
                     onBack = { nav.popBackStack() },
-                    onStatements = { nav.navigate(STATEMENTS_ROUTE) { launchSingleTop = true } }
+                    onStatements = { nav.navigate(STATEMENTS_ROUTE) { launchSingleTop = true } },
+                    onReceipt = { nav.navigate("receipt") { launchSingleTop = true } }
+                )
+            }
+            composable(
+                RECEIPT_ROUTE,
+                arguments = listOf(navArgument("tx") { type = NavType.StringType; nullable = true; defaultValue = null })
+            ) { entry ->
+                val txId = entry.arguments?.getString("tx")
+                val uploads by container.receiptUploads.collectAsStateWithLifecycle()
+                ReceiptScreen(
+                    viewModel {
+                        ReceiptViewModel(
+                            container.receipts,
+                            container.repository.accounts(),
+                            container.repository.categories(),
+                            txId,
+                            container.repository::transaction
+                        ) {
+                            container.repository.refreshAccounts()
+                            container.repository.refreshHome(YearMonth.from(JakartaDate.today()))
+                        }
+                    },
+                    uploads = uploads,
+                    onUploadsConsumed = { container.receiptUploads.value = emptyList() },
+                    onCamera = pickers.receiptCamera,
+                    onPickFiles = pickers.receiptFiles,
+                    onBack = { nav.popBackStack() }
                 )
             }
             composable(INBOX_ROUTE) { InboxScreen(container.api, onBack = { nav.popBackStack() }) }
@@ -243,7 +322,7 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState, pickStat
                     },
                     sharedFiles = shared,
                     onSharedConsumed = { container.sharedUploads.value = emptyList() },
-                    onPickFiles = pickStatementFiles,
+                    onPickFiles = pickers.statementFiles,
                     onBack = { nav.popBackStack() }
                 )
             }
@@ -252,7 +331,7 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState, pickStat
                 AddScreen(viewModel { AddViewModel(container.repository, id) }, onBack = { nav.popBackStack() })
             }
         }
-        if (current != ADD_ROUTE && current != EDIT_ROUTE && current != INBOX_ROUTE && current != STATEMENTS_ROUTE) {
+        if (current != ADD_ROUTE && current != EDIT_ROUTE && current != INBOX_ROUTE && current != STATEMENTS_ROUTE && current != RECEIPT_ROUTE) {
             FloatingNavBar(
                 current = current,
                 onSelect = { tab ->

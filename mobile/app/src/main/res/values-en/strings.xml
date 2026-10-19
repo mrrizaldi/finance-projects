@@ -149,7 +149,7 @@
     <string name="widget_synced">Synced %1$s</string>
     <string name="widget_never">Not synced yet</string>
 
-    <string name="add_from_statement">Match bank statement</string>
+    <string name="add_from_statement">Bank statement</string>
     <string name="statements_title">Match statement</string>
     <string name="statements_intro">Send a PDF e-statement (any bank or e-wallet) or screenshots of your transaction history. Nothing is recorded until you approve.</string>
     <string name="statements_account">Account</string>
@@ -178,4 +178,33 @@
     <string name="statements_done">Recorded %1$d new, moved %2$d to this account, removed %3$d duplicates</string>
     <string name="statements_kind_screenshot">Screenshot</string>
     <string name="statements_finish">Done</string>
+    <string name="add_from_receipt">From receipt</string>
+    <string name="receipt_title">Receipt items</string>
+    <string name="receipt_intro">Snap the receipt or pick a PDF/photo from your gallery. I\'ll read the items, you just check them.</string>
+    <string name="receipt_camera">Take photo</string>
+    <string name="receipt_pick">Pick photo or PDF</string>
+    <string name="receipt_manual">Type manually</string>
+    <string name="receipt_reading">Reading… this can take up to 30 seconds</string>
+    <string name="receipt_total_mismatch">Line total differs from the printed total, please check</string>
+    <string name="receipt_extract_failed">Couldn\'t read the receipt automatically, fill it in manually</string>
+    <string name="receipt_view_file">View receipt</string>
+    <string name="receipt_match_title">Looks like it\'s already recorded:</string>
+    <string name="receipt_new_tx">No, record as a new transaction</string>
+    <string name="receipt_items">Items</string>
+    <string name="receipt_item_name">Item name</string>
+    <string name="receipt_adjustments">Tax, service, discount</string>
+    <string name="receipt_follow_parent">Same as transaction category</string>
+    <string name="receipt_uncategorized">Uncategorized</string>
+    <string name="receipt_add_item">Add item</string>
+    <string name="receipt_remove_item">Remove item</string>
+    <string name="receipt_allocation">Goes to category</string>
+    <string name="receipt_save">Save items</string>
+    <string name="receipt_saving">Saving…</string>
+    <string name="receipt_delete">Delete items</string>
+    <string name="receipt_delete_title">Delete receipt items?</string>
+    <string name="receipt_delete_body">Items and the receipt photo will be deleted. The transaction stays.</string>
+    <string name="receipt_already">This receipt was already itemized.</string>
+    <string name="receipt_close">Close</string>
+    <string name="receipt_offline">You need a connection to read and save receipts</string>
+    <string name="receipt_pdf_too_large">The PDF is larger than 10 MB</string>
 </resources>
