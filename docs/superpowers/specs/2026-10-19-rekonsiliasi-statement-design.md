@@ -220,7 +220,7 @@ User mau review nanti bisa ngobrol dengan AI ("nomor 3 bukan dobel", kirim scree
 | 5 Screenshot Gemini | selesai, live | `5f361e7` |
 | 6 Android | selesai, diuji di HP tanpa commit data asli | `1399c24` |
 | 7 Skill + CLI + OpenClaw | selesai, eval 10/10 | `45e9a24`, `63b606d`, `4e8894f`, `7c92c13`; `~/.openclaw` `eb7fb10`, `8632c06` |
-| 8 Bank tambahan | screenshot sudah mencakup Jago/DANA/GoPay/ShopeePay lewat Gemini; parser PDF selain BCA/BSI belum | – |
-| 9 Bersih-bersih dobel lama | belum (sesuai permintaan user: paling akhir) | – |
+| 8 Bank tambahan | PDF selain BCA/BSI dan PDF scan dibaca Gemini (rantai model, cek saldo kalau tercantum); diuji PDF GoPay sintetis | `ae779f1`, `5b23bab` |
+| 9 Bersih-bersih dobel lama | 58 pasang diperiksa; 1 terbukti dobel (BIAYA ADM BCA 1 Jul: bank Juli 5 debit Rp 15.000, app 6) dihapus lewat `delete_manual_transaction`; sisanya terbukti transaksi berbeda atau gak bisa dibuktikan (entri tunai) | data, 19 Okt |
 
-Belum terbukti: share dari app Galeri/Files di HP (cuma pemilih file yang diuji) dan tombol Catat di HP dengan data asli.
+Belum terbukti: share dari app Galeri/Files di HP (cuma pemilih file yang diuji), tombol Catat di HP dengan data asli, dan PDF GoPay/Jago/DANA asli (yang diuji PDF sintetis). Kuota Gemini free tier ~20 file/hari per model.
