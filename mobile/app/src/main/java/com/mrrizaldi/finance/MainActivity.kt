@@ -316,16 +316,19 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState, pickers:
                             txId,
                             container.repository::transaction
                         ) {
-                            container.repository.refreshAccounts()
-                            container.repository.refreshHome(YearMonth.from(JakartaDate.today()))
-                            container.repository.refreshAnalytics(defaultAnalyticsBounds())
+                            container.appScope.launch {
+                                container.repository.refreshAccounts()
+                                container.repository.refreshHome(YearMonth.from(JakartaDate.today()))
+                                container.repository.refreshAnalytics(defaultAnalyticsBounds())
+                            }
                         }
                     },
                     uploads = uploads,
                     onUploadsConsumed = { container.receiptUploads.value = emptyList() },
                     onCamera = pickers.receiptCamera,
                     onPickFiles = pickers.receiptFiles,
-                    onBack = { nav.popBackStack() }
+                    onBack = { nav.popBackStack() },
+                    onDone = { if (txId == null) nav.popBackStack(ADD_ROUTE, inclusive = true) else nav.popBackStack() }
                 )
             }
             composable(INBOX_ROUTE) { InboxScreen(container.api, onBack = { nav.popBackStack() }) }

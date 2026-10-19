@@ -85,7 +85,7 @@ class ReceiptViewModelTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun vm(api: FakeReceiptApi, onSaved: suspend () -> Unit = {}) = ReceiptViewModel(
+    private fun vm(api: FakeReceiptApi, onSaved: () -> Unit = {}) = ReceiptViewModel(
         api, flowOf(emptyList()), flowOf(emptyList()), null, { id -> parent.takeIf { it.id == id } }, dispatcher, onSaved
     )
 
@@ -141,6 +141,30 @@ class ReceiptViewModelTest {
         assertEquals("Struk ini sudah pernah dirinci", state.notice)
         assertNull(state.error)
         assertTrue(state.exists)
+    }
+
+    @Test
+    fun conflictWithoutTransactionShowsProcessingMessage() = runTest(dispatcher) {
+        val api = FakeReceiptApi(draft)
+        api.failUpload = StatementApiException(CONFLICT, "teks server")
+        val model = vm(api)
+        model.upload(listOf(pdf))
+        advanceUntilIdle()
+        assertEquals(com.mrrizaldi.finance.R.string.receipt_err_processing, model.state.value.errorRes)
+        assertNull(model.state.value.error)
+    }
+
+    @Test
+    fun doneDoesNotWaitForRefresh() = runTest(dispatcher) {
+        val api = FakeReceiptApi(draft)
+        var started = false
+        val model = vm(api) { started = true }
+        model.upload(listOf(pdf))
+        advanceUntilIdle()
+        model.save()
+        advanceUntilIdle()
+        assertTrue(started)
+        assertTrue(model.state.value.done)
     }
 
     @Test

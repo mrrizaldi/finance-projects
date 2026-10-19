@@ -54,6 +54,32 @@ class ReceiptStateTest {
     }
 
     @Test
+    fun `kategori dominan mengabaikan baris tanpa kategori`() {
+        val big = ReceiptLineDto("item", "Besar", 1.0, 90000.0, null)
+        val small = ReceiptLineDto("item", "Kecil", 1.0, 10000.0, "food")
+        val state = ReceiptState().withDraft(ReceiptDraftDto(receipt = draftReceipt, lines = listOf(big, small)))
+        assertEquals("food", state.newCategoryId)
+        val none = ReceiptState().withDraft(ReceiptDraftDto(receipt = draftReceipt, lines = listOf(big)))
+        assertNull(none.newCategoryId)
+    }
+
+    @Test
+    fun `hapus baris tengah mempertahankan kunci baris lain`() {
+        val state = ReceiptState().withLines(listOf(item, item.copy(name = "B"), item.copy(name = "C")))
+        val keys = state.lineKeys
+        assertEquals(listOf(keys[0], keys[2]), state.withoutLine(1).lineKeys)
+        assertEquals(keys + 3L, state.withAddedLine(item).lineKeys)
+    }
+
+    @Test
+    fun `status HTTP dipetakan ke pesan`() {
+        assertEquals(com.mrrizaldi.finance.R.string.receipt_err_processing, receiptErrorRes(409, true))
+        assertEquals(com.mrrizaldi.finance.R.string.receipt_err_has_breakdown, receiptErrorRes(409, false))
+        assertEquals(com.mrrizaldi.finance.R.string.receipt_err_invalid, receiptErrorRes(400, false))
+        assertEquals(com.mrrizaldi.finance.R.string.receipt_err_failed, receiptErrorRes(500, false))
+    }
+
+    @Test
     fun `draft tanpa kandidat langsung mode transaksi baru dengan nominal total`() {
         val state = ReceiptState().withDraft(ReceiptDraftDto(receipt = draftReceipt, lines = listOf(draftLine)))
         assertTrue(state.createNew)

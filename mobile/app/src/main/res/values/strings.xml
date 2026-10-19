@@ -208,4 +208,11 @@
     <string name="receipt_offline">Butuh sinyal buat baca dan nyimpen struk</string>
     <string name="receipt_pdf_too_large">PDF-nya lebih dari 10 MB</string>
     <string name="receipt_no_app">Gak ada app yang bisa buka ini</string>
+    <string name="receipt_err_processing">Struk ini lagi diproses, coba lagi sebentar</string>
+    <string name="receipt_err_has_breakdown">Transaksi ini udah punya rincian</string>
+    <string name="receipt_err_invalid">Ada isian yang gak valid, cek nominal dan kategori</string>
+    <string name="receipt_err_not_found">Transaksi atau struknya gak ketemu</string>
+    <string name="receipt_err_too_large">Filenya kegedean</string>
+    <string name="receipt_err_unsupported">Jenis file ini belum didukung</string>
+    <string name="receipt_err_failed">Gagal menyimpan, coba lagi</string>
 </resources>

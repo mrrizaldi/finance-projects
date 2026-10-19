@@ -24,6 +24,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -73,7 +74,8 @@ fun ReceiptScreen(
     onUploadsConsumed: () -> Unit,
     onCamera: () -> Unit,
     onPickFiles: () -> Unit,
-    onBack: () -> Unit
+    onBack: () -> Unit,
+    onDone: () -> Unit = onBack
 ) {
     val state by vm.state.collectAsStateWithLifecycle()
     val accounts by vm.accounts.collectAsStateWithLifecycle()
@@ -88,7 +90,7 @@ fun ReceiptScreen(
         }
     }
     LaunchedEffect(state.done) {
-        if (state.done) onBack()
+        if (state.done) onDone()
     }
 
     Column(Modifier.fillMaxSize().imePadding()) {
@@ -232,25 +234,27 @@ private fun ReviewPane(
     SectionLabel(stringResource(R.string.receipt_items))
     state.lines.forEachIndexed { index, line ->
         if (line.kind != KIND_ITEM) return@forEachIndexed
-        GroupedCard {
-            Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                CapsuleField(line.name, { v -> vm.updateLine(index, line.copy(name = v)) }, stringResource(R.string.receipt_item_name))
-                Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    AmountField(
-                        digitsOf(line.amount),
-                        { v -> vm.updateLine(index, line.copy(amount = v.toLongOrNull() ?: 0L)) },
-                        stringResource(R.string.add_amount),
-                        Modifier.weight(1f)
+        key(state.lineKeys.getOrElse(index) { index.toLong() }) {
+            GroupedCard {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    CapsuleField(line.name, { v -> vm.updateLine(index, line.copy(name = v)) }, stringResource(R.string.receipt_item_name))
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        AmountField(
+                            digitsOf(line.amount),
+                            { v -> vm.updateLine(index, line.copy(amount = v.toLongOrNull() ?: 0L)) },
+                            stringResource(R.string.add_amount),
+                            Modifier.weight(1f)
+                        )
+                        TopBarButton(AppIcons.Trash, stringResource(R.string.receipt_remove_item), { vm.removeLine(index) }, tint = p.negative)
+                    }
+                    DropdownField(
+                        label = stringResource(R.string.add_category),
+                        options = categoryOptions,
+                        selected = categoryOptions.firstOrNull { it.first == line.categoryId },
+                        optionLabel = { it.second },
+                        onSelect = { (id, _) -> vm.updateLine(index, line.copy(categoryId = id)) }
                     )
-                    TopBarButton(AppIcons.Trash, stringResource(R.string.receipt_remove_item), { vm.removeLine(index) }, tint = p.negative)
                 }
-                DropdownField(
-                    label = stringResource(R.string.add_category),
-                    options = categoryOptions,
-                    selected = categoryOptions.firstOrNull { it.first == line.categoryId },
-                    optionLabel = { it.second },
-                    onSelect = { (id, _) -> vm.updateLine(index, line.copy(categoryId = id)) }
-                )
             }
         }
     }

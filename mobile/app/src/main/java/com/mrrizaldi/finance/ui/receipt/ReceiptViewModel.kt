@@ -45,6 +45,8 @@ data class ReceiptState(
     val totalOk: Boolean = true,
     val extractionError: String? = null,
     val lines: List<ReceiptLine> = emptyList(),
+    val lineKeys: List<Long> = emptyList(),
+    val nextKey: Long = 0,
     val files: List<ReceiptFileDto> = emptyList(),
     val candidates: List<ReceiptCandidateDto> = emptyList(),
     val chosenCandidateId: String? = null,
@@ -82,11 +84,20 @@ data class ReceiptState(
         }
     }
 
+    fun withLines(new: List<ReceiptLine>): ReceiptState =
+        copy(lines = new, lineKeys = List(new.size) { nextKey + it }, nextKey = nextKey + new.size)
+
+    fun withoutLine(index: Int): ReceiptState =
+        copy(lines = lines.filterIndexed { i, _ -> i != index }, lineKeys = lineKeys.filterIndexed { i, _ -> i != index })
+
+    fun withAddedLine(line: ReceiptLine): ReceiptState =
+        copy(lines = lines + line, lineKeys = lineKeys + nextKey, nextKey = nextKey + 1)
+
     fun withDraft(draft: ReceiptDraftDto): ReceiptState {
         val lines = draft.lines.map { it.toLine() }
         val total = draft.receipt.printed_total?.roundToLong() ?: lines.sumOf { it.amount }.takeIf { it > 0 }
         val first = draft.candidates.firstOrNull()
-        val dominant = lines.filter { it.kind == KIND_ITEM }.groupBy { it.categoryId }
+        val dominant = lines.filter { it.kind == KIND_ITEM && it.categoryId != null }.groupBy { it.categoryId }
             .maxByOrNull { (_, group) -> group.sumOf { it.amount } }?.key
         return copy(
             receiptId = draft.receipt.id,
@@ -96,13 +107,12 @@ data class ReceiptState(
             printedTotal = draft.receipt.printed_total?.roundToLong(),
             totalOk = draft.totalOk,
             extractionError = draft.extractionError,
-            lines = lines,
             candidates = draft.candidates,
             chosenCandidateId = if (transactionId == null) first?.id else null,
             createNew = transactionId == null && first == null,
             newAmount = total?.toString() ?: "",
             newCategoryId = dominant
-        )
+        ).withLines(lines)
     }
 }
 
@@ -117,9 +127,22 @@ fun signedAdjustment(kind: String, magnitude: Long, previous: Long): Long = when
 }
 
 private const val CONFLICT = 409
+private const val BAD_REQUEST = 400
+private const val NOT_FOUND = 404
+private const val TOO_LARGE = 413
+private const val UNSUPPORTED = 415
 private const val BYTES_PER_KB = 1024
 private const val MAX_PDF_MB = 10
 private const val MAX_PDF_BYTES = MAX_PDF_MB * BYTES_PER_KB * BYTES_PER_KB
+
+internal fun receiptErrorRes(status: Int, upload: Boolean): Int = when (status) {
+    CONFLICT -> if (upload) R.string.receipt_err_processing else R.string.receipt_err_has_breakdown
+    BAD_REQUEST -> R.string.receipt_err_invalid
+    NOT_FOUND -> R.string.receipt_err_not_found
+    TOO_LARGE -> R.string.receipt_err_too_large
+    UNSUPPORTED -> R.string.receipt_err_unsupported
+    else -> R.string.receipt_err_failed
+}
 
 class ReceiptViewModel(
     private val api: ReceiptApi,
@@ -128,7 +151,7 @@ class ReceiptViewModel(
     transactionId: String?,
     private val loadParent: suspend (String) -> TransactionEntity?,
     private val shrinkDispatcher: CoroutineDispatcher = Dispatchers.Default,
-    private val onSaved: suspend () -> Unit
+    private val onSaved: () -> Unit
 ) : ViewModel() {
     private val _state = MutableStateFlow(ReceiptState(transactionId = transactionId))
     val state: StateFlow<ReceiptState> = _state.asStateFlow()
@@ -142,9 +165,13 @@ class ReceiptViewModel(
         if (transactionId != null) load(transactionId)
     }
 
-    private fun failed(state: ReceiptState, e: Exception): ReceiptState = when (e) {
-        is IOException -> state.copy(busy = null, error = null, errorRes = R.string.receipt_offline)
-        else -> state.copy(busy = null, error = e.message ?: e.javaClass.simpleName, errorRes = null)
+    private fun failed(state: ReceiptState, e: Exception, upload: Boolean = false): ReceiptState {
+        val res = when (e) {
+            is IOException -> R.string.receipt_offline
+            is StatementApiException -> receiptErrorRes(e.status, upload)
+            else -> R.string.receipt_err_failed
+        }
+        return state.copy(busy = null, error = null, errorRes = res)
     }
 
     private fun load(transactionId: String) {
@@ -159,9 +186,8 @@ class ReceiptViewModel(
                     else it.copy(
                         busy = null, exists = true, editing = true, receiptId = view.receipt.id,
                         merchant = view.receipt.merchant, purchasedAt = view.receipt.purchased_at,
-                        printedTotal = view.receipt.printed_total?.roundToLong(),
-                        lines = view.lines.map { line -> line.toLine() }, files = view.files
-                    )
+                        printedTotal = view.receipt.printed_total?.roundToLong(), files = view.files
+                    ).withLines(view.lines.map { line -> line.toLine() })
                 }
             } catch (e: Exception) {
                 _state.update { failed(it, e) }
@@ -187,15 +213,15 @@ class ReceiptViewModel(
                     _state.update { it.copy(busy = null, notice = e.message) }
                     load(existing)
                 } else {
-                    _state.update { it.copy(busy = null, error = e.message, alreadyItemized = e.status == CONFLICT) }
+                    _state.update { failed(it, e, upload = true) }
                 }
             } catch (e: Exception) {
-                _state.update { failed(it, e) }
+                _state.update { failed(it, e, upload = true) }
             }
         }
     }
 
-    fun startManual() = _state.update { it.copy(editing = true, lines = listOf(ReceiptLine(KIND_ITEM, "", 1.0, 0, null))) }
+    fun startManual() = _state.update { it.copy(editing = true).withLines(listOf(ReceiptLine(KIND_ITEM, "", 1.0, 0, null))) }
 
     fun chooseCandidate(id: String?) = _state.update { it.copy(chosenCandidateId = id, createNew = id == null) }
 
@@ -204,9 +230,9 @@ class ReceiptViewModel(
     fun updateLine(index: Int, line: ReceiptLine) =
         _state.update { it.copy(lines = it.lines.toMutableList().also { list -> list[index] = line }) }
 
-    fun removeLine(index: Int) = _state.update { it.copy(lines = it.lines.filterIndexed { i, _ -> i != index }) }
+    fun removeLine(index: Int) = _state.update { it.withoutLine(index) }
 
-    fun addItem() = _state.update { it.copy(lines = it.lines + ReceiptLine(KIND_ITEM, "", 1.0, 0, null)) }
+    fun addItem() = _state.update { it.withAddedLine(ReceiptLine(KIND_ITEM, "", 1.0, 0, null)) }
 
     fun save() {
         val s = _state.value
@@ -223,7 +249,7 @@ class ReceiptViewModel(
                     transaction_date = s.purchasedAt ?: JakartaDate.now().toOffsetDateTime().toString()
                 ) else null
                 api.save(s.receiptId, target, fresh, s.lines.filter { it.amount != 0L }.map { it.toDto() })
-                runCatching { onSaved() }
+                onSaved()
                 _state.update { it.copy(busy = null, done = true) }
             } catch (e: Exception) {
                 _state.update { failed(it, e) }
@@ -237,7 +263,7 @@ class ReceiptViewModel(
         viewModelScope.launch {
             try {
                 api.delete(id)
-                runCatching { onSaved() }
+                onSaved()
                 _state.update { it.copy(busy = null, done = true) }
             } catch (e: Exception) {
                 _state.update { failed(it, e) }

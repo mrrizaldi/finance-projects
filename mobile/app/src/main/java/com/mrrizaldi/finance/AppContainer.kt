@@ -22,12 +22,17 @@ import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
 import io.github.jan.supabase.serializer.KotlinXSerializer
 import io.ktor.client.engine.okhttp.OkHttp
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.serialization.json.Json
 
 class AppContainer(context: Context) {
 
     private val appContext = context.applicationContext
+
+    val appScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     private val sessionStore by lazy { SessionStore(appContext) }
 
