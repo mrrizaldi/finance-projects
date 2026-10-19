@@ -47,7 +47,7 @@ export class StatementParseError extends Error {
 const PDFTOTEXT_TIMEOUT_MS = 120_000;
 const PDFTOTEXT_MAX_BUFFER_BYTES = 32 * 1024 * 1024;
 const INTEGRITY_TOLERANCE_RUPIAH = 1;
-const CENTS_PER_RUPIAH = 100;
+export const CENTS_PER_RUPIAH = 100;
 const MAX_CONTINUATION_LENGTH = 120;
 const MONTH_ABBREV_LENGTH = 3;
 const DECEMBER = 12;
@@ -89,7 +89,7 @@ const BSI_SIGNATURE = /LAPORAN REKENING|BYOND|EASY WADIAH/;
 const pad2 = (n: number) => String(n).padStart(2, '0');
 const isoDate = (year: number, month: number, day: number) => `${year}-${pad2(month)}-${pad2(day)}`;
 const collapseSpaces = (text: string) => text.replace(/\s{2,}/g, ' ').trim();
-const roundCents = (value: number) => Math.round(value * CENTS_PER_RUPIAH) / CENTS_PER_RUPIAH;
+export const roundCents = (value: number) => Math.round(value * CENTS_PER_RUPIAH) / CENTS_PER_RUPIAH;
 const lastDayOfMonth = (year: number, month: number) => new Date(Date.UTC(year, month, 0)).getUTCDate();
 
 export function parseStatementAmount(text: string | undefined | null): number | null {

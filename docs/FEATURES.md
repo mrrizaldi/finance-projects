@@ -507,9 +507,22 @@ Sedang dibangun. Rancangan lengkap: `docs/superpowers/specs/2026-10-19-rekonsili
 
 **Parser PDF** (`api/src/lib/statement-parser.ts`): `pdftotext -layout` lalu aturan per bank, BCA (Rekening Tahapan) dan BSI. Port dari `finance-recon/scripts/parse-statement.py` di server; hasilnya sama persis di 8 PDF `recap/` (250 baris). `integrityOk` = `saldo awal + kredit − debit = saldo akhir` (toleransi Rp 1), dan untuk BCA juga total `MUTASI CR/DB` di blok ringkasan. Beda dari versi Python: arah baris BCA tanpa penanda DB/CR ditebak dari **saldo berjalan** (saldo awal ± baris sebelumnya), bukan saldo tercetak terakhir, supaya baris tanpa kolom saldo gak bikin baris sesudahnya salah arah. Error `StatementParseError` dengan `code`: `pdftotext_missing`, `pdftotext_failed`, `unrecognized`, `empty`.
 
-**Belum:** matcher, endpoint API, layar Android. Lihat §10 di spec.
+**Matcher & audit** (`api/src/lib/statement-matcher.ts`, fungsi murni tanpa DB): `matchStatement` membandingkan baris statement dengan transaksi semua akun user di jendela periode ±`MAX_DAY_GAP` (3) hari. Arah transaksi relatif ke akun diambil dari `getEffects` (`balance-math.ts`), jadi transfer pakai `to_amount` di sisi penerima. Skor: nominal persis 0,5 (selisih ≤ `FEE_TOLERANCE_RUPIAH` 6.500 → 0,25) + kedekatan tanggal 0,25 + jam ±30 menit 0,1 + kemiripan kata deskripsi 0,15. Pasangan diambil rakus dari skor tertinggi, satu transaksi sekali pakai.
 
-📂 **Kode:** `supabase/migrations/059_statement_imports.sql` · `api/src/lib/statement-parser.ts` · test `tests/integration/statement-imports.test.js`, `api/tests/unit/statement-parser.test.ts` (kasus PDF asli di-skip kalau `recap/` gak ada; folder itu gitignored)
+| Hasil | Kapan | Tercentang |
+|---|---|---|
+| `match` / `transfer_pair` | skor ≥ `MATCH_SCORE` (0,6); `transfer_pair` kalau pasangannya transfer | – |
+| `probable` | ada pasangan tapi skor < 0,6 (beda biaya, selisih 3 hari) | tidak |
+| `other_account` | gak ada di akun ini, tapi nominal persis + skor ≥ 0,6 di akun lain (bukan transfer) | ya |
+| `new` | gak ada pasangan sama sekali | ya |
+| `app_dup` (temuan app) | transaksi app yang kalah rebutan satu baris bank | ya kalau nominalnya persis |
+| `app_only` (temuan app) | transaksi app di dalam periode tanpa pasangan | tidak |
+
+Adjustment (`is_adjustment`) gak pernah dicocokkan. `auditBalance` menjelaskan selisih `saldo akhir statement − saldo app` dengan baris `new`/`other_account` dan temuan app; sisanya `unexplained`.
+
+**Belum:** endpoint API, layar Android. Lihat §10 di spec.
+
+📂 **Kode:** `supabase/migrations/059_statement_imports.sql` · `api/src/lib/statement-parser.ts` · `api/src/lib/statement-matcher.ts` · test `tests/integration/statement-imports.test.js`, `api/tests/unit/statement-parser.test.ts`, `api/tests/unit/statement-matcher.test.ts` (kasus PDF asli di-skip kalau `recap/` gak ada; folder itu gitignored)
 
 ---
 

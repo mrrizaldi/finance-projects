@@ -123,6 +123,8 @@ Setiap baris statement dibandingkan dengan transaksi DB akun itu di jendela `per
 
 **Penugasan:** urutkan semua pasangan kandidat dari skor tertinggi, ambil rakus, satu baris DB dipakai sekali. Ukurannya ratusan baris per statement, jadi rakus cukup.
 
+**Revisi saat implementasi (fase 3):** ambang `match` jadi 0,6 (nominal persis selisih 1 hari = 0,69 harus match). "Pesaing dekat" dihapus: ambiguitas sudah muncul sebagai `app_dup` di sisi app. `app_dup` dan `app_only` bukan keputusan baris statement, tapi daftar temuan terpisah (`appFindings`), karena keduanya tentang transaksi app, bukan baris bank. Penyimpanannya ditentukan di fase 4.
+
 **Kelas hasil:**
 
 | Kelas | Arti | Aksi default di review |
