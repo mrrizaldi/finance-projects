@@ -588,7 +588,7 @@ flowchart LR
 
 | Endpoint | Isi |
 |---|---|
-| `POST /api/receipts` (`:111`) | Upload gambar/PDF (`bodyLimit` khusus). Urutan aman: buat baris `receipts` berstatus `draft` → upload ke bucket privat `receipts` → insert `receipt_files` → baru panggil Gemini; kalau gagal di tengah, file storage dan draft dibersihkan. Hash `sha256` dihitung per file; struk yang sudah pernah dirinci: **409** + `receipt_id`/`transaction_id`. Respons: baris hasil ekstraksi + kandidat transaksi + URL bertanda tangan. Tiap upload juga memicu pembersihan malas draft > 7 hari (`purgeStaleDrafts`, `:53`, `DRAFT_TTL_DAYS`, `:20`) yang cuma menghapus status `draft`. |
+| `POST /api/receipts` (`:111`) | Upload gambar/PDF (`bodyLimit` khusus). Urutan aman: buat baris `receipts` berstatus `draft` → upload ke bucket privat `receipts` → insert `receipt_files` → baru panggil Gemini; kalau gagal di tengah, file storage dan draft dibersihkan. Hash `sha256` dihitung per file; struk yang sudah pernah dirinci: **409** + `receipt_id`/`transaction_id`. Respons 201: `{receipt, lines, totalOk, candidates, extractionError}` (gak ada URL file; itu cuma dari GET). Tiap upload juga memicu pembersihan malas draft > 7 hari (`purgeStaleDrafts`, `:53`, `DRAFT_TTL_DAYS`, `:20`) yang cuma menghapus status `draft`. |
 | `GET /api/receipts/by-transaction/:transactionId` (`:224`) | Rincian tersimpan + file (signed URL 1 jam, `SIGNED_URL_SECONDS`, `:23`). |
 | `POST /api/receipts/save` (`:247`) | RPC `save_receipt`; 404 tidak ditemukan, 409 transaksi sudah punya rincian, 422 validasi gagal. |
 | `DELETE /api/receipts/:id` (`:274`) | Hapus rincian; file storage ikut dihapus. |
