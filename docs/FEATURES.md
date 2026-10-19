@@ -518,8 +518,10 @@ Sedang dibangun. Rancangan lengkap: `docs/superpowers/specs/2026-10-19-rekonsili
 | `probable` | ada pasangan tapi skor < 0,6 (beda biaya, selisih 3 hari) | tidak |
 | `other_account` | gak ada di akun ini, tapi nominal persis + skor ≥ 0,6 di akun lain (bukan transfer) | ya |
 | `new` | gak ada pasangan sama sekali | ya |
-| `app_dup` (temuan app) | transaksi app yang kalah rebutan satu baris bank | ya kalau nominalnya persis |
-| `app_only` (temuan app) | transaksi app di dalam periode tanpa pasangan | tidak |
+| `app_dup` (temuan app) | transaksi app **di dalam periode** yang kalah rebutan satu baris bank, dengan nominal persis atau tanggal sama dengan baris itu | ya kalau nominalnya persis |
+| `app_only` (temuan app) | transaksi app di dalam periode tanpa pasangan (termasuk kandidat beda hari dan beda nominal) | tidak |
+
+Transaksi di luar periode (hari-hari jendela ±3) gak pernah jadi temuan. Aturan ini diperketat 19 Okt 2026 setelah uji data asli: screenshot BCA 2–4 Agu sempat menandai tiga transaksi 30 Jul–1 Agu sebagai dobel cuma karena nominalnya dalam toleransi biaya.
 
 Adjustment (`is_adjustment`) gak pernah dicocokkan. `auditBalance` menjelaskan selisih `saldo akhir statement − saldo app` dengan baris `new`/`other_account` dan temuan app; sisanya `unexplained`.
 

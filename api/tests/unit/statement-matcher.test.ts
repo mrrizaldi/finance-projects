@@ -132,6 +132,18 @@ describe('matchStatement', () => {
     ]);
   });
 
+  it('does not call a nearby but different transaction a duplicate', () => {
+    const bank = line('2026-09-02', 12000, 'debit', 'JAJAN MOCHI');
+    const real = tx({ type: 'expense', amount: 12000, date: '2026-09-02', description: 'Jajan Mochi' });
+    const beforePeriod = tx({ type: 'expense', amount: 9900, date: '2026-08-31', description: 'Kopi WFC' });
+    const otherDay = tx({ type: 'expense', amount: 9000, date: '2026-09-03', description: 'Takoyaki' });
+    const { lines, appFindings } = run([bank], [real, beforePeriod, otherDay]);
+    expect(lines[0].matchedTransactionId).toBe(real.id);
+    expect(appFindings).toEqual([
+      { transactionId: otherDay.id, kind: 'app_only', relatedLineId: null, selected: false, signedAmount: -9000 },
+    ]);
+  });
+
   it('uses time of day to break a tie between two same-amount rows', () => {
     const morning = line('2026-09-07', 15000, 'debit', '', '08:05');
     const evening = line('2026-09-07', 15000, 'debit', '', '19:40');

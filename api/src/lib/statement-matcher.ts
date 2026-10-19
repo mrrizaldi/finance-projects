@@ -184,10 +184,11 @@ export function matchStatement(input: MatchInput): MatchResult {
 
   const appFindings: AppFinding[] = [];
   for (const tx of onAccount) {
-    if (usedTx.has(tx.id)) continue;
+    if (usedTx.has(tx.id) || tx.date < input.periodStart || tx.date > input.periodEnd) continue;
     const effect = signedEffectOn(accountId, tx);
     const rivalOf = pairs
-      .filter((p) => p.tx.id === tx.id && lineToPair.get(p.line.id)?.tx.id !== tx.id && lineToPair.has(p.line.id))
+      .filter((p) => p.tx.id === tx.id && lineToPair.has(p.line.id) && lineToPair.get(p.line.id)?.tx.id !== tx.id)
+      .filter((p) => isExactAmount(p.line, effect) || p.line.date === tx.date)
       .sort((a, b) => b.score - a.score)[0];
     if (rivalOf) {
       appFindings.push({
@@ -197,7 +198,7 @@ export function matchStatement(input: MatchInput): MatchResult {
         selected: isExactAmount(rivalOf.line, effect),
         signedAmount: effect,
       });
-    } else if (tx.date >= input.periodStart && tx.date <= input.periodEnd) {
+    } else {
       appFindings.push({ transactionId: tx.id, kind: 'app_only', relatedLineId: null, selected: false, signedAmount: effect });
     }
   }
