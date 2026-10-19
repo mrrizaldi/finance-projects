@@ -453,6 +453,8 @@ Trigger `push_notify_on_insert` → RPC `notify_push_on_transaction_insert` (mig
 
 Supabase Auth. Signup baru → trigger `on_auth_user_created` → `handle_new_user` bikin `profiles`, lalu `on_profile_created_seed` → `seed_user_data` isi kategori default dll.
 
+**Auth API:** `requireUser` (`api/src/lib/supabase.ts`) menerima header `Authorization: Bearer <access token>` (app Android) dan, kalau header itu gak ada, cookie session `@supabase/ssr` (dashboard). Klien Supabase per request tetap pakai anon key + token user, jadi RLS berlaku. `DISABLE_AUTH=true` (dev lokal) mem-bypass keduanya dengan service role dan `OWNER_USER_ID`.
+
 **RLS (multi-user, mig 041–046):** semua tabel punya `user_id`, di-enforce RLS. View pakai `security_invoker` (mig 043) biar ikut RLS pemanggil. RPC di-scope ke user (mig 044); trigger `trg_set_user_id` isi `user_id` otomatis dari akun/session (mig 045–046).
 
 **Admin (mig 048):** `profiles.role`, RPC `is_admin()`. Endpoint admin:
@@ -522,16 +524,28 @@ Adjustment (`is_adjustment`) gak pernah dicocokkan. `auditBalance` menjelaskan s
 
 **Commit** (mig 060, RPC `commit_statement_import(p_import)`, SECURITY INVOKER jadi RLS berlaku): satu transaksi DB untuk satu import berstatus `review` dengan `integrity_ok` bukan `false`. Urutannya: temuan app tercentang (`app_findings`, `app_dup`/`app_only`) di-soft-delete lewat `delete_manual_transaction`, baris `other_account` tercentang dipindah ke akun statement lewat `update_manual_transaction`, lalu baris `new` tercentang jadi transaksi `income`/`expense` baru dengan `source = 'statement_import'` dan `statement_line_id`. Jam kosong diisi 12:00 WIB. Sesudahnya status `committed`, jadi commit kedua ditolak. Trigger `notify_push_on_transaction_insert` melewati `source = 'statement_import'`, jadi impor massal gak nembak notif per baris. Kolom `statement_imports.app_findings` (jsonb) dan `audit` (jsonb) ikut di mig 060.
 
-**Belum:** endpoint API, layar Android. Lihat §10 di spec.
+**Endpoint** (`api/src/routes/statements.ts`, semua lewat `requireUser`, cookie atau `Authorization: Bearer <access token Supabase>`):
 
-📂 **Kode:** `supabase/migrations/059_statement_imports.sql`, `060_commit_statement_import.sql` · `api/src/lib/statement-parser.ts` · `api/src/lib/statement-matcher.ts` · test `tests/integration/statement-imports.test.js`, `statement-commit.test.js`, `api/tests/unit/statement-parser.test.ts`, `api/tests/unit/statement-matcher.test.ts` (kasus PDF asli di-skip kalau `recap/` gak ada; folder itu gitignored)
+| Endpoint | Isi |
+|---|---|
+| `POST /api/statements` | JSON `{account_id, files: [{name, content_base64}]}`, maks 10 file / 20MB (`bodyLimit` khusus route ini). Deteksi jenis dari magic bytes. PDF: parse → ambil transaksi semua akun di jendela periode ±3 hari → `matchStatement` → `auditBalance` (saldo app = `balance_after`/`to_balance_after` transaksi terakhir akun itu ≤ akhir periode, urutan kronologis RECONCILE §3) → simpan import + baris → upload file ke bucket `statements` (`<user>/<import>/<nama>`, `file_expires_at` +90 hari) → hapus file kedaluwarsa (maks 20 per upload). 201 + tampilan import. Screenshot: 422 (fase 5). File sama (hash gabungan) yang sudah ada: 409 + `import_id`; kalau import lama `discarded`, dihapus lalu impor ulang. |
+| `GET /api/statements?account_id=` | 20 import terakhir |
+| `GET /api/statements/:id` | `{import, lines, transactions}`; `transactions` dari `v_transactions` untuk semua id yang dirujuk baris dan `app_findings` |
+| `PATCH /api/statements/:id/lines/:lineId` | `selected`, `decision`, `category_id`, `target_account_id`; set `decided_by='user'` dan catat `user_correction` `{kolom: {from, to}}` (`from` = nilai awal dari mesin, bahan golden dataset) |
+| `PATCH /api/statements/:id/findings/:transactionId` | `{selected}` untuk temuan app |
+| `POST /api/statements/:id/commit` | RPC `commit_statement_import`; 404/409/422 dari pesan error |
+| `POST /api/statements/:id/discard` | status `discarded` |
+
+**Belum:** ekstraksi screenshot (Gemini), layar Android. Lihat §10 di spec.
+
+📂 **Kode:** `supabase/migrations/059_statement_imports.sql`, `060_commit_statement_import.sql` · `api/src/lib/statement-parser.ts` · `api/src/lib/statement-matcher.ts` · `api/src/lib/statement-import.ts` · route `api/src/routes/statements.ts` · test `tests/integration/statement-imports.test.js`, `statement-commit.test.js`, `api/tests/unit/statement-parser.test.ts`, `api/tests/unit/statement-matcher.test.ts`, e2e `api/tests/api-statements.e2e.test.ts` (butuh `api/.env` + `recap/`, skip di CI; kasus PDF asli di-skip kalau `recap/` gak ada; folder itu gitignored)
 
 ---
 
 ## Lampiran: Peta Endpoint API
 
 <details>
-<summary>52 endpoint (klik untuk expand)</summary>
+<summary>59 endpoint (klik untuk expand)</summary>
 
 **Transactions:** `GET /api/transactions`, `PATCH`/`DELETE /api/transactions/:id`, `POST /api/transactions/recalculate`
 **Accounts:** `GET`/`POST /api/accounts`, `PATCH`/`DELETE /api/accounts/:id`, `POST /api/accounts/:id/adjust`
@@ -542,6 +556,7 @@ Adjustment (`is_adjustment`) gak pernah dicocokkan. `auditBalance` menjelaskan s
 **AI:** `POST /api/{categorize,chat,budget/suggest}`
 **Telegram:** `POST /api/telegram/connect-token`, `GET /api/telegram/status`
 **Push:** `GET /api/push/vapid-key`, `POST /api/push/{subscribe,notify}`
+**Statements:** `GET`/`POST /api/statements`, `GET /api/statements/:id`, `PATCH /api/statements/:id/lines/:lineId`, `PATCH /api/statements/:id/findings/:transactionId`, `POST /api/statements/:id/{commit,discard}`
 **Profile/Admin:** `PATCH /api/profile`, `GET /api/admin/{users,invites,telegram-requests}`, `POST /api/admin/{invites,users/:id/suspend,telegram-requests/:chatId/approve,telegram-requests/:chatId/reject}`
 
 </details>
