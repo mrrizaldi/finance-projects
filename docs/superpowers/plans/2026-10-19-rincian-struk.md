@@ -4,7 +4,7 @@
 
 **Goal:** Pemilih bulan grid, tombol upload pindah ke layar Tambah, dan rincian struk (foto/PDF → item berkategori) yang memecah analitik kategori tanpa menyentuh saldo.
 
-**Architecture:** DB dapat tabel `receipts`/`receipt_files`/`receipt_lines` + RPC `save_receipt` (mig 061) dan view `v_expense_slices` yang dipakai RPC analitik (mig 062). API Fastify dapat `/api/receipts*` yang memakai ulang rantai Gemini dari `screenshot-extractor.ts` dan skor `scorePair` dari `statement-matcher.ts`. App Android dapat layar `ReceiptScreen` (dibuka dari Tambah atau dari detail transaksi) dan dialog grid bulan.
+**Architecture:** DB dapat tabel `receipts`/`receipt_files`/`receipt_lines` + RPC `save_receipt` (mig 061) dan view `v_expense_slices` yang dipakai RPC analitik (mig 063). API Fastify dapat `/api/receipts*` yang memakai ulang rantai Gemini dari `screenshot-extractor.ts` dan skor `scorePair` dari `statement-matcher.ts`. App Android dapat layar `ReceiptScreen` (dibuka dari Tambah atau dari detail transaksi) dan dialog grid bulan.
 
 **Tech Stack:** Supabase Postgres (plpgsql, RLS), Fastify + TypeScript + vitest, Kotlin + Jetpack Compose + Ktor + kotlinx.serialization, JUnit4.
 
@@ -43,7 +43,7 @@
 | `mobile/.../ui/receipt/ReceiptScreen.kt` (baru) | UI layar struk |
 | `mobile/.../ui/components/TxDetailSheet.kt` | tombol Rincian struk |
 | `supabase/migrations/061_receipts.sql` (baru) | tabel, bucket, RLS, `save_receipt` |
-| `supabase/migrations/062_expense_slices.sql` (baru) | view slices + RPC analitik |
+| `supabase/migrations/063_expense_slices.sql` (baru) | view slices + RPC analitik |
 | `api/src/lib/screenshot-extractor.ts` | rantai Gemini jadi generik (`callGeminiChain`) |
 | `api/src/lib/receipt.ts` (baru) | prompt, skema, normalisasi, ranking kandidat, ekstraksi |
 | `api/src/routes/receipts.ts` (baru) | endpoint `/api/receipts*` |
@@ -2142,10 +2142,10 @@ lalu `onReceipt = nav::receipt`.
 
 ---
 
-### Task 10: Migrasi 062 — analitik terpecah
+### Task 10: Migrasi 063 — analitik terpecah
 
 **Files:**
-- Create: `supabase/migrations/062_expense_slices.sql`
+- Create: `supabase/migrations/063_expense_slices.sql`
 - Test: `tests/integration/expense-slices.test.js`
 
 - [ ] **Step 1: Inventaris pemakai kategori** — via MCP:
@@ -2203,7 +2203,7 @@ try {
       .map((r) => [r.category_id, r]),
   );
 
-  await runSuite('v_expense_slices + RPC analitik (mig 062)', async () => {
+  await runSuite('v_expense_slices + RPC analitik (mig 063)', async () => {
     await test('breakdown memecah struk resto: makan, rumah tangga, sisa ke induk', async () => {
       const rows = await breakdown();
       near(rows[food.id].total_amount, 65417.24 + 20000);
@@ -2235,7 +2235,7 @@ try {
 
 - [ ] **Step 3: Gagal** — `node tests/integration/expense-slices.test.js` → ✗ (breakdown masih utuh ke Belanja).
 
-- [ ] **Step 4: Migrasi** — `supabase/migrations/062_expense_slices.sql`. Sebelum menulis, ambil definisi live `get_category_breakdown` dan `get_summary` (MCP `select pg_get_functiondef('public.get_summary'::regproc)`) dan pertahankan semua filter yang ada (zona Jakarta, `is_adjustment`, `auth.uid()`).
+- [ ] **Step 4: Migrasi** — `supabase/migrations/063_expense_slices.sql`. Sebelum menulis, ambil definisi live `get_category_breakdown` dan `get_summary` (MCP `select pg_get_functiondef('public.get_summary'::regproc)`) dan pertahankan semua filter yang ada (zona Jakarta, `is_adjustment`, `auth.uid()`).
 
 ```sql
 BEGIN;
@@ -2340,11 +2340,11 @@ Lalu `CREATE OR REPLACE FUNCTION public.get_summary(...)` = definisi live dengan
 
 Tutup dengan `COMMIT;`. Tambahkan `GRANT SELECT ON public.v_expense_slices TO authenticated;`.
 
-- [ ] **Step 5: Terapkan** via MCP `apply_migration` (`062_expense_slices`).
+- [ ] **Step 5: Terapkan** via MCP `apply_migration` (`063_expense_slices`).
 
 - [ ] **Step 6: Lulus + regresi** — `node tests/integration/expense-slices.test.js` semua ✓; `bash tests/run-all.sh` → `All test suites passed.` (khususnya `analytics-rpc.test.js`, `rpc-batas-hari.test.js`); MCP `get_advisors` security tanpa temuan baru untuk view. Bandingkan angka breakdown bulan berjalan user asli sebelum/sesudah (`execute_sql` dengan `set local request.jwt.claims` gak perlu; cukup cek total `SUM(amount)` view = `SUM(amount)` transaksi expense non-adjustment untuk bulan ini) dan masukkan angkanya ke pesan commit.
 
-- [ ] **Step 7: Commit** `feat(db): analitik kategori ikut rincian struk (mig 062)` dengan bukti.
+- [ ] **Step 7: Commit** `feat(db): analitik kategori ikut rincian struk (mig 063)` dengan bukti.
 
 ---
 
