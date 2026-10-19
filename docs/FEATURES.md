@@ -520,9 +520,11 @@ Sedang dibangun. Rancangan lengkap: `docs/superpowers/specs/2026-10-19-rekonsili
 
 Adjustment (`is_adjustment`) gak pernah dicocokkan. `auditBalance` menjelaskan selisih `saldo akhir statement − saldo app` dengan baris `new`/`other_account` dan temuan app; sisanya `unexplained`.
 
+**Commit** (mig 060, RPC `commit_statement_import(p_import)`, SECURITY INVOKER jadi RLS berlaku): satu transaksi DB untuk satu import berstatus `review` dengan `integrity_ok` bukan `false`. Urutannya: temuan app tercentang (`app_findings`, `app_dup`/`app_only`) di-soft-delete lewat `delete_manual_transaction`, baris `other_account` tercentang dipindah ke akun statement lewat `update_manual_transaction`, lalu baris `new` tercentang jadi transaksi `income`/`expense` baru dengan `source = 'statement_import'` dan `statement_line_id`. Jam kosong diisi 12:00 WIB. Sesudahnya status `committed`, jadi commit kedua ditolak. Trigger `notify_push_on_transaction_insert` melewati `source = 'statement_import'`, jadi impor massal gak nembak notif per baris. Kolom `statement_imports.app_findings` (jsonb) dan `audit` (jsonb) ikut di mig 060.
+
 **Belum:** endpoint API, layar Android. Lihat §10 di spec.
 
-📂 **Kode:** `supabase/migrations/059_statement_imports.sql` · `api/src/lib/statement-parser.ts` · `api/src/lib/statement-matcher.ts` · test `tests/integration/statement-imports.test.js`, `api/tests/unit/statement-parser.test.ts`, `api/tests/unit/statement-matcher.test.ts` (kasus PDF asli di-skip kalau `recap/` gak ada; folder itu gitignored)
+📂 **Kode:** `supabase/migrations/059_statement_imports.sql`, `060_commit_statement_import.sql` · `api/src/lib/statement-parser.ts` · `api/src/lib/statement-matcher.ts` · test `tests/integration/statement-imports.test.js`, `statement-commit.test.js`, `api/tests/unit/statement-parser.test.ts`, `api/tests/unit/statement-matcher.test.ts` (kasus PDF asli di-skip kalau `recap/` gak ada; folder itu gitignored)
 
 ---
 

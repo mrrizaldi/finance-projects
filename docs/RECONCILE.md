@@ -45,6 +45,7 @@ Tiga aturan yang **tidak boleh dilanggar**, kalau dilanggar snapshot langsung ng
    - RPC atomik `record_manual_entry` / `record_manual_transfer` (`039_atomic_manual_transaction_fns.sql:46`, `:10`)
    - RPC atomik `update_manual_transaction` / `delete_manual_transaction` (`056_manual_edit_delete_fns.sql`, dipakai app Android): saldo diubah dulu dalam satu `UPDATE accounts` agregat, lalu row ditimpa dengan semua kolom pemicu di SET + snapshot di-NULL-kan → trigger mengisi ulang; baris `is_adjustment` ditolak (jangkar saldo)
    - API `applyBalanceDiffs` di edit/delete (`api/src/routes/transactions-id.ts:16`)
+   - RPC `commit_statement_import` (`060_commit_statement_import.sql`, rekonsiliasi statement): baris baru ubah saldo dulu lalu insert `source = 'statement_import'`; pindah akun dan hapus dobel lewat `update_manual_transaction`/`delete_manual_transaction`, semua dalam satu transaksi DB
    - insert email dari n8n / RPC investasi
 3. **Urutan kronologis** selalu `ORDER BY transaction_date, created_at, id` (`040...sql:74`). `id` sebagai tie-breaker terakhir biar deterministik.
 
