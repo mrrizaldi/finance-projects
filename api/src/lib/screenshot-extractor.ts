@@ -97,7 +97,7 @@ interface RawRow {
   confidence?: unknown;
 }
 
-function isValidCalendarDate(text: string) {
+export function isValidCalendarDate(text: string) {
   if (!ISO_DATE.test(text)) return false;
   const parsed = new Date(`${text}T00:00:00Z`);
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(text);
@@ -156,12 +156,13 @@ export function configuredModels(): string[] {
 }
 
 async function callModel(
-  image: ScreenshotImage,
-  referenceDate: string,
+  files: ScreenshotImage[],
+  prompt: string,
+  schema: object,
   apiKey: string,
   model: string,
   timeoutMs: number,
-): Promise<GeminiAnswer> {
+): Promise<unknown> {
   const res = await fetch(`${GEMINI_ENDPOINT}/${model}:generateContent`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'x-goog-api-key': apiKey },
@@ -170,11 +171,11 @@ async function callModel(
       contents: [{
         role: 'user',
         parts: [
-          { text: buildPrompt(referenceDate) },
-          { inline_data: { mime_type: image.mimeType, data: image.data.toString('base64') } },
+          { text: prompt },
+          ...files.map((f) => ({ inline_data: { mime_type: f.mimeType, data: f.data.toString('base64') } })),
         ],
       }],
-      generationConfig: { responseMimeType: 'application/json', responseSchema: RESPONSE_SCHEMA, temperature: 0 },
+      generationConfig: { responseMimeType: 'application/json', responseSchema: schema, temperature: 0 },
     }),
   }).catch((error: Error) => {
     if (error.name === 'TimeoutError' || error.name === 'AbortError') throw new RetryableModelError(`${model} timeout`);
@@ -188,13 +189,20 @@ async function callModel(
   const body = await res.json() as { candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }> };
   const text = body.candidates?.[0]?.content?.parts?.map((p) => p.text ?? '').join('') ?? '';
   try {
-    return JSON.parse(text) as GeminiAnswer;
+    return JSON.parse(text) as unknown;
   } catch {
     throw new ScreenshotExtractionError('model_failed', 'Jawaban Gemini bukan JSON yang valid');
   }
 }
 
-async function extractOne(image: ScreenshotImage, referenceDate: string, apiKey: string, models: string[], deadline: number) {
+export async function callGeminiChain(
+  files: ScreenshotImage[],
+  prompt: string,
+  schema: object,
+  apiKey: string,
+  models: string[],
+  deadline: number,
+): Promise<{ model: string; answer: unknown }> {
   const failures: string[] = [];
   for (const model of models) {
     const remaining = deadline - Date.now();
@@ -203,7 +211,7 @@ async function extractOne(image: ScreenshotImage, referenceDate: string, apiKey:
       break;
     }
     try {
-      return { model, answer: await callModel(image, referenceDate, apiKey, model, Math.min(GEMINI_TIMEOUT_MS, remaining)) };
+      return { model, answer: await callModel(files, prompt, schema, apiKey, model, Math.min(GEMINI_TIMEOUT_MS, remaining)) };
     } catch (error) {
       if (!(error instanceof RetryableModelError)) throw error;
       failures.push(error.message);
@@ -222,8 +230,8 @@ export async function extractScreenshots(
   const models = options.models ?? configuredModels();
 
   const deadline = Date.now() + (options.budgetMs ?? GEMINI_TOTAL_BUDGET_MS);
-  const results = await Promise.all(images.map((image) => extractOne(image, referenceDate, apiKey, models, deadline)));
-  const answers = results.map((r) => r.answer);
+  const results = await Promise.all(images.map((image) => callGeminiChain([image], buildPrompt(referenceDate), RESPONSE_SCHEMA, apiKey, models, deadline)));
+  const answers = results.map((r) => r.answer as GeminiAnswer);
   let dropped = 0;
   const perImage = answers.map((answer) => {
     const normalized = normalizeRawRows(Array.isArray(answer.rows) ? answer.rows : []);
