@@ -475,6 +475,8 @@
     "email_shopee": "Email Shopee",
     "email_tokopedia": "Email Tokopedia",
     "openclaw": "OpenClaw AI",
+    "receipt": "Struk",
+    "statement_import": "Impor mutasi",
     "api": "API"
   },
   "filters": {

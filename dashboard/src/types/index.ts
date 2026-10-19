@@ -11,6 +11,8 @@ export type TransactionSource =
   | 'email_shopee'
   | 'email_tokopedia'
   | 'openclaw'
+  | 'receipt'
+  | 'statement_import'
   | 'api';
 
 export interface Transaction {
@@ -220,7 +222,7 @@ export interface Instrument {
 export interface InstrumentValue {
   instrument_id: string;
   name: string;
-  type: InstrumentType | 'reksadana'; // RPC balikin semua type, difilter reksadana di loader
+  type: InstrumentType | 'reksadana';
   quote_convention: string;
   account_id: string;
   account_name: string;
