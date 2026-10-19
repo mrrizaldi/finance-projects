@@ -163,6 +163,24 @@ try {
       expect(res.ok).toBe(false);
     });
 
+    await test('simpan ulang dengan p_receipt dan p_new sama gak menggandakan transaksi', async () => {
+      const draft = await insert('receipts', { status: 'draft', extractor: 'test' });
+      const before = await balanceOf(account.id);
+      const args = {
+        p_receipt: draft.id, p_transaction: null,
+        p_new: { account_id: account.id, amount: 33000, category_id: shop.id, merchant: 'Retry Mart', transaction_date: '2026-09-13T09:00:00+07:00' },
+        p_lines: [{ kind: 'item', name: 'Kopi', qty: 1, amount: 33000, category_id: food.id }],
+      };
+      const first = await rpc('save_receipt', args);
+      const second = await rpc('save_receipt', args);
+      if (!first.ok || !second.ok) throw new Error(JSON.stringify([first.body, second.body]));
+      expect(second.body.transaction_id).toBe(first.body.transaction_id);
+      const txs = await call(`/transactions?account_id=eq.${account.id}&merchant=eq.Retry%20Mart&source=eq.receipt&select=id`);
+      expect(txs.length).toBe(1);
+      expect(await balanceOf(account.id)).toBe(before - 33000);
+      expect(await lineCount(draft.id)).toBe(1);
+    });
+
     await test('RLS: user lain gak bisa lihat struk', async () => {
       const rows = await (await asUser(other.jwt)(`/receipts?id=eq.${receiptId}&select=id`)).json();
       expect(rows.length).toBe(0);
