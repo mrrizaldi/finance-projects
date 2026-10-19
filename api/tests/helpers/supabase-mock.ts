@@ -1,6 +1,5 @@
 import { vi } from 'vitest';
 
-// A chainable query object that resolves to a given response
 export function makeQueryChain(response: { data?: any; error?: any } = { data: null, error: null }) {
   const chain: any = {
     select: vi.fn().mockReturnThis(),
@@ -13,6 +12,7 @@ export function makeQueryChain(response: { data?: any; error?: any } = { data: n
   chain.eq = vi.fn().mockImplementation(() => {
     const eqChain = { ...chain };
     eqChain.eq = vi.fn().mockResolvedValue(response);
+    eqChain.then = (res: any, rej: any) => Promise.resolve(response).then(res, rej);
     return eqChain;
   });
   chain.in = vi.fn().mockResolvedValue(response);

@@ -2,22 +2,6 @@ import type { FastifyInstance } from 'fastify';
 import { createServiceClient } from '../lib/supabase.js';
 import { webpush } from '../lib/web-push.js';
 import type { PushPayload } from '../lib/web-push.js';
-import { formatRupiah } from '../lib/utils.js';
-
-function formatBody(tx: {
-  type: string;
-  amount: number;
-  is_adjustment: boolean;
-  category_name: string | null;
-  account_name: string | null;
-  to_account_name: string | null;
-}): string {
-  const amount = formatRupiah(tx.amount);
-  if (tx.is_adjustment) return `Penyesuaian ${amount} · ${tx.account_name ?? 'Akun'}`;
-  if (tx.type === 'transfer') return `Transfer ${amount} · ${tx.account_name ?? ''} → ${tx.to_account_name ?? ''}`;
-  if (tx.type === 'income') return `Pemasukan ${amount} · ${tx.category_name ?? '-'} · ${tx.account_name ?? '-'}`;
-  return `Pengeluaran ${amount} · ${tx.category_name ?? '-'} · ${tx.account_name ?? '-'}`;
-}
 
 export default async function plugin(app: FastifyInstance) {
   app.post('/api/push/notify', async (request, reply) => {
@@ -33,13 +17,13 @@ export default async function plugin(app: FastifyInstance) {
 
     const adminSupabase = createServiceClient();
 
-    const { data: tx, error: txError } = await (adminSupabase as any)
-      .from('v_transactions')
-      .select('id, type, amount, is_adjustment, category_name, account_name, to_account_name')
+    const { data: notif, error: notifError } = await (adminSupabase as any)
+      .from('notifications')
+      .select('id, kind, title, body')
       .eq('id', record.id)
       .single();
 
-    if (txError || !tx) return reply.code(404).send({ error: 'Transaction not found' });
+    if (notifError || !notif) return reply.code(404).send({ error: 'Notification not found' });
 
     const { data: subs, error: subsError } = await (adminSupabase as any)
       .from('push_subscriptions').select('endpoint, p256dh, auth').eq('user_id', record.user_id);
@@ -47,10 +31,10 @@ export default async function plugin(app: FastifyInstance) {
     if (subsError || !subs?.length) return { ok: true, sent: 0 };
 
     const payload: PushPayload = {
-      title: 'Transaksi Baru',
-      body: formatBody(tx),
+      title: notif.title,
+      body: notif.body,
       icon: '/icons/icon-192.png',
-      data: { url: '/transactions' },
+      data: { url: notif.kind === 'tx_baru' ? '/transactions' : '/notifications' },
     };
 
     const expiredEndpoints: string[] = [];
