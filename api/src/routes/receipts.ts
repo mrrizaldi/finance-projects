@@ -57,7 +57,13 @@ async function purgeStaleDrafts(service: Service) {
     .eq('status', 'draft')
     .lt('created_at', new Date(Date.now() - DRAFT_TTL_DAYS * MS_PER_DAY).toISOString())
     .limit(PURGE_BATCH);
-  for (const row of stale ?? []) await removeReceipt(service, service, row.id, row.user_id);
+  for (const row of stale ?? []) {
+    const { data: files } = await service.from('receipt_files').select('path').eq('receipt_id', row.id);
+    const { data: deleted } = await service
+      .from('receipts').delete().eq('id', row.id).eq('status', 'draft').select('id');
+    const paths = (files ?? []).map((f: { path: string }) => f.path).filter(ownedBy(row.user_id));
+    if (deleted?.length && paths.length) await service.storage.from(STORAGE_BUCKET).remove(paths);
+  }
 }
 
 async function findCandidates(supabase: any, extraction: NormalizedReceipt) {
