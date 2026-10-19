@@ -1,6 +1,6 @@
 # Rekonsiliasi & Audit Statement (PDF + Screenshot) — Design
 
-Tanggal: 19 Okt 2026. Status: **draft, menunggu keputusan user di §12**. Permintaan user: "input e-statement dan rekonsiliasi dan audit laporan keuangan, termasuk memproses screenshot transaksi, cekatan mencocokkan timeline catatan yang diinput dengan yang sudah ada untuk mencegah duplikasi, ada skill khusus yang bisa diaplikasikan di versi mobile".
+Tanggal: 19 Okt 2026. Status: **disetujui user 19 Okt 2026** (keputusan di §12). Chat AI di layar review ditunda sampai upload + review tanpa chat sudah oke (§13). Permintaan user: "input e-statement dan rekonsiliasi dan audit laporan keuangan, termasuk memproses screenshot transaksi, cekatan mencocokkan timeline catatan yang diinput dengan yang sudah ada untuk mencegah duplikasi, ada skill khusus yang bisa diaplikasikan di versi mobile".
 
 ## 1. Tujuan
 
@@ -82,23 +82,24 @@ Fine-tune baru masuk akal kalau eval ekstraksi screenshot mentok di bawah target
 
 - Mesin hidup di `api/` (Fastify, TS). Satu implementasi, tiga pintu. Skill OpenClaw `finance-recon` berubah jadi pemanggil API, bukan punya parser sendiri.
 - Parser BCA/BSI diport dari `parse-statement.py` ke TS, diuji dengan 8 PDF di `recap/`. Butuh binary `pdftotext` (poppler) di server; sudah terpasang (`pdftotext 24.02.0`, dicek 19 Okt).
-- Vision LLM dipanggil dengan `fetch` biasa (tanpa SDK baru). Pilihan model = gate §12.
+- Vision LLM: **Gemini 2.5 Flash** (`GEMINI_API_KEY`, sudah dipakai `analyze-file` di server), dipanggil dengan `fetch` biasa + `responseSchema` JSON, tanpa SDK baru. Key perlu ditambah ke `api/.env` server saat deploy fase 5.
 
 ## 5. Model data (migrasi baru)
 
 ```
 statement_imports
-  id, owner_id, account_id, kind ('pdf'|'screenshot'), bank ('BCA'|'BSI'|'JAGO'|'DANA'|'GOPAY'|...),
+  id, user_id, account_id, kind ('pdf'|'screenshot'), bank ('BCA'|'BSI'|'JAGO'|'DANA'|'GOPAY'|...),
   period_start, period_end, opening_balance, closing_balance (null untuk screenshot),
-  file_sha256 (unique per owner), file_path (Supabase Storage), extractor ('parser:bca@1'|'vision:<model>@<prompt-ver>'),
+  file_sha256 (unique per user), file_path (bucket privat `statements`), file_expires_at (+90 hari), extractor ('parser:bca@1'|'vision:<model>@<prompt-ver>'),
   integrity_ok bool, status ('review'|'committed'|'discarded'), created_at
 
 statement_lines
-  id, import_id, line_no, occurred_at (date + time kalau ada), amount, direction ('debit'|'credit'),
-  description_raw, counterparty, fingerprint (unique per owner+account),
+  id, import_id, user_id, line_no, occurred_on date, occurred_time time null, amount, direction ('debit'|'credit'),
+  description_raw, counterparty, running_balance null, fingerprint (unique per import),
   confidence (1.0 untuk parser, dari model untuk vision),
-  decision ('match'|'new'|'duplicate'|'skip'|'transfer_pair'|'other_account'),
-  matched_transaction_id, decided_by ('auto'|'user'), user_correction jsonb
+  decision ('match'|'probable'|'new'|'app_dup'|'transfer_pair'|'other_account'|'skip'),
+  selected bool, target_account_id, category_id, matched_transaction_id,
+  decided_by ('auto'|'user'), user_correction jsonb, committed_transaction_id
 
 transactions
   + statement_line_id uuid null references statement_lines
@@ -106,9 +107,11 @@ transactions
 ```
 
 - `file_sha256` unik → upload file yang sama dua kali langsung dikenali.
-- `fingerprint` = hash(account, tanggal, jam kalau ada, nominal, arah, deskripsi ternormalisasi, urutan kemunculan di kunci yang sama). Urutan kemunculan membedakan dua kopi Rp 18.000 di hari yang sama. Screenshot yang saling tumpang tindih (scroll 1 dan scroll 2) menghasilkan fingerprint sama → baris kedua otomatis dibuang.
+- Beberapa screenshot sekaligus (share banyak gambar) masuk ke **satu import**.
+- `fingerprint` = hash(account, tanggal, jam kalau ada, nominal, arah, deskripsi ternormalisasi, urutan kemunculan di kunci yang sama). Urutan kemunculan membedakan dua kopi Rp 18.000 di hari yang sama. Screenshot yang saling tumpang tindih (scroll 1 dan scroll 2) menghasilkan fingerprint sama, jadi baris kedua otomatis dibuang (unique per import). Tumpang tindih antar-import ketangkep matcher setelah import pertama di-commit.
 - `user_correction` menyimpan koreksi user di layar review. Ini bahan golden dataset (§9).
-- RLS sama dengan tabel lain (owner_id = auth.uid()).
+- RLS sama dengan tabel lain: policy `own_rows` (`user_id = auth.uid()`), `user_id` diisi trigger `set_user_id_on_insert` yang sudah ada.
+- **Push notif:** trigger `push_notify_on_insert` di `transactions` nembak `/api/push/notify` per baris. Commit 30 baris = 30 notif. Fitur inbox notifikasi (spec `2026-10-19-notifications-inbox-design.md`, migrasi 058) sedang menulis ulang fungsi trigger itu jadi insert ke tabel `notifications`. Fase 4 (setelah 058 masuk): fungsi itu melewati `source = 'statement_import'` lewat migrasi terpisah, dan RPC commit menulis `source` langsung saat insert (bukan UPDATE sesudahnya). Satu notif ringkasan per commit boleh nyusul. Migrasi rekonsiliasi mulai dari 059.
 
 ## 6. Pencocokan & anti-dobel
 
@@ -145,8 +148,8 @@ Setiap baris statement dibandingkan dengan transaksi DB akun itu di jendela `per
 ### 8.1 Android
 
 - **Share target**: dari m-banking/galeri, "Bagikan" PDF/gambar ke app (intent-filter `ACTION_SEND`/`SEND_MULTIPLE`, `application/pdf`, `image/*`). Tanpa izin storage tambahan.
-- Layar **"Cocokkan mutasi"**: pilih akun (default dari bank yang terdeteksi) → upload → daftar berkelompok per kelas (§6) dengan ringkasan audit di atas. Tiap baris bisa diubah: kelas, akun, kategori, nominal (koreksi masuk `user_correction`).
-- Tombol **"Catat yang dipilih"** → `POST /api/statements/:id/commit`. Butuh sinyal; gak lewat outbox (sama alasannya dengan edit/hapus, §6.5 spec mobile-edit-delete).
+- Layar **"Cocokkan mutasi"**: pilih akun (default dari bank yang terdeteksi) → upload → daftar berkelompok per kelas (§6) dengan ringkasan audit di atas. Baris `new`, `app_dup`, `other_account` **sudah tercentang**; `probable` tidak. User uncheck yang meragukan. Tiap baris bisa diubah: kelas, akun, kategori, nominal (koreksi masuk `user_correction`).
+- Tombol **"Catat yang dipilih"** (approve manual, gak ada yang ditulis tanpa tombol ini) → `POST /api/statements/:id/commit`. Butuh sinyal; gak lewat outbox (sama alasannya dengan edit/hapus, §6.5 spec mobile-edit-delete).
 - App memanggil API Fastify, bukan Supabase langsung, karena ekstraksi butuh `pdftotext` + kunci LLM di server. Auth: app kirim access token Supabase sebagai `Authorization: Bearer`. `requireUser` (`api/src/lib/supabase.ts`) sekarang **hanya membaca cookie**, jadi fase 4 menambah jalur Bearer di situ.
 
 ### 8.2 OpenClaw
@@ -180,7 +183,7 @@ tests/fixtures/statements/
 2. **Parser PDF TS** BCA/BSI port dari Python + 8 fixture.
 3. **Matcher + audit** (§6–7) murni fungsi + fixture kasus §2.
 4. **API** jalur auth Bearer di `requireUser` + `POST /api/statements`, `GET /api/statements/:id`, `POST /api/statements/:id/commit` (RPC atomik baru `commit_statement_lines`, idempoten via fingerprint).
-5. **Ekstraksi screenshot** vision LLM + eval set awal (butuh keputusan §12.1).
+5. **Ekstraksi screenshot** Gemini 2.5 Flash + eval set awal.
 6. **Android** share target + layar review + commit, uji di HP.
 7. **Skill** repo + `eval.md`; `finance-recon` OpenClaw v2 memanggil API; hapus parser Python lama.
 8. **Bank tambahan** (JAGO PDF, DANA, GoPay, ShopeePay) satu per commit, masing-masing dengan fixture.
@@ -193,9 +196,13 @@ tests/fixtures/statements/
 - Tarik mutasi otomatis dari bank (scraping/API bank).
 - Dashboard web; boleh nyusul memakai API yang sama.
 
-## 12. Keputusan user (gate)
+## 12. Keputusan user (19 Okt 2026)
 
-1. **Model vision untuk screenshot.** Opsi: Gemini Flash (kunci sudah ada di server untuk `analyze-file`, murah) atau Claude (lebih teliti angka, kunci baru). Rekomendasi: Gemini Flash dulu, eval §9 yang menentukan ganti atau tidak.
-2. **Penyimpanan file asli** di Supabase Storage (perlu bucket privat baru) atau dibuang setelah ekstraksi (jejak audit cuma baris + hash). Rekomendasi: simpan 90 hari.
-3. **Auto-commit untuk `match` + `new` dari PDF yang integritasnya OK?** Sesi 7 Okt user bilang "langsung aja sesuaikan". Rekomendasi: tetap satu tombol approve, tapi defaultnya semua `new` sudah tercentang.
-4. **Fase 9** (bersihin 58 pasang kandidat dobel lama) dikerjakan di proyek ini atau terpisah.
+1. **Model screenshot:** Gemini Flash yang sudah ada di server.
+2. **File asli:** diserahkan ke Claude. Dipilih: simpan 90 hari di bucket privat `statements`, dihapus malas saat upload berikutnya (file dengan `file_expires_at` lewat). Alasan: bisa diekstrak ulang kalau parser/prompt diperbaiki, dan bisa dijadikan fixture eval.
+3. **Commit:** baris baru sudah tercentang, tapi approve tetap manual lewat tombol. Yang meragukan bisa di-uncheck.
+4. **Bersih-bersih 58 pasang dobel lama:** paling akhir (fase 9).
+
+## 13. Ditunda: chat AI di layar review
+
+User mau review nanti bisa ngobrol dengan AI ("nomor 3 bukan dobel", kirim screenshot tambahan di tengah percakapan). Ditunda sampai fase 1–7 oke. Rancangan kasar biar data model sekarang gak menghalangi: tabel `recon_messages (import_id, role, content, attachments, tool_calls)`, Gemini Flash dengan function calling yang cuma boleh mengubah `statement_lines` (decision, selected, akun, kategori), commit tetap lewat tombol.
