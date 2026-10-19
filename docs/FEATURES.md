@@ -516,7 +516,7 @@ Sedang dibangun. Rancangan lengkap: `docs/superpowers/specs/2026-10-19-rekonsili
 |---|---|---|
 | `match` / `transfer_pair` | skor ≥ `MATCH_SCORE` (0,6); `transfer_pair` kalau pasangannya transfer | – |
 | `probable` | ada pasangan tapi skor < 0,6 (beda biaya, selisih 3 hari) | tidak |
-| `other_account` | gak ada di akun ini, tapi nominal persis + skor ≥ 0,6 di akun lain (bukan transfer) | ya |
+| `other_account` | gak ada di akun ini, tapi nominal persis + skor ≥ 0,6 di akun lain (bukan transfer) | ya kalau skor ≥ `STRONG_MATCH_SCORE` (0,8: nominal persis + hari sama + deskripsi mirip); nominal bulat yang kebetulan sama (uji April: Google Rp 10.000 vs "patungan badminton" Cash) muncul tapi gak dicentang |
 | `new` | gak ada pasangan sama sekali | ya |
 | `app_dup` (temuan app) | transaksi app **di dalam periode** yang kalah rebutan satu baris bank, dengan nominal persis atau tanggal sama dengan baris itu | ya kalau nominalnya persis |
 | `app_only` (temuan app) | transaksi app di dalam periode tanpa pasangan (termasuk kandidat beda hari dan beda nominal) | tidak |

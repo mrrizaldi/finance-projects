@@ -91,6 +91,12 @@ describe('matchStatement', () => {
     expect(lines[0]).toMatchObject({ decision: 'other_account', selected: true, matchedTransactionId: onGopay.id });
   });
 
+  it('suggests a weak other_account match but leaves it unchecked', () => {
+    const bank = line('2026-09-17', 10000, 'debit', 'DB INTERCHANGE GOOGLE CHROME');
+    const cash = tx({ type: 'expense', amount: 10000, date: '2026-09-18', accountId: GOPAY, description: 'patungan badminton' });
+    expect(run([bank], [cash]).lines[0]).toMatchObject({ decision: 'other_account', selected: false, matchedTransactionId: cash.id });
+  });
+
   it('recognises a transfer between own accounts on the receiving side', () => {
     const bank = line('2026-09-09', 500000, 'credit', 'BIFAST DARI BCA');
     const transfer = tx({ type: 'transfer', amount: 500000, date: '2026-09-09', accountId: BCA, toAccountId: JAGO });

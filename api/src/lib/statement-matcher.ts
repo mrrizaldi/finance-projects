@@ -57,6 +57,7 @@ export interface MatchInput {
 export const MAX_DAY_GAP = 3;
 export const FEE_TOLERANCE_RUPIAH = 6500;
 export const MATCH_SCORE = 0.6;
+export const STRONG_MATCH_SCORE = 0.8;
 
 const AMOUNT_TOLERANCE_RUPIAH = 1;
 const EXACT_AMOUNT_WEIGHT = 0.5;
@@ -176,7 +177,13 @@ export function matchStatement(input: MatchInput): MatchResult {
       .sort((a, b) => b.score - a.score)[0];
     if (foreign) {
       usedElsewhere.add(foreign.tx.id);
-      return { lineId: line.id, decision: 'other_account', selected: true, matchedTransactionId: foreign.tx.id, score: foreign.score };
+      return {
+        lineId: line.id,
+        decision: 'other_account',
+        selected: foreign.score >= STRONG_MATCH_SCORE,
+        matchedTransactionId: foreign.tx.id,
+        score: foreign.score,
+      };
     }
 
     return { lineId: line.id, decision: 'new', selected: true, matchedTransactionId: null, score: 0 };
