@@ -10,6 +10,7 @@ berbeda, maksimal 3 putaran.
 | `tanpa-komentar-kode` | kode TS/JS/Kotlin/SQL/shell/Python tanpa komentar/docstring, penjelasan ke dokumen atau pesan commit |
 | `rekonsiliasi-mutasi` | mencocokkan e-statement PDF / screenshot mutasi lewat `node scripts/mutasi.mjs`: akun dipilih user, gak ada yang dicatat sebelum user setuju, tiap keputusan = satu perintah |
 | `tree-bersama` | repo dipakai beberapa sesi sekaligus: jangan stash/reset/clean perubahan yang bukan milik sesi ini, deploy dari git worktree `origin/main`, stage per path |
+| `hasil-activity-tahan-mati` | hasil kamera/pemilih/share di Android harus tahan proses dimatikan: konteks di `savedInstanceState`, input saat LOADING diantrekan, uji dengan `run-as ... kill -9` saat app lain terbuka |
 
 Pemeriksa mesin: `cd /home/mrrizaldi/dev/finance-project && python3 scripts/cek_komentar.py <berkas>`
 (tanpa argumen = seluruh repo; `--uji` = self-test).
