@@ -47,7 +47,7 @@ fun InboxScreen(api: SupabaseApi, onBack: () -> Unit) {
         runCatching { api.listNotifications("1970-01-01T00:00:00Z", 50, ascending = false) }.onSuccess { list ->
             rows = list
             loaded = true
-            runCatching { api.markNotificationsRead(list.filter { it.readAt == null }.map { it.id }) }
+            runCatching { api.markAllNotificationsRead() }
         }
     }
 

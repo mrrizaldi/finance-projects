@@ -9,6 +9,7 @@ import io.github.jan.supabase.auth.user.UserSession
 import io.github.jan.supabase.postgrest.from
 import io.github.jan.supabase.postgrest.postgrest
 import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.postgrest.query.Count
 import io.github.jan.supabase.postgrest.query.Order
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.json.buildJsonObject
@@ -60,10 +61,16 @@ class SupabaseApiImpl(private val client: SupabaseClient) : SupabaseApi {
             limit(limit.toLong())
         }.decodeList()
 
-    override suspend fun markNotificationsRead(ids: List<String>) {
-        if (ids.isEmpty()) return
+    override suspend fun countUnreadNotifications(): Int =
+        client.from("notifications").select(Columns.list("id")) {
+            count(Count.EXACT)
+            filter { exact("read_at", null) }
+            limit(1)
+        }.countOrNull()?.toInt() ?: 0
+
+    override suspend fun markAllNotificationsRead() {
         client.from("notifications").update(buildJsonObject { put("read_at", JakartaDate.now().toOffsetDateTime().toString()) }) {
-            filter { isIn("id", ids) }
+            filter { exact("read_at", null) }
         }
     }
 

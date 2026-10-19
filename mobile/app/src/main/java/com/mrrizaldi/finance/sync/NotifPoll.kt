@@ -19,8 +19,8 @@ const val NOTIF_CHANNEL = "finance_notif"
 private const val PREFS = "notif_poll"
 private const val KEY_LAST = "last_notified_at"
 
-fun latestCreatedAt(rows: List<NotificationDto>, fallback: String): String =
-    rows.maxOfOrNull { it.createdAt } ?: fallback
+fun markerAfter(rows: List<NotificationDto>, shownIds: Set<String>, fallback: String): String =
+    rows.sortedBy { it.createdAt }.takeWhile { it.id in shownIds }.lastOrNull()?.createdAt ?: fallback
 
 class NotifPollWorker(context: Context, params: WorkerParameters) : CoroutineWorker(context, params) {
     override suspend fun doWork(): Result {
@@ -34,6 +34,9 @@ class NotifPollWorker(context: Context, params: WorkerParameters) : CoroutineWor
             return Result.success()
         }
 
+        val manager = NotificationManagerCompat.from(applicationContext)
+        if (!manager.areNotificationsEnabled()) return Result.success()
+
         val rows = runCatching { api.listNotifications(since, 20) }.getOrElse { return Result.retry() }
         if (rows.isEmpty()) return Result.success()
 
@@ -44,7 +47,8 @@ class NotifPollWorker(context: Context, params: WorkerParameters) : CoroutineWor
             Intent(applicationContext, MainActivity::class.java).addFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        val manager = NotificationManagerCompat.from(applicationContext)
+        val unread = runCatching { api.countUnreadNotifications() }.getOrDefault(rows.size)
+        val shown = mutableSetOf<String>()
         rows.forEach { row ->
             val notification = NotificationCompat.Builder(applicationContext, NOTIF_CHANNEL)
                 .setSmallIcon(R.drawable.ic_notification)
@@ -52,18 +56,20 @@ class NotifPollWorker(context: Context, params: WorkerParameters) : CoroutineWor
                 .setContentText(row.body)
                 .setStyle(NotificationCompat.BigTextStyle().bigText(row.body))
                 .setContentIntent(open)
+                .setNumber(unread)
                 .setAutoCancel(true)
                 .build()
-            runCatching { manager.notify(row.id.hashCode(), notification) }
+            if (runCatching { manager.notify(row.id.hashCode(), notification) }.isSuccess) shown += row.id
         }
 
-        prefs.edit().putString(KEY_LAST, latestCreatedAt(rows, since)).apply()
+        prefs.edit().putString(KEY_LAST, markerAfter(rows, shown, since)).apply()
         return Result.success()
     }
 
     private fun ensureChannel() {
         val manager = applicationContext.getSystemService(NotificationManager::class.java)
         val channel = NotificationChannel(NOTIF_CHANNEL, "Finance", NotificationManager.IMPORTANCE_DEFAULT)
+            .apply { setShowBadge(true) }
         manager.createNotificationChannel(channel)
     }
 }

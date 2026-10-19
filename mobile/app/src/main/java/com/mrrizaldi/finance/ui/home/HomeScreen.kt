@@ -8,11 +8,13 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -39,6 +41,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.mrrizaldi.finance.R
 import com.mrrizaldi.finance.data.SyncError
@@ -64,7 +67,7 @@ import java.time.YearMonth
 import kotlin.math.abs
 
 @Composable
-fun HomeScreen(vm: HomeViewModel, lock: AppLock, onEdit: (String) -> Unit, onInbox: () -> Unit) {
+fun HomeScreen(vm: HomeViewModel, lock: AppLock, unread: Int, onEdit: (String) -> Unit, onInbox: () -> Unit) {
     val state by vm.uiState.collectAsStateWithLifecycle()
     val error by vm.error.collectAsStateWithLifecycle()
     val refreshing by vm.refreshing.collectAsStateWithLifecycle()
@@ -86,7 +89,10 @@ fun HomeScreen(vm: HomeViewModel, lock: AppLock, onEdit: (String) -> Unit, onInb
                 )
                 MonthMenuButton(state.month, vm::setMonth)
                 IconButton(onClick = onInbox) {
-                    Icon(AppIcons.Bell, stringResource(R.string.inbox_title))
+                    Box {
+                        Icon(AppIcons.Bell, stringResource(R.string.inbox_title))
+                        if (unread > 0) UnreadBadge(unread, Modifier.align(Alignment.TopEnd))
+                    }
                 }
                 IconButton(onClick = { showSettings = true }) {
                     Icon(AppIcons.Settings, stringResource(R.string.settings_title))
@@ -234,5 +240,17 @@ private fun BudgetRow(spent: Long, limit: Long) {
                 Box(Modifier.fillMaxWidth(ratio).fillMaxHeight().background(color, CircleShape))
             }
         }
+    }
+}
+
+@Composable
+private fun UnreadBadge(count: Int, modifier: Modifier) {
+    val p = LocalPalette.current
+    Box(
+        modifier.offset(x = 6.dp, y = (-4).dp).defaultMinSize(minWidth = 16.dp, minHeight = 16.dp)
+            .clip(CircleShape).background(p.primary).padding(horizontal = 4.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(if (count > 99) "99+" else count.toString(), color = p.primaryFg, fontSize = 10.sp, fontWeight = FontWeight.Bold)
     }
 }

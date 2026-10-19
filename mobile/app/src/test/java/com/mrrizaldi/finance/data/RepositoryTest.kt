@@ -75,7 +75,8 @@ class FakeApi : SupabaseApi {
 
     override suspend fun signIn(email: String, password: String) {}
     override suspend fun listNotifications(since: String, limit: Int, ascending: Boolean): List<NotificationDto> = emptyList()
-    override suspend fun markNotificationsRead(ids: List<String>) {}
+    override suspend fun countUnreadNotifications(): Int = 0
+    override suspend fun markAllNotificationsRead() {}
     var signOutFailure: Exception? = null
 
     override suspend fun signOut() {
