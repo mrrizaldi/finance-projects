@@ -1,9 +1,9 @@
 package com.mrrizaldi.finance.ui.inbox
 
 import android.Manifest
+import android.app.Activity
+import android.content.pm.PackageManager
 import android.os.Build
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,9 +22,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.mrrizaldi.finance.R
 import com.mrrizaldi.finance.data.remote.NotificationDto
 import com.mrrizaldi.finance.data.remote.SupabaseApi
@@ -34,16 +37,28 @@ import com.mrrizaldi.finance.ui.theme.AppType
 import com.mrrizaldi.finance.ui.theme.LocalPalette
 import com.mrrizaldi.finance.util.JakartaDate
 
+private const val REQ_POST_NOTIFICATIONS = 1001
+
 @Composable
 fun InboxScreen(api: SupabaseApi, onBack: () -> Unit) {
     val p = LocalPalette.current
     val locale = LocalConfiguration.current.locales[0]
+    val context = LocalContext.current
     var rows by remember { mutableStateOf<List<NotificationDto>>(emptyList()) }
     var loaded by remember { mutableStateOf(false) }
-    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {}
-
     LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= 33) permission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        if (Build.VERSION.SDK_INT >= 33) {
+            val activity = context as? Activity
+            val granted = ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
+            if (activity != null && !granted) {
+                ActivityCompat.requestPermissions(
+                    activity,
+                    arrayOf(Manifest.permission.POST_NOTIFICATIONS),
+                    REQ_POST_NOTIFICATIONS
+                )
+            }
+        }
         runCatching { api.listNotifications("1970-01-01T00:00:00Z", 50, ascending = false) }.onSuccess { list ->
             rows = list
             loaded = true
