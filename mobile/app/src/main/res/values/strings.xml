@@ -207,4 +207,5 @@
     <string name="receipt_close">Tutup</string>
     <string name="receipt_offline">Butuh sinyal buat baca dan nyimpen struk</string>
     <string name="receipt_pdf_too_large">PDF-nya lebih dari 10 MB</string>
+    <string name="receipt_no_app">Gak ada app yang bisa buka ini</string>
 </resources>

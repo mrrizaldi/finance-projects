@@ -44,3 +44,5 @@ fun periodBounds(period: AnalyticsPeriod, anchor: LocalDate): PeriodBounds {
     }
     return PeriodBounds(period, start, period.step(start, 1).minusDays(1), period.step(start, -1), start.minusDays(1))
 }
+
+fun defaultAnalyticsBounds(): PeriodBounds = periodBounds(AnalyticsPeriod.MONTH, JakartaDate.today())

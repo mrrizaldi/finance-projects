@@ -2,6 +2,7 @@ package com.mrrizaldi.finance.ui.receipt
 
 import android.content.Intent
 import android.net.Uri
+import android.widget.Toast
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -112,6 +113,7 @@ fun ReceiptScreen(
         ) {
             val message = state.error ?: state.errorRes?.let { stringResource(it) }
             message?.let { Text(it, color = p.negative, style = AppType.rowMeta) }
+            state.notice?.let { Text(it, color = p.textMute, style = AppType.rowMeta) }
             when {
                 state.busy == ReceiptBusy.LOADING -> Box(Modifier.fillMaxWidth().padding(top = 48.dp), contentAlignment = Alignment.Center) {
                     CircularProgressIndicator()
@@ -182,7 +184,10 @@ private fun ReviewPane(state: ReceiptState, vm: ReceiptViewModel, accounts: List
     state.files.firstOrNull()?.let { file ->
         CapsuleButton(
             stringResource(R.string.receipt_view_file),
-            { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(file.url))) },
+            {
+                runCatching { context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(file.url))) }
+                    .onFailure { Toast.makeText(context, R.string.receipt_no_app, Toast.LENGTH_SHORT).show() }
+            },
             Modifier.fillMaxWidth()
         )
     }

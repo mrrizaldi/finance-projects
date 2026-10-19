@@ -15,6 +15,8 @@ import com.mrrizaldi.finance.data.remote.ReceiptLineDto
 import com.mrrizaldi.finance.data.remote.StatementApiException
 import com.mrrizaldi.finance.data.remote.UploadFile
 import com.mrrizaldi.finance.util.JakartaDate
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -24,6 +26,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.IOException
 import kotlin.math.roundToLong
 
@@ -52,6 +55,7 @@ data class ReceiptState(
     val busy: ReceiptBusy? = null,
     val error: String? = null,
     val errorRes: Int? = null,
+    val notice: String? = null,
     val alreadyItemized: Boolean = false,
     val done: Boolean = false
 ) {
@@ -123,6 +127,7 @@ class ReceiptViewModel(
     categories: Flow<List<CategoryEntity>>,
     transactionId: String?,
     private val loadParent: suspend (String) -> TransactionEntity?,
+    private val shrinkDispatcher: CoroutineDispatcher = Dispatchers.Default,
     private val onSaved: suspend () -> Unit
 ) : ViewModel() {
     private val _state = MutableStateFlow(ReceiptState(transactionId = transactionId))
@@ -138,16 +143,16 @@ class ReceiptViewModel(
     }
 
     private fun failed(state: ReceiptState, e: Exception): ReceiptState = when (e) {
-        is IOException -> state.copy(busy = null, errorRes = R.string.receipt_offline)
-        else -> state.copy(busy = null, error = e.message ?: e.javaClass.simpleName)
+        is IOException -> state.copy(busy = null, error = null, errorRes = R.string.receipt_offline)
+        else -> state.copy(busy = null, error = e.message ?: e.javaClass.simpleName, errorRes = null)
     }
 
     private fun load(transactionId: String) {
         _state.update { it.copy(transactionId = transactionId, busy = ReceiptBusy.LOADING) }
         viewModelScope.launch {
-            val parent = loadParent(transactionId)
-            _state.update { it.copy(parentAmount = parent?.amount, parentCategoryId = parent?.categoryId) }
             try {
+                val parent = loadParent(transactionId)
+                _state.update { it.copy(parentAmount = parent?.amount, parentCategoryId = parent?.categoryId) }
                 val view = api.byTransaction(transactionId)
                 _state.update {
                     if (view == null) it.copy(busy = null)
@@ -170,15 +175,16 @@ class ReceiptViewModel(
             _state.update { it.copy(errorRes = R.string.receipt_pdf_too_large, error = null) }
             return
         }
-        _state.update { it.copy(busy = ReceiptBusy.UPLOADING, error = null, errorRes = null) }
+        _state.update { it.copy(busy = ReceiptBusy.UPLOADING, error = null, errorRes = null, notice = null) }
         viewModelScope.launch {
             try {
-                val draft = api.upload(files.map(::shrinkForUpload))
+                val shrunk = withContext(shrinkDispatcher) { files.map(::shrinkForUpload) }
+                val draft = api.upload(shrunk)
                 _state.update { it.withDraft(draft).copy(busy = null) }
             } catch (e: StatementApiException) {
                 val existing = e.existingTransactionId
                 if (e.status == CONFLICT && existing != null) {
-                    _state.update { it.copy(busy = null, error = e.message) }
+                    _state.update { it.copy(busy = null, notice = e.message) }
                     load(existing)
                 } else {
                     _state.update { it.copy(busy = null, error = e.message, alreadyItemized = e.status == CONFLICT) }

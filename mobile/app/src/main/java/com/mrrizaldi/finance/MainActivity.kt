@@ -4,6 +4,7 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.widget.Toast
 import androidx.core.content.FileProvider
 import androidx.core.content.IntentCompat
 import androidx.lifecycle.lifecycleScope
@@ -70,6 +71,7 @@ import com.mrrizaldi.finance.ui.statements.StatementScreen
 import com.mrrizaldi.finance.ui.statements.StatementViewModel
 import com.mrrizaldi.finance.ui.statements.readUploads
 import com.mrrizaldi.finance.util.JakartaDate
+import com.mrrizaldi.finance.util.defaultAnalyticsBounds
 import java.io.File
 import java.time.YearMonth
 import kotlinx.coroutines.launch
@@ -149,10 +151,19 @@ class MainActivity : FragmentActivity() {
         lifecycleScope.launch { container.sharedUploads.value = readUploads(this@MainActivity, uris) }
     }
 
+    private fun receiptCacheDir() = File(cacheDir, "receipts")
+
+    private fun clearReceiptCache() {
+        receiptCacheDir().listFiles()?.forEach(File::delete)
+    }
+
     private fun deliverReceiptUploads(uris: List<Uri>) {
         if (uris.isEmpty()) return
         val container = (application as App).container
-        lifecycleScope.launch { container.receiptUploads.value = readUploads(this@MainActivity, uris) }
+        lifecycleScope.launch {
+            container.receiptUploads.value = readUploads(this@MainActivity, uris)
+            clearReceiptCache()
+        }
     }
 
     private fun pickDocuments(requestCode: Int) {
@@ -170,14 +181,16 @@ class MainActivity : FragmentActivity() {
     private fun pickReceiptFiles() = pickDocuments(PICK_RECEIPT_FILES)
 
     private fun captureReceipt() {
-        val dir = File(cacheDir, "receipts").apply { mkdirs() }
+        clearReceiptCache()
+        val dir = receiptCacheDir().apply { mkdirs() }
         val uri = FileProvider.getUriForFile(this, "$packageName.files", File(dir, "capture-${System.currentTimeMillis()}.jpg"))
         captureUri = uri
         val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
             .putExtra(MediaStore.EXTRA_OUTPUT, uri)
             .addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION or Intent.FLAG_GRANT_READ_URI_PERMISSION)
         @Suppress("DEPRECATION")
-        startActivityForResult(intent, CAPTURE_RECEIPT)
+        runCatching { startActivityForResult(intent, CAPTURE_RECEIPT) }
+            .onFailure { Toast.makeText(this, R.string.receipt_no_app, Toast.LENGTH_SHORT).show() }
     }
 
     private fun pickedUris(data: Intent?): List<Uri> {
@@ -292,7 +305,7 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState, pickers:
                 val txId = entry.arguments?.getString("tx")
                 val uploads by container.receiptUploads.collectAsStateWithLifecycle()
                 ReceiptScreen(
-                    viewModel {
+                    viewModel(key = "receipt-$txId") {
                         ReceiptViewModel(
                             container.receipts,
                             container.repository.accounts(),
@@ -302,6 +315,7 @@ private fun MainScaffold(container: AppContainer, hazeState: HazeState, pickers:
                         ) {
                             container.repository.refreshAccounts()
                             container.repository.refreshHome(YearMonth.from(JakartaDate.today()))
+                            container.repository.refreshAnalytics(defaultAnalyticsBounds())
                         }
                     },
                     uploads = uploads,

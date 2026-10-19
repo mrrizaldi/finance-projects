@@ -13,6 +13,7 @@ import com.mrrizaldi.finance.data.toEntity
 import com.mrrizaldi.finance.util.AnalyticsPeriod
 import com.mrrizaldi.finance.util.JakartaDate
 import com.mrrizaldi.finance.util.PeriodBounds
+import com.mrrizaldi.finance.util.defaultAnalyticsBounds
 import com.mrrizaldi.finance.util.periodBounds
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -35,7 +36,7 @@ data class AnalyticsUiState(
 )
 
 class AnalyticsViewModel(private val repo: Repository) : ViewModel() {
-    private val bounds = MutableStateFlow(periodBounds(AnalyticsPeriod.MONTH, JakartaDate.today()))
+    private val bounds = MutableStateFlow(defaultAnalyticsBounds())
     private val _error = MutableStateFlow<SyncError?>(null)
     val error: StateFlow<SyncError?> = _error
     private val _refreshing = MutableStateFlow(false)

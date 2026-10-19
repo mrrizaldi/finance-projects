@@ -207,4 +207,5 @@
     <string name="receipt_close">Close</string>
     <string name="receipt_offline">You need a connection to read and save receipts</string>
     <string name="receipt_pdf_too_large">The PDF is larger than 10 MB</string>
+    <string name="receipt_no_app">No app can open this</string>
 </resources>
